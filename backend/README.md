@@ -56,6 +56,13 @@ pytest tests -q
 - Point `DATABASE_URL` at your managed Postgres; run Alembic migrations before traffic.
 - Restrict `CORS_ORIGINS` to your real web origins (comma-separated).
 
+### Render.com
+
+- Put **`runtime.txt`** in this `backend` folder (this repo pins **Python 3.12.8**) so Render does not pick **3.14**, which can break older SQLAlchemy typing paths.
+- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT` — Render sets **`PORT`**; do **not** use `--reload` in production (it breaks the health/port check and is unnecessary).
+- If the Git repo root is the monorepo, set the service **Root Directory** to **`backend`** and **Build Command** to `pip install -r requirements.txt`.
+- Set `DATABASE_URL`, `SECRET_KEY` (≥32 chars), `ENVIRONMENT`, and `CORS_ORIGINS` in the Render dashboard.
+
 ## Auth endpoints
 
 - `POST /api/v1/auth/register` — body: name, email, password, role (`student` | `instructor`)

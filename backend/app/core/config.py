@@ -17,8 +17,8 @@ class Settings(BaseSettings):
 
     log_level: str = Field(default="INFO", description="Root log level: DEBUG, INFO, WARNING, ERROR.")
 
-    # Default to SQLite so `uvicorn` works without Docker/Postgres. Override with PostgreSQL in production.
-    database_url: str = "sqlite:///./multivate.db"
+    # Default matches root `docker-compose.yml` (`db` service). Override `DATABASE_URL` for Render/other hosts.
+    database_url: str = "postgresql://multivate:multivate@localhost:5432/multivate"
 
     secret_key: str = _DEV_SECRET_MARKER
     algorithm: str = "HS256"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Optional
 
 from sqlalchemy import ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
@@ -19,7 +20,7 @@ class Course(Base):
     description: Mapped[str] = mapped_column(String(512), nullable=False)
     image_url: Mapped[str] = mapped_column(Text, nullable=False)
     lessons_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    instructor_id: Mapped[uuid.UUID | None] = mapped_column(
+    instructor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,7 +27,7 @@ class Payment(Base):
         nullable=False,
         index=True,
     )
-    course_id: Mapped[uuid.UUID | None] = mapped_column(
+    course_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("courses.id", ondelete="SET NULL"),
         nullable=True,
@@ -39,7 +40,7 @@ class Payment(Base):
         nullable=False,
         default=PaymentStatus.PENDING,
     )
-    external_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    external_ref: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
