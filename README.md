@@ -49,13 +49,23 @@ High-level flow:
 
 The API expects **PostgreSQL** by default (`DATABASE_URL` in `backend/.env`; see `backend/.env.example`). The repo ships a single **`db`** service in `docker-compose.yml` (user `multivate`, password `multivate`, database `multivate`, port **5432**).
 
-1. From the **`multivate-edtech`** directory (repository root for this app), start Postgres:
+1. From the **`multivate-edtech`** directory (repository root for this app), start Postgres and create **`backend/.env`** if it is missing:
+
+   **Windows (recommended):**
+
+   ```powershell
+   .\scripts\setup-database.ps1
+   ```
+
+   This uses Docker Compose when Docker is available; otherwise it prints manual steps and still creates **`backend/.env`**.
+
+   **Manual (any OS):**
 
    ```bash
    docker compose up -d db
    ```
 
-   **Windows (PowerShell), optional helper** (starts `db` and waits until `pg_isready` succeeds):
+   **Optional helper** (starts `db` and waits until `pg_isready` succeeds):
 
    ```powershell
    .\scripts\dev-db-up.ps1

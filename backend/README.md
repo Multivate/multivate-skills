@@ -15,6 +15,10 @@ This service is structured for a **real** deployment: explicit environment modes
 
 From the **repository root** (parent of `backend/`, where `docker-compose.yml` lives):
 
+**Windows:** run **`.\scripts\setup-database.ps1`** (starts Docker `db` when Docker is installed, creates **`backend/.env`** from `.env.example` if missing).
+
+**Any OS:** start the database:
+
 ```bash
 docker compose up -d db
 ```
@@ -25,7 +29,9 @@ Wait until Postgres accepts connections (optional):
 docker compose exec db pg_isready -U multivate -d multivate
 ```
 
-Or use **`scripts/dev-db-up.ps1`** (Windows) or **`scripts/dev-db-up.sh`** (Unix) from that same root.
+Without Docker, create the role and database once using **`database/manual-init.sql`** (run as a Postgres superuser), then keep **`DATABASE_URL`** in **`backend/.env`** pointing at that instance.
+
+Or use **`scripts/dev-db-up.ps1`** (Windows) or **`scripts/dev-db-up.sh`** (Unix) from the same root to start `db` and wait for readiness.
 
 ### 2. Environment file
 
