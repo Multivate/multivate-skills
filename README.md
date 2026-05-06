@@ -40,7 +40,7 @@ High-level flow:
 - **Python** 3.11+ and **pip** for the API.
 - **Git** for version control.
 
-Optional: **Docker** if you use the compose setup described at the end of this file.
+**Docker** if you use the compose setup described at the end of this file.
 
 ---
 
@@ -116,20 +116,6 @@ npx --yes pnpm@9.15.4 dev
 ## Internationalization
 
 The frontend ships with **next-intl** and locale-prefixed routes for **English**, **French**, **German**, and **Spanish**. Copy and message files live under `frontend/messages/`. To add or change copy, edit the JSON per locale and keep keys aligned across `en`, `fr`, `de`, and `es`.
-
----
-
-## Optional demo data
-
-To seed demo learning data for `admin@example.com` (see project scripts):
-
-```bash
-cd backend
-.\.venv\Scripts\python.exe -m scripts.seed_learning_demo   # Windows
-# python -m scripts.seed_learning_demo                      # Unix
-```
-
-Then open **Dashboard → My courses**; data is served from `GET /api/v1/learning/my-courses` via Next’s `/api/learning/my-courses`.
 
 ---
 
