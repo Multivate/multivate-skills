@@ -8,6 +8,7 @@
 
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
+- [Database setup (PostgreSQL)](#database-setup-postgresql)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Internationalization](#internationalization)
@@ -40,7 +41,44 @@ High-level flow:
 - **Python** 3.11+ and **pip** for the API.
 - **Git** for version control.
 
-**Docker** if you use the compose setup described at the end of this file.
+**Docker Desktop** (or Docker Engine + Compose v2) for the local PostgreSQL service below.
+
+---
+
+## Database setup (PostgreSQL)
+
+The API expects **PostgreSQL** by default (`DATABASE_URL` in `backend/.env`; see `backend/.env.example`). The repo ships a single **`db`** service in `docker-compose.yml` (user `multivate`, password `multivate`, database `multivate`, port **5432**).
+
+1. From the **`multivate-edtech`** directory (repository root for this app), start Postgres:
+
+   ```bash
+   docker compose up -d db
+   ```
+
+   **Windows (PowerShell), optional helper** (starts `db` and waits until `pg_isready` succeeds):
+
+   ```powershell
+   .\scripts\dev-db-up.ps1
+   ```
+
+   **macOS / Linux:**
+
+   ```bash
+   chmod +x scripts/dev-db-up.sh
+   ./scripts/dev-db-up.sh
+   ```
+
+2. Confirm the container is healthy:
+
+   ```bash
+   docker compose exec db pg_isready -U multivate -d multivate
+   ```
+
+3. In **`backend/.env`**, set (or keep) a URL that matches compose:
+
+   `postgresql://multivate:multivate@localhost:5432/multivate`
+
+With **`ENVIRONMENT=development`** and **`AUTO_CREATE_TABLES=true`**, the API creates tables on first startup. For staging/production, use migrations and set **`AUTO_CREATE_TABLES=false`** (see `backend/README.md`).
 
 ---
 
@@ -48,7 +86,7 @@ High-level flow:
 
 ### 1. Backend (FastAPI)
 
-From the `backend` directory:
+Start **PostgreSQL** first ([Database setup](#database-setup-postgresql)). Then from the `backend` directory:
 
 ```bash
 cd backend
@@ -145,13 +183,13 @@ From `frontend`, `pnpm dev` uses **Turbopack**. For webpack: `pnpm dev:webpack`.
 
 ## Docker
 
-From the `multivate-edtech` directory (if a compose file is present for the frontend):
+The root `docker-compose.yml` currently defines only the **`db`** (PostgreSQL) service for local development. Start it with:
 
 ```bash
-docker compose up --build frontend
+docker compose up -d db
 ```
 
-Adjust service names to match your `docker-compose` definitions.
+If you add more services (for example a frontend image), adjust `docker compose` commands and service names accordingly.
 
 ---
 

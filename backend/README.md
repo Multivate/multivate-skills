@@ -11,7 +11,34 @@ This service is structured for a **real** deployment: explicit environment modes
 
 ## Setup
 
-1. Create a virtual environment and install dependencies:
+### 1. PostgreSQL (local)
+
+From the **repository root** (parent of `backend/`, where `docker-compose.yml` lives):
+
+```bash
+docker compose up -d db
+```
+
+Wait until Postgres accepts connections (optional):
+
+```bash
+docker compose exec db pg_isready -U multivate -d multivate
+```
+
+Or use **`scripts/dev-db-up.ps1`** (Windows) or **`scripts/dev-db-up.sh`** (Unix) from that same root.
+
+### 2. Environment file
+
+In `backend/`, copy `.env.example` to `.env` and set at least **`SECRET_KEY`**. **`DATABASE_URL`** should match compose unless you use another host:
+
+```
+DATABASE_URL=postgresql://multivate:multivate@localhost:5432/multivate
+SECRET_KEY=<use-a-long-random-string>
+```
+
+With **`ENVIRONMENT=development`** and **`AUTO_CREATE_TABLES=true`**, missing tables are created when the app starts. Do not rely on that in production.
+
+### 3. Python virtualenv and dependencies
 
 ```bash
 cd backend
@@ -20,35 +47,24 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-2. Copy `.env.example` to `.env` and adjust values. For local Postgres with root `docker-compose.yml`:
-
-```
-DATABASE_URL=postgresql://multivate:multivate@localhost:5432/multivate
-SECRET_KEY=<use-a-long-random-string>
-```
-
-3. Start PostgreSQL (from repo root):
-
-```bash
-docker compose up -d db
-```
-
-4. Run the API:
+### 4. Run the API
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-5. (Optional) Run automated checks:
+### 5. Verify
+
+- **`/health`** — process is up.
+- **`/health/ready`** — database reachable (use after API is running).
+- **`/docs`** — OpenAPI UI.
+
+### 6. (Optional) Run automated checks
 
 ```bash
 pip install -r requirements-dev.txt
 pytest tests -q
 ```
-
-- Docs: `http://localhost:8000/docs`
-- Liveness: `http://localhost:8000/health`
-- Readiness (DB): `http://localhost:8000/health/ready`
 
 ### Production checklist
 

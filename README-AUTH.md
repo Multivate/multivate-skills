@@ -8,6 +8,8 @@ From repo root:
 docker compose up -d db
 ```
 
+Optional: `.\scripts\dev-db-up.ps1` (Windows) or `./scripts/dev-db-up.sh` (Unix) starts `db` and waits until Postgres is ready.
+
 ## 2. Backend (FastAPI)
 
 ```bash
