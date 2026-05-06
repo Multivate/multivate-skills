@@ -1,0 +1,28 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  Award,
+  BarChart3,
+  BookOpen,
+  ClipboardList,
+  CreditCard,
+  GraduationCap,
+  LayoutDashboard,
+  ScrollText,
+  Settings,
+  Star,
+  Users,
+} from "lucide-react";
+
+export const adminNav: { href: string; id: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", id: "home", icon: LayoutDashboard },
+  { href: "/dashboard/admin/users", id: "users", icon: Users },
+  { href: "/dashboard/admin/courses", id: "courses", icon: BookOpen },
+  { href: "/dashboard/admin/instructors", id: "instructors", icon: GraduationCap },
+  { href: "/dashboard/admin/enrollments", id: "enrollments", icon: ClipboardList },
+  { href: "/dashboard/admin/payments", id: "payments", icon: CreditCard },
+  { href: "/dashboard/admin/certificates", id: "certificates", icon: Award },
+  { href: "/dashboard/admin/analytics", id: "analytics", icon: BarChart3 },
+  { href: "/dashboard/admin/reviews", id: "reviews", icon: Star },
+  { href: "/dashboard/settings", id: "settings", icon: Settings },
+  { href: "/dashboard/admin/system-logs", id: "systemLogs", icon: ScrollText },
+];

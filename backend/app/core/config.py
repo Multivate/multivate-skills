@@ -1,0 +1,57 @@
+from functools import lru_cache
+from typing import Literal
+
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEV_SECRET_MARKER = "dev-only-change-in-production-min-32-characters-long"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    environment: Literal["development", "staging", "production"] = Field(
+        default="development",
+        description="Controls security defaults, logging noise, and schema bootstrap behaviour.",
+    )
+
+    log_level: str = Field(default="INFO", description="Root log level: DEBUG, INFO, WARNING, ERROR.")
+
+    # Default to SQLite so `uvicorn` works without Docker/Postgres. Override with PostgreSQL in production.
+    database_url: str = "sqlite:///./multivate.db"
+
+    secret_key: str = _DEV_SECRET_MARKER
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 14
+
+    cors_origins: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:3001,http://127.0.0.1:3001,"
+        "http://localhost:3002,http://localhost:3003"
+    )
+
+    auto_create_tables: bool = Field(
+        default=True,
+        description="If true, SQLAlchemy creates missing tables on startup. "
+        "Must be false in production — use Alembic migrations instead.",
+    )
+
+    @model_validator(mode="after")
+    def enforce_production_rules(self) -> "Settings":
+        if self.environment in ("staging", "production"):
+            if len(self.secret_key) < 32:
+                raise ValueError("SECRET_KEY must be at least 32 characters in staging/production.")
+            if self.secret_key.strip() == _DEV_SECRET_MARKER:
+                raise ValueError("SECRET_KEY must be changed from the development placeholder in staging/production.")
+            if self.auto_create_tables:
+                raise ValueError(
+                    "AUTO_CREATE_TABLES must be false in staging/production. "
+                    "Apply schema changes with Alembic (or your migration tool), not create_all()."
+                )
+        return self
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

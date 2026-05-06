@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: multivate
+      POSTGRES_PASSWORD: multivate
+      POSTGRES_DB: multivate
+    ports:
+      - "5432:5432"
+    volumes:
+      - multivate_pg:/var/lib/postgresql/data
+
+volumes:
+  multivate_pg:

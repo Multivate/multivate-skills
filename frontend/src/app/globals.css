@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-slate-800 antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-layout px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12;
+  }
+
+  .heading-display {
+    @apply text-balance font-extrabold tracking-tight text-brand-ink;
+  }
+
+  .heading-section {
+    @apply text-balance font-bold tracking-tight text-brand-ink;
+  }
+
+  .btn-primary-brand {
+    @apply inline-flex min-h-[3rem] min-w-[10rem] items-center justify-center gap-2 rounded-xl bg-brand-primary px-7 py-3 text-sm font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition hover:bg-brand-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary;
+  }
+
+  .btn-outline-brand {
+    @apply inline-flex min-h-[3rem] items-center justify-center rounded-xl border-2 border-brand-primary bg-white px-7 py-3 text-sm font-semibold text-brand-primary transition hover:bg-violet-50/80;
+  }
+
+  /** Primary CTA — orange accent (auth forms, high-intent actions) */
+  .btn-cta-accent {
+    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-xl bg-brand-accent px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-auth-social {
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .section-y {
+    @apply py-[4.5rem] sm:py-24 lg:py-28;
+  }
+
+  .tag-overline {
+    @apply text-[11px] font-bold uppercase tracking-[0.22em];
+  }
+
+  /** Crisp floating panel on photos (no heavy blur). */
+  .float-widget {
+    @apply rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-widget sm:p-4;
+  }
+
+  .surface-section {
+    @apply bg-brand-muted;
+  }
+}
