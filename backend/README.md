@@ -78,12 +78,24 @@ pytest tests -q
 - Point `DATABASE_URL` at your managed Postgres; run Alembic migrations before traffic.
 - Restrict `CORS_ORIGINS` to your real web origins (comma-separated).
 
-### Render.com
+### Railway
 
-- Put **`runtime.txt`** in this `backend` folder (this repo pins **Python 3.12.8**) so Render does not pick **3.14**, which can break older SQLAlchemy typing paths.
-- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT` — Render sets **`PORT`**; do **not** use `--reload` in production (it breaks the health/port check and is unnecessary).
-- If the Git repo root is the monorepo, set the service **Root Directory** to **`backend`** and **Build Command** to `pip install -r requirements.txt`.
-- Set `DATABASE_URL`, `SECRET_KEY` (≥32 chars), `ENVIRONMENT`, and `CORS_ORIGINS` in the Render dashboard.
+Config-as-code lives in **`railway.json`** (start command and **`/health`** check). **`runtime.txt`** pins **Python 3.12.8** for [Railpack](https://docs.railway.com/reference/railpack) so builds stay on 3.12 instead of a very new default.
+
+1. **New project** → Deploy from this GitHub repo.
+2. **Service root:** set the service **Root Directory** (or watch path) to **`backend`** so `requirements.txt`, `app/`, and `railway.json` are at the service root.
+3. **Database:** add a **PostgreSQL** plugin (or template), open the database service, and **connect / reference** it from the API service so **`DATABASE_URL`** is injected automatically (often `DATABASE_PRIVATE_URL` is also available for private networking; use whichever matches your plan).
+4. **Variables** on the API service (minimum for production):
+
+   | Variable | Example |
+   |----------|---------|
+   | `ENVIRONMENT` | `production` |
+   | `SECRET_KEY` | random string, **≥32 characters** |
+   | `AUTO_CREATE_TABLES` | `false` (use migrations before traffic) |
+   | `CORS_ORIGINS` | your real site origins, comma-separated (e.g. `https://yourapp.vercel.app`) |
+
+5. **Do not** use **`--reload`** in production. **`PORT`** is set by Railway; the start command in **`railway.json`** already binds **`0.0.0.0`**.
+6. After deploy, confirm **`/health`** and **`/health/ready`** (readiness needs a working **`DATABASE_URL`**).
 
 ## Auth endpoints
 

@@ -170,6 +170,7 @@ The frontend ships with **next-intl** and locale-prefixed routes for **English**
 ## Production notes
 
 - Set **`ENVIRONMENT=production`**, a strong **`SECRET_KEY`**, and disable unsafe dev-only behavior as described in `backend/README.md`.
+- Deploy the API on **[Railway](https://railway.com)** using the **`backend`** root directory and env vars documented in **`backend/README.md`** (including **`railway.json`** and **`runtime.txt`**).
 - Set **`INTERNAL_API_URL`** on the Next server to your **private** API URL (same network / VPC preferred).
 - Run database migrations with **Alembic** before serving traffic; do not rely on `create_all()` in production.
 
