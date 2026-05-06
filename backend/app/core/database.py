@@ -9,6 +9,9 @@ from app.core.config import get_settings
 
 settings = get_settings()
 _url = settings.database_url
+# Render and some hosts still emit postgres://; SQLAlchemy expects postgresql:// for the psycopg2 dialect.
+if _url.startswith("postgres://"):
+    _url = "postgresql://" + _url.removeprefix("postgres://")
 _connect_args: dict = {}
 _engine_kw: dict = {}
 if _url.startswith("sqlite"):

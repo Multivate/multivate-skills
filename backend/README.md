@@ -78,6 +78,26 @@ pytest tests -q
 - Point `DATABASE_URL` at your managed Postgres; run Alembic migrations before traffic.
 - Restrict `CORS_ORIGINS` to your real web origins (comma-separated).
 
+### Render.com
+
+**Typical failure modes (and fixes):**
+
+| Symptom | Likely cause | Fix |
+|--------|----------------|-----|
+| Build OK, then **“No open ports detected”** / deploy unhealthy | Process crashed on startup (not listening on `PORT`) | Check logs. Use **`uvicorn app.main:app --host 0.0.0.0 --port $PORT`** — **no `--reload`**. Root directory must be **`backend`** so `app` imports work. |
+| Crash immediately on boot | **`ENVIRONMENT=production`** with default / short **`SECRET_KEY`**, or **`AUTO_CREATE_TABLES=true`** | For a **first** deploy, use **`ENVIRONMENT=development`** and **`AUTO_CREATE_TABLES=true`**, or satisfy production rules (≥32 char secret, **`AUTO_CREATE_TABLES=false`**, migrations applied). |
+| **`/health/ready`** returns 503 | Database unreachable or wrong URL | Link Render Postgres to the web service so **`DATABASE_URL`** is set, or paste the **External** URL from the DB dashboard. Same region helps. |
+| Wrong Python / wheel build errors | Render defaults to **Python 3.14.x** on new services | Set **`PYTHON_VERSION=3.12.8`** in the service, and/or rely on **`backend/runtime.txt`** + **`backend/.python-version`** in this repo. |
+
+**Manual Web Service setup**
+
+1. **Root Directory:** `backend` (monorepo).
+2. **Build:** `pip install -r requirements.txt`
+3. **Start:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. **Environment:** `PYTHON_VERSION=3.12.8`, linked **`DATABASE_URL`**, **`SECRET_KEY`**, **`CORS_ORIGINS`**, and (for first boot) **`ENVIRONMENT=development`** + **`AUTO_CREATE_TABLES=true`** unless you have migrations.
+
+**Blueprint (optional):** repo root **`render.yaml`** defines a **free** Postgres (`multivate-db`) and a **free** web service with safe first-deploy env (development + `create_all`). You still need to set **`CORS_ORIGINS`** when prompted (`sync: false` in the blueprint).
+
 ### Railway
 
 Config-as-code lives in **`railway.json`** (start command and **`/health`** check). **`runtime.txt`** pins **Python 3.12.8** for [Railpack](https://docs.railway.com/reference/railpack) so builds stay on 3.12 instead of a very new default.

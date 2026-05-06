@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     log_level: str = Field(default="INFO", description="Root log level: DEBUG, INFO, WARNING, ERROR.")
 
-    # Default matches root `docker-compose.yml` (`db` service). Override `DATABASE_URL` in production (e.g. Railway).
+    # Default matches root `docker-compose.yml` (`db` service). Override `DATABASE_URL` in production (Render, Railway, etc.).
     database_url: str = "postgresql://multivate:multivate@localhost:5432/multivate"
 
     secret_key: str = _DEV_SECRET_MARKER
