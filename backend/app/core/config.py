@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from typing import Literal
 
@@ -36,6 +37,26 @@ class Settings(BaseSettings):
         description="If true, SQLAlchemy creates missing tables on startup. "
         "Must be false in production — use Alembic migrations instead.",
     )
+
+    @model_validator(mode="after")
+    def require_render_database_url(self) -> "Settings":
+        """Render sets RENDER=true. Without DATABASE_URL, the model default targets localhost and boot fails."""
+        if os.environ.get("RENDER", "").lower() != "true":
+            return self
+        raw = os.environ.get("DATABASE_URL")
+        if raw is None or not str(raw).strip():
+            raise ValueError(
+                "DATABASE_URL is not set. In the Render Dashboard: open your Web Service → Environment → "
+                "add DATABASE_URL using your Render PostgreSQL connection string (database → Info → "
+                "External or Internal Database URL), or link the database to this service so Render injects it."
+            )
+        url_lower = self.database_url.lower()
+        if "localhost" in url_lower or "127.0.0.1" in url_lower:
+            raise ValueError(
+                "DATABASE_URL must not point to localhost on Render. Paste the PostgreSQL URL from your "
+                "Render database service (hostname looks like dpg-xxxxx-a.REGION-postgres.render.com)."
+            )
+        return self
 
     @model_validator(mode="after")
     def enforce_production_rules(self) -> "Settings":

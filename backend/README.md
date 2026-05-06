@@ -87,6 +87,7 @@ pytest tests -q
 | Build OK, then **“No open ports detected”** / deploy unhealthy | Process crashed on startup (not listening on `PORT`) | Check logs. Use **`uvicorn app.main:app --host 0.0.0.0 --port $PORT`** — **no `--reload`**. Root directory must be **`backend`** so `app` imports work. |
 | Crash immediately on boot | **`ENVIRONMENT=production`** with default / short **`SECRET_KEY`**, or **`AUTO_CREATE_TABLES=true`** | For a **first** deploy, use **`ENVIRONMENT=development`** and **`AUTO_CREATE_TABLES=true`**, or satisfy production rules (≥32 char secret, **`AUTO_CREATE_TABLES=false`**, migrations applied). |
 | **`/health/ready`** returns 503 | Database unreachable or wrong URL | Link Render Postgres to the web service so **`DATABASE_URL`** is set, or paste the **External** URL from the DB dashboard. Same region helps. |
+| **`localhost:5432` / connection refused** on deploy | **`DATABASE_URL` missing** — the app falls back to the local Docker default | Web Service → **Environment** → add **`DATABASE_URL`** from your Render Postgres (**Info** → External or Internal URL), or **Link Database** so Render injects it. The app now fails fast on Render if this is missing. |
 | Wrong Python / wheel build errors | Render defaults to **Python 3.14.x** on new services | Set **`PYTHON_VERSION=3.12.8`** in the service, and/or rely on **`backend/runtime.txt`** + **`backend/.python-version`** in this repo. |
 
 **Manual Web Service setup**
