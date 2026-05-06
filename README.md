@@ -143,7 +143,7 @@ From `frontend`, `pnpm dev` uses **Turbopack**. For webpack: `pnpm dev:webpack`.
 
 ---
 
-## Docker (optional)
+## Docker
 
 From the `multivate-edtech` directory (if a compose file is present for the frontend):
 
