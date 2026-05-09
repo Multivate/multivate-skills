@@ -21,10 +21,10 @@ export function LocaleSwitcher({ className }: { className?: string }) {
 
   return (
     <label className={`inline-flex items-center gap-2 ${className ?? ""}`}>
-      <Globe className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={2} aria-hidden />
+      <Globe className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={2} aria-hidden />
       <span className="sr-only">{t("label")}</span>
       <select
-        className="max-w-[10.5rem] cursor-pointer rounded-lg border border-slate-200 bg-white py-1.5 pl-2 pr-7 text-xs font-semibold text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 sm:text-sm"
+        className="max-w-[10.5rem] cursor-pointer rounded-lg border border-slate-200 bg-white py-1.5 pl-2 pr-7 text-xs font-semibold text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-500 sm:text-sm"
         value={locale}
         aria-label={t("label")}
         onChange={(e) => {

@@ -4,21 +4,29 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
-from app.core.database import Base, SessionLocal, apply_sqlite_schema_patches, engine
+from app.core.database import Base, SessionLocal, engine
 from app.core.logging import configure_logging
 from app.middleware.request_id import RequestIdMiddleware
-from app.models.course import Course  # noqa: F401 — register ORM metadata
+from app.models.certificate import Certificate  # noqa: F401
+from app.models.course import Course  # noqa: F401
+from app.models.course_review import CourseReview  # noqa: F401
 from app.models.enrollment import Enrollment  # noqa: F401
+from app.models.inbox_message import InboxMessage  # noqa: F401
 from app.models.lesson import Lesson  # noqa: F401
+from app.models.mfa_otp_challenge import MfaOtpChallenge  # noqa: F401
 from app.models.payment import Payment  # noqa: F401
+from app.models.instructor_teaching_profile import InstructorTeachingProfile  # noqa: F401
+from app.models.student_learning_profile import StudentLearningProfile  # noqa: F401
 from app.models.user import User  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -29,9 +37,20 @@ _settings = get_settings()
 async def lifespan(_: FastAPI):
     configure_logging(_settings.log_level)
     if _settings.auto_create_tables:
-        Base.metadata.create_all(bind=engine)
-        apply_sqlite_schema_patches()
-        logger.info("Schema bootstrap: create_all() finished (development mode).")
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Schema bootstrap: create_all() finished (development mode).")
+        except OperationalError as exc:
+            dbu = _settings.database_url
+            hint = (
+                "Cannot reach the database. Start PostgreSQL (e.g. `docker compose up -d db` from the repo root) "
+                "or your local instance, create the database if needed (see database/pgadmin/), and verify "
+                "DATABASE_URL in backend/.env."
+            )
+            logger.error("%s URL=%s … %s", hint, dbu.split("@")[-1] if "@" in dbu else dbu[:48], exc)
+            raise RuntimeError(
+                "Database unreachable during startup (create_all). See log above for DATABASE_URL tail and fix."
+            ) from exc
     else:
         logger.info("Schema bootstrap skipped (AUTO_CREATE_TABLES=false).")
     yield
@@ -73,9 +92,9 @@ async def validation_exception_handler(
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Never swallow HTTPException — preserve status codes for API clients."""
+    """Preserve Starlette/FastAPI HTTPException responses (subclass check must use Starlette base)."""
     rid = getattr(request.state, "request_id", None)
-    if isinstance(exc, HTTPException):
+    if isinstance(exc, StarletteHTTPException):
         detail: Any = exc.detail
         hdrs = getattr(exc, "headers", None)
         return JSONResponse(

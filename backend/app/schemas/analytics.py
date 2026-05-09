@@ -30,6 +30,8 @@ class RecentEnrollmentRow(BaseModel):
     course_title: str
     course_slug: str
     created_at: datetime
+    instructor_name: str | None = None
+    instructor_email: str | None = None
 
 
 class RecentPaymentRow(BaseModel):
@@ -78,6 +80,8 @@ class InstructorStudentRow(BaseModel):
     course_slug: str
     course_title: str
     enrolled_at: datetime
+    lesson_done: int
+    progress_pct: int
 
 
 class PaymentAdminRow(BaseModel):

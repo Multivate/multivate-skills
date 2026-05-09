@@ -27,3 +27,13 @@ def create_payment(
     user: Annotated[User, Depends(get_current_user)],
 ) -> PaymentOut:
     return payment_service.create_payment(db, user.id, payload)
+
+
+@router.post("/checkout", response_model=PaymentOut, status_code=status.HTTP_201_CREATED)
+def post_checkout_and_enroll(
+    payload: PaymentCreate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> PaymentOut:
+    """Pay for a course and enroll in one step (simulated settlement until a real PSP is wired)."""
+    return payment_service.checkout_and_enroll(db, user, payload)

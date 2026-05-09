@@ -11,6 +11,8 @@ backend/.venv/
 *$py.class
 .pytest_cache/
 .mypy_cache/
+
+# Accidental local DB files (runtime DB is PostgreSQL)
 *.db
 *.sqlite3
 

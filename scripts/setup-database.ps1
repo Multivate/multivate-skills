@@ -37,7 +37,8 @@ if ($docker) {
     Write-Host ""
     Write-Host "Option B - Use an existing PostgreSQL server:"
     Write-Host "  1. Start your PostgreSQL service."
-    Write-Host "  2. As superuser, run: psql -U postgres -h localhost -f database\manual-init.sql"
+    Write-Host "  2. As superuser from repo root: psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f database\manual-init.sql"
+    Write-Host "     (or run database\pgadmin\01-role.sql then 02-databases.sql in pgAdmin)"
     Write-Host "  3. Ensure backend\.env has DATABASE_URL=postgresql://multivate:multivate@localhost:5432/multivate"
     Write-Host ""
 }

@@ -9,8 +9,10 @@ from app.core.deps import require_roles
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.analytics import AdminDashboardOut, PaymentAdminRow, RecentEnrollmentRow
-from app.schemas.user import UserPublic
-from app.services import analytics_service
+from app.schemas.instructor_profile import InstructorTeachingProfileAdminRow
+from app.schemas.student_profile import StudentLearningProfileAdminRow
+from app.schemas.user import UserPublic, user_public_from_orm
+from app.services import analytics_service, instructor_profile_service, learning_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -42,6 +44,26 @@ def list_admin_payments(
     return analytics_service.admin_payments_page(db, skip, limit)
 
 
+@router.get("/student-learning-profiles", response_model=list[StudentLearningProfileAdminRow])
+def list_student_learning_profiles(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    limit: int = Query(200, ge=1, le=500),
+) -> list[StudentLearningProfileAdminRow]:
+    """Questionnaire responses submitted by learners (joined to user name/email)."""
+    return learning_service.list_student_profiles_for_admin(db, limit=limit)
+
+
+@router.get("/instructor-teaching-profiles", response_model=list[InstructorTeachingProfileAdminRow])
+def list_instructor_teaching_profiles(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    limit: int = Query(200, ge=1, le=500),
+) -> list[InstructorTeachingProfileAdminRow]:
+    """Instructor onboarding questionnaire (joined to user name/email)."""
+    return instructor_profile_service.list_instructor_profiles_for_admin(db, limit=limit)
+
+
 @router.get("/users", response_model=list[UserPublic])
 def list_admin_users(
     db: Annotated[Session, Depends(get_db)],
@@ -51,4 +73,4 @@ def list_admin_users(
 ) -> list[UserPublic]:
     stmt = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
     rows = list(db.scalars(stmt).unique().all())
-    return [UserPublic.model_validate(u) for u in rows]
+    return [user_public_from_orm(u) for u in rows]

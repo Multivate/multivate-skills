@@ -4,7 +4,8 @@ import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 
 const secure = process.env.NODE_ENV === "production";
 
-export async function POST(req: Request) {
+/** BFF: POST body `{ mfa_token, code }` → FastAPI `POST /api/v1/auth/login/mfa`, set session cookies. */
+export async function proxyMfaLoginComplete(req: Request): Promise<Response> {
   let body: unknown;
   try {
     body = await req.json();
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
 
   try {
     const base = getInternalApiUrl();
-    const upstream = await fetch(`${base}/api/v1/auth/register`, {
+    const upstream = await fetch(`${base}/api/v1/auth/login/mfa`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
     if (!access || !refresh || !user) {
       return NextResponse.json({ detail: "Invalid upstream response" }, { status: 502 });
     }
-    const res = NextResponse.json({ user }, { status: 201 });
+    const res = NextResponse.json({ user });
     setAuthCookies(res, access, refresh, secure);
     return res;
   } catch (e) {

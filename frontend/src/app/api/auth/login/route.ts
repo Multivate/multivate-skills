@@ -23,6 +23,20 @@ export async function POST(req: Request) {
     if (!upstream.ok) {
       return NextResponse.json(data, { status: upstream.status });
     }
+    if (
+      data &&
+      typeof data === "object" &&
+      (data as { mfa_required?: unknown }).mfa_required === true &&
+      typeof (data as { mfa_token?: unknown }).mfa_token === "string"
+    ) {
+      const d = data as { mfa_token: string; email_masked?: string; dev_otp?: string | null };
+      return NextResponse.json({
+        mfa_required: true,
+        mfa_token: d.mfa_token,
+        email_masked: typeof d.email_masked === "string" ? d.email_masked : "",
+        ...(typeof d.dev_otp === "string" && d.dev_otp.length === 6 ? { dev_otp: d.dev_otp } : {}),
+      });
+    }
     const access = data.access_token as string | undefined;
     const refresh = data.refresh_token as string | undefined;
     const user = data.user;

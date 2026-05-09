@@ -3,8 +3,11 @@ import { AdminSectionContent } from "@/components/dashboard/AdminSectionContent"
 
 const SECTIONS = new Set([
   "users",
+  "student-profiles",
+  "instructor-profiles",
   "courses",
   "instructors",
+  "data-management",
   "enrollments",
   "payments",
   "certificates",
@@ -15,9 +18,12 @@ const SECTIONS = new Set([
 
 const TITLES: Record<string, string> = {
   users: "Users",
+  "student-profiles": "Student learning profiles",
+  "instructor-profiles": "Instructor teaching profiles",
   courses: "Courses",
   instructors: "Instructors",
-  enrollments: "Enrollments",
+  "data-management": "Data management",
+  enrollments: "Enrollments & relationships",
   payments: "Payments",
   certificates: "Certificates",
   analytics: "Analytics",

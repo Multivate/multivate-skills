@@ -45,6 +45,32 @@ def create_refresh_token(user_id: UUID) -> str:
     return _create_token(str(user_id), expire, "refresh")
 
 
+def create_mfa_pending_token(user_id: UUID, challenge_id: UUID) -> str:
+    """Short-lived token after password check; exchange with email OTP for session tokens."""
+    expire = timedelta(minutes=10)
+    now = datetime.now(timezone.utc)
+    exp = now + expire
+    payload: dict[str, Any] = {
+        "sub": str(user_id),
+        "cid": str(challenge_id),
+        "type": "mfa_pending",
+        "iat": int(now.timestamp()),
+        "exp": int(exp.timestamp()),
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_mfa_pending_token(token: str) -> tuple[UUID, UUID]:
+    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    if payload.get("type") != "mfa_pending":
+        raise JWTError("Invalid token type")
+    sub = payload.get("sub")
+    cid = payload.get("cid")
+    if not sub or not cid:
+        raise JWTError("Missing subject or challenge id")
+    return UUID(str(sub)), UUID(str(cid))
+
+
 def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
 

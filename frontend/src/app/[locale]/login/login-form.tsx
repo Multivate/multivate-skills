@@ -9,6 +9,7 @@ import { AuthBrandBlock, AuthSplitLayout } from "@/components/auth/AuthSplitLayo
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { useAuth } from "@/contexts/auth-context";
+import { pathnameWithoutLeadingLocale } from "@/i18n/routing";
 import { Link, useRouter } from "@/i18n/navigation";
 
 function GoogleGlyph() {
@@ -36,7 +37,7 @@ function GoogleGlyph() {
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
-  const { login, user, loading } = useAuth();
+  const { login, completeMfaLogin, user, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -44,8 +45,10 @@ export function LoginForm() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [mfa, setMfa] = useState<{ token: string; masked: string; devOtp?: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
 
-  const from = searchParams.get("from") || "/dashboard";
+  const from = pathnameWithoutLeadingLocale(searchParams.get("from") || "/dashboard");
 
   useEffect(() => {
     if (!loading && user) {
@@ -58,7 +61,37 @@ export function LoginForm() {
     setError(null);
     setPending(true);
     try {
-      await login(email.trim(), password);
+      const outcome = await login(email.trim(), password);
+      if ("mfaRequired" in outcome && outcome.mfaRequired) {
+        setMfa({
+          token: outcome.mfaToken,
+          masked: outcome.emailMasked,
+          ...(outcome.devOtp ? { devOtp: outcome.devOtp } : {}),
+        });
+        setMfaCode(outcome.devOtp ?? "");
+        return;
+      }
+      router.replace(from.startsWith("/") ? from : "/dashboard");
+      router.refresh();
+    } catch (err) {
+      if (err instanceof Error && err.message === "PROFILE_INCOMPLETE") {
+        setError(t("errorProfileIncomplete"));
+      } else {
+        setError(err instanceof Error ? err.message : t("errorGeneric"));
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function onMfaSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!mfa) return;
+    setError(null);
+    setPending(true);
+    try {
+      await completeMfaLogin(mfa.token, mfaCode.trim());
+      setMfa(null);
       router.replace(from.startsWith("/") ? from : "/dashboard");
       router.refresh();
     } catch (err) {
@@ -80,82 +113,131 @@ export function LoginForm() {
         />
       }
       form={
-        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200/90 bg-white p-6 shadow-card sm:p-8">
-          <h2 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{t("title")}</h2>
-          <p className="mt-1.5 text-sm text-slate-600">{t("subtitle")}</p>
+        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-card sm:p-8">
+          <h2 className="text-xl font-extrabold tracking-tight text-brand-ink dark:text-slate-100 sm:text-2xl">
+            {mfa ? t("mfaTitle") : t("title")}
+          </h2>
+          <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">
+            {mfa ? t("mfaSubtitle", { email: mfa.masked || email }) : t("subtitle")}
+          </p>
 
-          <form onSubmit={onSubmit} className="mt-8 space-y-5">
-            {error ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <AuthInput
-              id="email"
-              label={t("email")}
-              icon={Mail}
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={setEmail}
-              placeholder={t("emailPh")}
-            />
-            <PasswordField
-              label={t("password")}
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={setPassword}
-              placeholder={t("passwordPh")}
-            />
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-brand-panel focus:ring-brand-panel/30"
-                />
-                {t("remember")}
-              </label>
+          {mfa ? (
+            <form onSubmit={onMfaSubmit} className="mt-8 space-y-5">
+              {error ? (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <AuthInput
+                id="mfa-code"
+                label={t("mfaCodeLabel")}
+                icon={Mail}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                value={mfaCode}
+                onChange={setMfaCode}
+                placeholder={t("mfaCodePh")}
+              />
+              {mfa.devOtp ? (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                  {t("mfaDevOtpBanner", { code: mfa.devOtp })}
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t("mfaDevHint")}</p>
+              )}
+              <button type="submit" disabled={pending} className="btn-cta-accent">
+                {pending ? t("mfaSubmitting") : t("mfaSubmit")}
+              </button>
               <button
                 type="button"
-                className="text-sm font-semibold text-brand-primary hover:underline"
+                className="w-full text-center text-sm font-semibold text-brand-primary hover:underline"
                 onClick={() => {
-                  /* Placeholder until password reset flow exists */
+                  setMfa(null);
+                  setMfaCode("");
+                  setError(null);
                 }}
               >
-                {t("forgot")}
+                {t("mfaBack")}
               </button>
-            </div>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={onSubmit} className="mt-8 space-y-5">
+                {error ? (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200" role="alert">
+                    {error}
+                  </p>
+                ) : null}
 
-            <button type="submit" disabled={pending} className="btn-cta-accent">
-              {pending ? t("submitting") : t("submit")}
-            </button>
-          </form>
+                <AuthInput
+                  id="email"
+                  label={t("email")}
+                  icon={Mail}
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={setEmail}
+                  placeholder={t("emailPh")}
+                />
+                <PasswordField
+                  label={t("password")}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={setPassword}
+                  placeholder={t("passwordPh")}
+                />
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center" aria-hidden>
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <span className="bg-white px-3">{t("divider")}</span>
-            </div>
-          </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-panel focus:ring-brand-panel/30"
+                    />
+                    {t("remember")}
+                  </label>
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-brand-primary hover:underline"
+                    onClick={() => {
+                      /* Placeholder until password reset flow exists */
+                    }}
+                  >
+                    {t("forgot")}
+                  </button>
+                </div>
 
-          <div className="space-y-3">
-            <button type="button" className="btn-auth-social">
-              <GoogleGlyph />
-              {t("google")}
-            </button>
-            <button type="button" className="btn-auth-social">
-              <Apple className="h-[18px] w-[18px] text-slate-900" strokeWidth={2} aria-hidden />
-              {t("apple")}
-            </button>
-          </div>
+                <button type="submit" disabled={pending} className="btn-cta-accent">
+                  {pending ? t("submitting") : t("submit")}
+                </button>
+              </form>
+
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center" aria-hidden>
+                  <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                </div>
+                <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <span className="bg-white px-3 dark:bg-slate-900">{t("divider")}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button type="button" className="btn-auth-social">
+                  <GoogleGlyph />
+                  {t("google")}
+                </button>
+                <button type="button" className="btn-auth-social">
+                  <Apple className="h-[18px] w-[18px] text-slate-900 dark:text-slate-100" strokeWidth={2} aria-hidden />
+                  {t("apple")}
+                </button>
+              </div>
+            </>
+          )}
 
           <p className="mt-8 text-center text-sm text-slate-600">
             {t("noAccount")}{" "}

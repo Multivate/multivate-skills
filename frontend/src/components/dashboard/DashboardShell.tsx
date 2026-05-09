@@ -14,7 +14,6 @@ import {
   Wallet,
   Menu,
   MessageSquare,
-  Moon,
   Search,
   Settings,
   Shield,
@@ -147,10 +146,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   const shellBg =
     workspace === "admin"
-      ? "bg-admin-canvas"
+      ? "bg-admin-canvas dark:bg-slate-950"
       : workspace === "instructor"
-        ? "bg-instructor-canvas"
-        : "bg-slate-50";
+        ? "bg-instructor-canvas dark:bg-slate-950"
+        : "bg-slate-50 dark:bg-slate-950";
 
   const asideShell =
     workspace === "admin"
@@ -310,19 +309,19 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       ) : null}
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-slate-800/90 dark:bg-slate-900/95 dark:supports-[backdrop-filter]:bg-slate-900/85">
           <div className="flex h-14 flex-wrap items-center gap-3 px-4 sm:h-16 sm:gap-4 sm:px-6 lg:px-8">
             {isProWorkspace ? (
               <>
                 <button
                   type="button"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 lg:hidden"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 lg:hidden dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   aria-label={tDash("shell.openMenu")}
                   onClick={() => setMobileOpen(true)}
                 >
                   <Menu className="h-5 w-5" strokeWidth={2} />
                 </button>
-                <h1 className="min-w-0 shrink-0 text-base font-extrabold tracking-tight text-brand-ink sm:text-lg">
+                <h1 className="min-w-0 shrink-0 text-base font-extrabold tracking-tight text-brand-ink dark:text-slate-100 sm:text-lg">
                   {workspace === "admin"
                     ? tDash("shell.adminDashboardTitle")
                     : tDash("shell.instructorDashboardTitle")}
@@ -340,14 +339,14 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                       placeholder={
                         workspace === "admin" ? tDash("shell.searchAdminPh") : tDash("shell.searchInstructorPh")
                       }
-                      className={`w-full rounded-xl border border-slate-200 bg-slate-50/80 py-2.5 pl-10 pr-3 text-sm font-medium text-brand-ink placeholder:text-slate-400 outline-none ring-inset transition ${searchFocus}`}
+                      className={`w-full rounded-xl border border-slate-200 bg-slate-50/80 py-2.5 pl-10 pr-3 text-sm font-medium text-brand-ink placeholder:text-slate-400 outline-none ring-inset transition dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-500 ${searchFocus}`}
                     />
                   </label>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
                   <button
                     type="button"
-                    className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700"
                     aria-label={tDash("shell.notificationsAdmin")}
                   >
                     <Bell className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
@@ -355,18 +354,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                       {workspace === "admin" ? "3" : "5"}
                     </span>
                   </button>
-                  {workspace === "admin" ? (
-                    <button
-                      type="button"
-                      className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 md:flex"
-                      aria-label={tDash("shell.darkModeSoon")}
-                    >
-                      <Moon className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
-                    </button>
-                  ) : null}
                   <Link
                     href="/dashboard/settings"
-                    className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 sm:flex"
+                    className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 dark:border-slate-700 dark:bg-slate-800 sm:flex"
                   >
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold ${
@@ -378,8 +368,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                       {initial}
                     </div>
                     <div className="min-w-0 text-left">
-                      <p className="truncate text-sm font-bold text-brand-ink">{user.name}</p>
-                      <p className="text-xs font-medium text-slate-500">
+                      <p className="truncate text-sm font-bold text-brand-ink dark:text-slate-100">{user.name}</p>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                         {workspace === "admin" ? tDash("shell.superAdmin") : tDash("roles.instructor")}
                       </p>
                     </div>
@@ -389,27 +379,27 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             ) : (
               <>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-brand-ink sm:text-base">
+                  <p className="truncate text-sm font-bold text-brand-ink dark:text-slate-100 sm:text-base">
                     {tDash("shell.welcomeBack", { name: firstName })}{" "}
-                    <span className="font-normal text-slate-500" aria-hidden>
+                    <span className="font-normal text-slate-500 dark:text-slate-400" aria-hidden>
                       👋
                     </span>
                   </p>
-                  <p className="truncate text-xs text-slate-500 sm:text-sm">
-                    <span className="font-medium text-slate-700">{user.name}</span>
-                    <span className="text-slate-300"> · </span>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{user.name}</span>
+                    <span className="text-slate-300 dark:text-slate-600"> · </span>
                     {tDash(`roles.${roleLabelKey(user.role)}`)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white"
                     aria-label={tDash("shell.notifications")}
                   >
                     <Bell className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
                   </button>
-                  <div className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-sm font-bold text-brand-panel sm:flex">
+                  <div className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-sm font-bold text-brand-panel dark:border-slate-700 dark:bg-slate-800 dark:text-violet-200 sm:flex">
                     {initial}
                   </div>
                 </div>
@@ -417,7 +407,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             )}
           </div>
           {isProWorkspace ? (
-            <div className="border-t border-slate-100 px-4 py-2 md:hidden">
+            <div className="border-t border-slate-100 px-4 py-2 dark:border-slate-800 md:hidden">
               <label className="relative block">
                 <span className="sr-only">{tDash("shell.searchSr")}</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={2} aria-hidden />
@@ -426,7 +416,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   placeholder={
                     workspace === "admin" ? tDash("shell.searchAdminPh") : tDash("shell.searchInstructorPh")
                   }
-                  className={`w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-3 text-sm outline-none ${searchFocus}`}
+                  className={`w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-3 text-sm text-brand-ink outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 ${searchFocus}`}
                 />
               </label>
             </div>
@@ -437,7 +427,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       </div>
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:hidden"
         aria-label={tDash("shell.mobileNav")}
       >
         {isProWorkspace ? (
@@ -449,7 +439,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   key={href}
                   href={href}
                   className={`flex min-w-[4.25rem] shrink-0 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[9px] font-semibold leading-tight sm:min-w-[4.75rem] sm:text-[10px] ${
-                    active ? mobileNavActive : "text-slate-500"
+                    active ? mobileNavActive : "text-slate-500 dark:text-slate-400"
                   }`}
                 >
                   <Icon className="h-5 w-5 shrink-0 sm:h-[1.35rem] sm:w-[1.35rem]" strokeWidth={2} aria-hidden />
@@ -467,7 +457,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   key={href}
                   href={href}
                   className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-0.5 py-1 text-[9px] font-semibold leading-tight sm:text-[10px] ${
-                    active ? "text-brand-panel" : "text-slate-500"
+                    active ? "text-brand-panel dark:text-violet-300" : "text-slate-500 dark:text-slate-400"
                   }`}
                 >
                   <Icon className="h-5 w-5 shrink-0 sm:h-[1.35rem] sm:w-[1.35rem]" strokeWidth={2} aria-hidden />

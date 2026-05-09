@@ -18,7 +18,7 @@ def enroll(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> None:
-    enrollment_service.enroll_by_slug(db, user.id, body.course_slug)
+    enrollment_service.enroll_by_slug(db, user, body.course_slug)
 
 
 @router.delete("/{course_slug}", status_code=status.HTTP_204_NO_CONTENT)
@@ -27,4 +27,4 @@ def unenroll(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> None:
-    enrollment_service.unenroll_by_slug(db, user.id, course_slug)
+    enrollment_service.unenroll_by_slug(db, user, course_slug)

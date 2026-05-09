@@ -6,7 +6,10 @@ import {
   ClipboardList,
   CreditCard,
   GraduationCap,
+  IdCard,
   LayoutDashboard,
+  ListChecks,
+  Network,
   ScrollText,
   Settings,
   Star,
@@ -15,7 +18,10 @@ import {
 
 export const adminNav: { href: string; id: string; icon: LucideIcon }[] = [
   { href: "/dashboard", id: "home", icon: LayoutDashboard },
+  { href: "/dashboard/admin/data-management", id: "dataManagement", icon: Network },
   { href: "/dashboard/admin/users", id: "users", icon: Users },
+  { href: "/dashboard/admin/student-profiles", id: "studentProfiles", icon: ListChecks },
+  { href: "/dashboard/admin/instructor-profiles", id: "instructorProfiles", icon: IdCard },
   { href: "/dashboard/admin/courses", id: "courses", icon: BookOpen },
   { href: "/dashboard/admin/instructors", id: "instructors", icon: GraduationCap },
   { href: "/dashboard/admin/enrollments", id: "enrollments", icon: ClipboardList },

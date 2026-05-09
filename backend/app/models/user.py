@@ -25,6 +25,7 @@ class User(Base):
         default=UserRole.STUDENT,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    two_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

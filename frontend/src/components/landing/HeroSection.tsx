@@ -46,7 +46,7 @@ export async function HeroSection() {
             </div>
 
             <div
-              className="mt-10 rounded-2xl border border-slate-200/90 bg-white px-4 py-1 shadow-card sm:px-5 sm:py-0 md:px-6"
+              className="mt-10 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 px-4 py-1 shadow-card sm:px-5 sm:py-0 md:px-6"
               role="region"
               aria-label={t("trustedAria")}
             >

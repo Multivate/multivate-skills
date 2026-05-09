@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -14,6 +15,8 @@ type MyCourseItem = {
   lesson_done: number;
   progress_pct: number;
   status: string;
+  instructor_name?: string | null;
+  instructor_email?: string | null;
 };
 
 function StatProgressRing({ value }: { value: number }) {
@@ -45,6 +48,8 @@ function StatProgressRing({ value }: { value: number }) {
 }
 
 export function StudentDashboardHome() {
+  const tProfile = useTranslations("dashboard.learningProfile");
+  const tRel = useTranslations("dashboard.relationships");
   const [items, setItems] = useState<MyCourseItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +97,7 @@ export function StudentDashboardHome() {
 
   if (items === null) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-10 text-center shadow-sm">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-sm">
         <p className="text-sm font-medium text-slate-600">Loading your learning data…</p>
       </div>
     );
@@ -111,26 +116,31 @@ export function StudentDashboardHome() {
 
   return (
     <div className="mx-auto max-w-6xl">
+      <div className="mb-6 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 px-4 py-3 shadow-sm sm:px-5">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          <span className="font-semibold text-brand-ink dark:text-slate-100">{tProfile("bannerTitle")}</span> — {tProfile("bannerBody")}
+        </p>
+      </div>
       <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Enrolled courses</p>
           <p className="mt-2 text-3xl font-extrabold tabular-nums text-brand-ink">{stats.enrolled}</p>
           <Link href="/dashboard/courses" className="mt-3 inline-block text-xs font-semibold text-brand-primary hover:underline">
             View all courses
           </Link>
         </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Average progress</p>
           <div className="mt-1 flex justify-center">
             <StatProgressRing value={stats.avg} />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Lessons completed</p>
           <p className="mt-2 text-3xl font-extrabold tabular-nums text-brand-ink">{stats.lessonsDone}</p>
           <p className="mt-1 text-sm font-medium text-slate-600">Across {stats.lessonsTotal} catalog lessons</p>
         </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Payments</p>
           <p className="mt-2 text-sm text-slate-600">View your recorded payment attempts.</p>
           <Link href="/dashboard/payments" className="mt-3 inline-block text-xs font-semibold text-brand-primary hover:underline">
@@ -138,6 +148,41 @@ export function StudentDashboardHome() {
           </Link>
         </div>
       </section>
+
+      {items.length > 0 ? (
+        <section className="mt-10">
+          <h2 className="text-lg font-extrabold tracking-tight text-brand-ink sm:text-xl">{tRel("studentInstructorsTitle")}</h2>
+          <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-400">{tRel("studentInstructorsSubtitle")}</p>
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                <tr>
+                  <th className="px-4 py-3">{tRel("colCourse")}</th>
+                  <th className="px-4 py-3">{tRel("colInstructor")}</th>
+                  <th className="px-4 py-3">{tRel("colEmail")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {items.map((row) => (
+                  <tr key={`instr-${row.slug}`}>
+                    <td className="px-4 py-3">
+                      <Link href={`/courses/${row.slug}`} className="font-semibold text-brand-primary hover:underline">
+                        {row.title}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-800 dark:text-slate-200">
+                      {row.instructor_name?.trim() ? row.instructor_name : tRel("unassigned")}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      {row.instructor_email?.trim() ? row.instructor_email : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-10">
         <div className="flex items-end justify-between gap-4">
@@ -160,7 +205,7 @@ export function StudentDashboardHome() {
               <Link
                 key={row.slug}
                 href={`/courses/${row.slug}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm transition hover:border-slate-300 hover:shadow-md"
               >
                 <div className="relative aspect-[16/10] w-full bg-slate-100">
                   <Image
@@ -172,9 +217,11 @@ export function StudentDashboardHome() {
                   />
                   <span
                     className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      row.status === "In Progress"
-                        ? "bg-amber-100 text-amber-950 ring-1 ring-amber-200/90"
-                        : "bg-slate-100 text-slate-700 ring-1 ring-slate-200/90"
+                      row.status === "Completed"
+                        ? "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-200/90"
+                        : row.status === "In Progress"
+                          ? "bg-amber-100 text-amber-950 ring-1 ring-amber-200/90"
+                          : "bg-slate-100 text-slate-700 ring-1 ring-slate-200/90"
                     }`}
                   >
                     {row.status}

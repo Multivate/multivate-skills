@@ -10,7 +10,9 @@ class MyCourseItem(BaseModel):
     lessons: int
     lesson_done: int
     progress_pct: int
-    status: str = Field(description="In Progress | Not Started")
+    status: str = Field(description="In Progress | Not Started | Completed")
+    instructor_name: str | None = None
+    instructor_email: str | None = None
 
 
 class ProgressUpdate(BaseModel):

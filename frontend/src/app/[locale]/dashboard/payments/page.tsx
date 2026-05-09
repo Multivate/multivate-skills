@@ -1,7 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
+import { PaymentsCheckoutPanel } from "@/components/dashboard/PaymentsCheckoutPanel";
 
 type PaymentRow = {
   id: string;
@@ -12,7 +15,8 @@ type PaymentRow = {
   course_id: string | null;
 };
 
-export default function DashboardPaymentsPage() {
+function PaymentsHistory() {
+  const t = useTranslations("dashboard.studentPayments");
   const [rows, setRows] = useState<PaymentRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,19 +28,19 @@ export default function DashboardPaymentsPage() {
         const data = await res.json().catch(() => null);
         if (cancelled) return;
         if (res.status === 401) {
-          setError("Sign in to view payments.");
+          setError(t("signIn"));
           setRows([]);
           return;
         }
         if (!res.ok) {
-          setError(typeof data?.detail === "string" ? data.detail : "Could not load payments.");
+          setError(typeof data?.detail === "string" ? data.detail : t("loadError"));
           setRows([]);
           return;
         }
         setError(null);
         setRows(Array.isArray(data) ? (data as PaymentRow[]) : []);
       } catch {
-        if (!cancelled) setError("Network error.");
+        if (!cancelled) setError(t("network"));
       }
     })();
     return () => {
@@ -45,34 +49,63 @@ export default function DashboardPaymentsPage() {
   }, []);
 
   if (rows === null) {
-    return <p className="text-sm text-slate-600">Loading payments…</p>;
+    return <p className="text-sm text-slate-600">{t("loading")}</p>;
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <h1 className="text-lg font-extrabold text-brand-ink sm:text-xl">Payments</h1>
-        <p className="mt-1 text-sm text-slate-600">Records from the Multivate billing API.</p>
-      </div>
+    <>
       {error ? (
-        <p className="text-sm text-red-800">{error}</p>
+        <p className="text-sm font-medium text-red-800">{error}</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-slate-600">No payment records on your account yet.</p>
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
+          <p className="text-sm leading-relaxed text-slate-600">{t("empty")}</p>
+        </div>
       ) : (
-        <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+        <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800/90 dark:bg-slate-900">
           {rows.map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
-              <span className="font-semibold text-brand-ink">
-                {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(p.amount_cents / 100)}
+            <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
+              <div>
+                <span className="font-semibold text-brand-ink">
+                  {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(p.amount_cents / 100)}
+                </span>
+                <p className="mt-1 font-mono text-xs text-slate-500">ID {p.id}</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                {p.status}
               </span>
-              <span className="text-xs font-bold uppercase text-slate-600">{p.status}</span>
               <span className="text-xs text-slate-500">{new Date(p.created_at).toLocaleString()}</span>
             </li>
           ))}
         </ul>
       )}
+    </>
+  );
+}
+
+export default function DashboardPaymentsPage() {
+  const t = useTranslations("dashboard.studentPayments");
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <Suspense
+        fallback={
+          <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+            <p className="text-sm text-slate-600">{t("loadingCheckout")}</p>
+          </section>
+        }
+      >
+        <PaymentsCheckoutPanel />
+      </Suspense>
+
+      <header>
+        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{t("title")}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("intro")}</p>
+      </header>
+
+      <PaymentsHistory />
+
       <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-primary hover:underline">
-        ← Back to dashboard
+        {t("back")}
       </Link>
     </div>
   );

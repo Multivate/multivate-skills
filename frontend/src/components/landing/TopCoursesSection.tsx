@@ -19,6 +19,8 @@ import {
   matchesTab,
   type TabId,
 } from "@/data/courses-catalog";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import type { CartLine } from "@/lib/cart-types";
 
 function CourseCard({
   c,
@@ -34,6 +36,13 @@ function CourseCard({
   tCommon: ReturnType<typeof useTranslations>;
 }) {
   const flyoutLeft = index % 4 >= 2;
+  const cartLine: CartLine = {
+    slug: c.slug,
+    title: c.title,
+    image: c.image,
+    source: "catalog",
+    priceLabel: c.price,
+  };
 
   return (
     <article
@@ -96,12 +105,12 @@ function CourseCard({
           <span className="text-sm text-slate-400 line-through">{c.wasPrice}</span>
         </div>
 
-        <Link
-          href={`/courses/${c.slug}`}
-          className="btn-primary-brand mt-auto w-full !py-3 text-[0.8125rem]"
-        >
-          {tCommon("viewCourse")}
-        </Link>
+        <div className="mt-auto flex flex-col gap-2">
+          <Link href={`/courses/${c.slug}`} className="btn-primary-brand w-full !py-3 text-[0.8125rem]">
+            {tCommon("viewCourse")}
+          </Link>
+          <AddToCartButton item={cartLine} variant="outline" className="!w-full" />
+        </div>
       </div>
 
       {/* Udemy-style hover panel — desktop only */}
@@ -128,12 +137,9 @@ function CourseCard({
             </li>
           ))}
         </ul>
-        <Link
-          href={`/courses/${c.slug}`}
-          className="btn-primary-brand mt-4 w-full !py-2.5 text-xs"
-        >
-          {tTop("addToCart")}
-        </Link>
+        <div className="mt-4">
+          <AddToCartButton item={cartLine} variant="primary" className="!w-full !py-2.5 text-xs" />
+        </div>
       </div>
     </article>
   );

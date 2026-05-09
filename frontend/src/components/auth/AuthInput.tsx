@@ -1,3 +1,4 @@
+import type { InputHTMLAttributes } from "react";
 import type { LucideIcon } from "lucide-react";
 
 export function AuthInput({
@@ -6,6 +7,7 @@ export function AuthInput({
   type = "text",
   icon: Icon,
   autoComplete,
+  inputMode,
   required,
   value,
   onChange,
@@ -17,6 +19,7 @@ export function AuthInput({
   type?: string;
   icon: LucideIcon;
   autoComplete?: string;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   required?: boolean;
   value: string;
   onChange: (v: string) => void;
@@ -38,6 +41,7 @@ export function AuthInput({
           id={id}
           name={id}
           type={type}
+          inputMode={inputMode}
           autoComplete={autoComplete}
           required={required}
           value={value}

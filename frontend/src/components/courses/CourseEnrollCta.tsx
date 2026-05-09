@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
+import { useAuth } from "@/contexts/auth-context";
 
 type Props = {
   courseSlug: string;
@@ -11,57 +11,45 @@ type Props = {
 export function CourseEnrollCta({ courseSlug }: Props) {
   const t = useTranslations("courseEnroll");
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
 
-  const enroll = async () => {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/enrollments", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ course_slug: courseSlug }),
-      });
-      if (res.status === 401) {
-        router.push(`/login?from=${encodeURIComponent(`/courses/${courseSlug}`)}`);
-        return;
-      }
-      if (res.status === 204) {
-        setMsg(t("enrolledMsg"));
-        router.refresh();
-        return;
-      }
-      const data = (await res.json().catch(() => null)) as { detail?: unknown } | null;
-      const detail =
-        data && typeof data === "object" && data.detail !== undefined
-          ? typeof data.detail === "string"
-            ? data.detail
-            : JSON.stringify(data.detail)
-          : `Could not enroll (${res.status})`;
-      setMsg(detail);
-    } catch {
-      setMsg(t("networkError"));
-    } finally {
-      setBusy(false);
+  function goToCheckout() {
+    if (!user) {
+      router.push(`/login?from=${encodeURIComponent(`/courses/${courseSlug}`)}`);
+      return;
     }
-  };
+    router.push(`/dashboard/payments?checkout=${encodeURIComponent(courseSlug)}`);
+  }
+
+  if (authLoading) {
+    return (
+      <div className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/40">
+        {t("checkingSession")}
+      </div>
+    );
+  }
+
+  if (user && user.role !== "student") {
+    return (
+      <div className="mt-5 space-y-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60">
+        <p className="text-sm font-semibold text-brand-ink dark:text-slate-100">{t("studentOnlyTitle")}</p>
+        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{t("studentOnlyBody")}</p>
+        <Link
+          href="/dashboard"
+          className="inline-block text-sm font-semibold text-brand-primary hover:text-brand-primary-dark"
+        >
+          {t("studentOnlyDashboard")}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-5 space-y-3">
-      <button
-        type="button"
-        onClick={() => void enroll()}
-        disabled={busy}
-        className="btn-primary-brand block w-full text-center !py-3 disabled:opacity-60"
-      >
-        {busy ? t("enrolling") : t("enrollCta")}
+      <button type="button" onClick={goToCheckout} className="btn-primary-brand block w-full text-center !py-3">
+        {t("enrollCta")}
       </button>
-      <p className="text-center text-xs text-slate-500">{t("sessionNote")}</p>
-      {msg ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm text-slate-800">{msg}</p>
-      ) : null}
+      <p className="text-center text-xs text-slate-500">{t("paymentNote")}</p>
       <Link href="/register" className="block text-center text-sm font-semibold text-brand-primary hover:text-brand-primary-dark">
         {t("needAccount")}
       </Link>

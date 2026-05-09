@@ -1,6 +1,6 @@
 import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { routing } from "./i18n/routing";
+import { pathnameWithoutLeadingLocale, routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -29,7 +29,7 @@ export default function middleware(request: NextRequest) {
   if (dash && !request.cookies.get("access_token")) {
     const loc = dash[1];
     const login = new URL(`/${loc}/login`, request.url);
-    login.searchParams.set("from", pathname);
+    login.searchParams.set("from", pathnameWithoutLeadingLocale(pathname));
     return NextResponse.redirect(login);
   }
 

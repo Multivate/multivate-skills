@@ -9,6 +9,15 @@ services:
       - "5432:5432"
     volumes:
       - multivate_pg:/var/lib/postgresql/data
+      - ./database/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - multivate_redis:/data
 
 volumes:
   multivate_pg:
+  multivate_redis:

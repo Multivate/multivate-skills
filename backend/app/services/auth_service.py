@@ -5,18 +5,31 @@ from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.instructor_teaching_profile import InstructorTeachingProfile
 from app.models.role import UserRole
+from app.models.student_learning_profile import StudentLearningProfile
 from app.models.user import User
-from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, TokenPair
-from app.schemas.user import UserPublic
+from app.schemas.auth import (
+    AuthResponse,
+    LoginMfaRequired,
+    LoginRequest,
+    MfaDisableRequest,
+    MfaEnableConfirmRequest,
+    MfaVerifyRequest,
+    TokenPair,
+)
+from app.schemas.user import user_public_from_orm
 from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
-    hash_password,
     verify_password,
     verify_token_type,
 )
+from app.core.config import get_settings
+from app.services import instructor_profile_service
+from app.services import learning_service
+from app.services import mfa_service
 
 
 def _tokens_for_user(user: User) -> TokenPair:
@@ -26,33 +39,23 @@ def _tokens_for_user(user: User) -> TokenPair:
     )
 
 
-def register_user(db: Session, data: RegisterRequest) -> AuthResponse:
-    if data.role == UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot register as admin via public API",
-        )
-    existing = db.execute(select(User).where(User.email == str(data.email))).scalar_one_or_none()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered",
-        )
-    user = User(
-        name=data.name,
-        email=str(data.email).lower(),
-        password_hash=hash_password(data.password),
-        role=data.role,
-        is_active=True,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    tokens = _tokens_for_user(user)
-    return AuthResponse(**tokens.model_dump(), user=UserPublic.model_validate(user))
+def _require_profile_for_session(db: Session, user: User) -> None:
+    """Students and instructors must have an onboarding profile row before receiving tokens."""
+    if user.role == UserRole.STUDENT:
+        if learning_service.get_student_profile(db, user.id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="profile_incomplete",
+            )
+    elif user.role == UserRole.INSTRUCTOR:
+        if instructor_profile_service.get_instructor_profile(db, user.id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="profile_incomplete",
+            )
 
 
-def login_user(db: Session, data: LoginRequest) -> AuthResponse:
+def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequired:
     user = db.execute(select(User).where(User.email == str(data.email).lower())).scalar_one_or_none()
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
@@ -61,8 +64,37 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse:
         )
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+    _require_profile_for_session(db, user)
+    if user.two_factor_enabled:
+        mfa_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
+        settings = get_settings()
+        include_dev_otp = settings.environment == "development" and bool(dev_plain)
+        return LoginMfaRequired(
+            mfa_token=mfa_token,
+            email_masked=masked,
+            dev_otp=dev_plain if include_dev_otp else None,
+        )
     tokens = _tokens_for_user(user)
-    return AuthResponse(**tokens.model_dump(), user=UserPublic.model_validate(user))
+    return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
+
+
+def complete_mfa_login(db: Session, data: MfaVerifyRequest) -> AuthResponse:
+    user = mfa_service.complete_login_mfa(db, data.mfa_token, data.code)
+    _require_profile_for_session(db, user)
+    tokens = _tokens_for_user(user)
+    return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
+
+
+def start_mfa_enable(db: Session, user: User) -> None:
+    mfa_service.start_enable_2fa(db, user)
+
+
+def confirm_mfa_enable(db: Session, user: User, data: MfaEnableConfirmRequest) -> None:
+    mfa_service.confirm_enable_2fa(db, user, data.code)
+
+
+def disable_mfa(db: Session, user: User, data: MfaDisableRequest) -> None:
+    mfa_service.disable_2fa(db, user, data.password)
 
 
 def get_user_by_id(db: Session, user_id: UUID) -> User | None:
@@ -82,4 +114,5 @@ def refresh_tokens_for_user(db: Session, refresh_token: str) -> TokenPair:
     user = get_user_by_id(db, user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    _require_profile_for_session(db, user)
     return _tokens_for_user(user)

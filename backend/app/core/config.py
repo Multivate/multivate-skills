@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEV_SECRET_MARKER = "dev-only-change-in-production-min-32-characters-long"
@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Default matches root `docker-compose.yml` (`db` service). Override `DATABASE_URL` in production (Render, Railway, etc.).
     database_url: str = "postgresql://multivate:multivate@localhost:5432/multivate"
 
+    redis_url: str = Field(
+        default="redis://127.0.0.1:6379/0",
+        description="Redis for short-lived signup OTP payloads (must match docker-compose `redis` if used).",
+    )
+
     secret_key: str = _DEV_SECRET_MARKER
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
@@ -36,6 +41,30 @@ class Settings(BaseSettings):
         default=True,
         description="If true, SQLAlchemy creates missing tables on startup. "
         "Must be false in production — use Alembic migrations instead.",
+    )
+
+    # Outbound mail: Resend only (https://resend.com). One API key on the server — end users never paste mail passwords.
+    resend_api_key: str = Field(
+        default="",
+        description="Resend API key. Required in staging/production to send OTP mail.",
+    )
+    resend_from: str = Field(
+        default="",
+        description='Verified sender, e.g. "Multivate <onboarding@resend.dev>" or noreply@your-domain.com.',
+    )
+    mail_from: str = Field(
+        default="Multivate <noreply@localhost>",
+        validation_alias=AliasChoices("MAIL_FROM", "SMTP_FROM"),
+        description="Fallback From / mailto identity when RESEND_FROM is empty (local dev).",
+    )
+
+    mail_footer_line: str = Field(
+        default="Delivered by Multivate - online learning and career skills.",
+        description="Footer line in OTP HTML emails.",
+    )
+    mail_support_url: str = Field(
+        default="",
+        description="Optional https:// or mailto: link for “Contact us” in OTP emails; defaults to mailto: parsed from MAIL_FROM.",
     )
 
     @model_validator(mode="after")
@@ -69,6 +98,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "AUTO_CREATE_TABLES must be false in staging/production. "
                     "Apply schema changes with Alembic (or your migration tool), not create_all()."
+                )
+            if not (self.resend_api_key or "").strip():
+                raise ValueError(
+                    "RESEND_API_KEY is required in staging/production (transactional email is Resend-only)."
                 )
         return self
 

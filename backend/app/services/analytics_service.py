@@ -3,7 +3,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.models.course import Course
 from app.models.enrollment import Enrollment
@@ -21,14 +21,24 @@ from app.schemas.analytics import (
     RecentPaymentRow,
     TopCourseRow,
 )
-from app.schemas.user import UserPublic
+from app.schemas.user import user_public_from_orm
 
 
 def _recent_enrollment_rows(db: Session, limit: int) -> list[RecentEnrollmentRow]:
+    instructor_user = aliased(User)
     enr_rows = db.execute(
-        select(User.name, User.email, Course.title, Course.slug, Enrollment.created_at)
+        select(
+            User.name,
+            User.email,
+            Course.title,
+            Course.slug,
+            Enrollment.created_at,
+            instructor_user.name,
+            instructor_user.email,
+        )
         .join(Enrollment, Enrollment.user_id == User.id)
         .join(Course, Course.id == Enrollment.course_id)
+        .outerjoin(instructor_user, instructor_user.id == Course.instructor_id)
         .order_by(Enrollment.created_at.desc())
         .limit(limit)
     ).all()
@@ -39,6 +49,8 @@ def _recent_enrollment_rows(db: Session, limit: int) -> list[RecentEnrollmentRow
             course_title=r[2],
             course_slug=r[3],
             created_at=r[4],
+            instructor_name=r[5],
+            instructor_email=str(r[6]) if r[6] is not None else None,
         )
         for r in enr_rows
     ]
@@ -78,7 +90,7 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
     recent_user_models = list(
         db.scalars(select(User).order_by(User.created_at.desc()).limit(8)).unique().all()
     )
-    recent_users = [UserPublic.model_validate(u) for u in recent_user_models]
+    recent_users = [user_public_from_orm(u) for u in recent_user_models]
 
     recent_enrollments = _recent_enrollment_rows(db, 12)
 
@@ -177,7 +189,16 @@ def instructor_dashboard(db: Session, instructor_id: UUID) -> InstructorDashboar
 
 def instructor_students(db: Session, instructor_id: UUID, limit: int = 200) -> list[InstructorStudentRow]:
     rows = db.execute(
-        select(User.id, User.name, User.email, Course.slug, Course.title, Enrollment.created_at)
+        select(
+            User.id,
+            User.name,
+            User.email,
+            Course.slug,
+            Course.title,
+            Enrollment.created_at,
+            Enrollment.lesson_done,
+            Enrollment.progress_pct,
+        )
         .join(Enrollment, Enrollment.user_id == User.id)
         .join(Course, Course.id == Enrollment.course_id)
         .where(Course.instructor_id == instructor_id)
@@ -192,6 +213,8 @@ def instructor_students(db: Session, instructor_id: UUID, limit: int = 200) -> l
             course_slug=r[3],
             course_title=r[4],
             enrolled_at=r[5],
+            lesson_done=int(r[6] or 0),
+            progress_pct=int(r[7] or 0),
         )
         for r in rows
     ]

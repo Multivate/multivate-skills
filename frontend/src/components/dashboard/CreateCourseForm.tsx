@@ -60,7 +60,7 @@ export function CreateCourseForm() {
         Creates a catalog row via <code className="rounded bg-slate-100 px-1">POST /api/v1/courses</code>. Slug must be
         lowercase letters, numbers, and single hyphens (e.g. <code className="rounded bg-slate-100 px-1">fullstack-react</code>).
       </p>
-      <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
+      <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
         <label className="block text-sm font-semibold text-slate-800">
           Slug
           <input

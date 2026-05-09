@@ -9,15 +9,18 @@ import { LogoMark } from "@/components/layout/LogoMark";
 export function AuthSplitLayout({
   brand,
   form,
+  /** Wider column for long flows (e.g. register wizard). Default matches compact login. */
+  formMaxWidthClass = "max-w-md",
 }: {
   brand: ReactNode;
   form: ReactNode;
+  formMaxWidthClass?: string;
 }) {
   const t = useTranslations("common");
   const tNav = useTranslations("nav");
 
   return (
-    <div className="grid min-h-screen min-h-[100dvh] grid-cols-1 bg-white lg:grid-cols-2">
+    <div className="grid min-h-screen min-h-[100dvh] grid-cols-1 bg-white dark:bg-slate-950 lg:grid-cols-2">
       <aside className="relative flex flex-col bg-brand-auth-page px-5 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-6 lg:min-h-screen lg:px-10 lg:pb-12 lg:pt-8 xl:px-12">
         <div className="relative z-[1] flex shrink-0 items-start justify-between gap-4">
           <Link href="/" className="inline-flex shrink-0" aria-label={tNav("homeAria")}>
@@ -34,8 +37,8 @@ export function AuthSplitLayout({
         <div className="relative z-[1] mt-6 flex min-h-0 flex-1 flex-col sm:mt-7 lg:mt-6">{brand}</div>
       </aside>
 
-      <main className="flex flex-col justify-center px-5 py-10 sm:px-8 sm:py-12 lg:border-l lg:border-slate-200/80 lg:px-10 lg:py-12 xl:px-14">
-        <div className="mx-auto w-full max-w-md">{form}</div>
+      <main className="flex flex-col justify-center px-5 py-10 sm:px-8 sm:py-12 lg:border-l lg:border-slate-200/80 dark:lg:border-slate-800/80 lg:px-10 lg:py-12 xl:px-14">
+        <div className={`mx-auto w-full ${formMaxWidthClass}`}>{form}</div>
       </main>
     </div>
   );
