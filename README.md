@@ -252,10 +252,4 @@ This project is proprietary. A `LICENSE` file will be added when the project is 
 ## Author
 
 **Adewale Data** - [GitHub Profile](https://github.com/AdewaleData)
-#   M U L T I V A T E - L E A R N I N G 
- 
- #   M u l t i v a t e - W e b - P r o j e c t 
- 
- #   W e b - A p p l i c a t i o n - M u l t i v a t e 
- 
- 
+#
