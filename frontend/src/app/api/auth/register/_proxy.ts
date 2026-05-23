@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getInternalApiUrl } from "@/lib/internal-api";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
+import { fetchInternal, handleProxyError } from "@/lib/internal-api";
 
 const secure = process.env.NODE_ENV === "production";
 
@@ -17,11 +17,10 @@ export async function proxyRegisterPost(
     return NextResponse.json({ detail: "Invalid JSON" }, { status: 400 });
   }
 
-  const base = getInternalApiUrl();
   const upstreamPath = `/api/v1/auth/register/${role}/${action}`;
 
   try {
-    const upstream = await fetch(`${base}${upstreamPath}`, {
+    const upstream = await fetchInternal(upstreamPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -43,11 +42,7 @@ export async function proxyRegisterPost(
     setAuthCookies(res, access, refresh, secure);
     return res;
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Server error";
-    if (message.includes("INTERNAL_API_URL")) {
-      return NextResponse.json({ detail: "Auth proxy is not configured" }, { status: 500 });
-    }
-    const res = NextResponse.json({ detail: message }, { status: 500 });
+    const res = handleProxyError(e);
     clearAuthCookies(res, secure);
     return res;
   }

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getInternalApiUrl } from "@/lib/internal-api";
+import { fetchInternal, handleProxyError } from "@/lib/internal-api";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 
 const secure = process.env.NODE_ENV === "production";
@@ -15,12 +15,11 @@ export async function GET() {
       return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
     }
 
-    const base = getInternalApiUrl();
     let rotated: { access: string; refresh: string } | null = null;
 
     const refreshPair = async (): Promise<boolean> => {
       if (!refreshToken) return false;
-      const r = await fetch(`${base}/api/v1/auth/refresh`, {
+      const r = await fetchInternal("/api/v1/auth/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -36,7 +35,7 @@ export async function GET() {
     };
 
     const callMe = (token: string) =>
-      fetch(`${base}/api/v1/auth/me`, {
+      fetchInternal("/api/v1/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
@@ -70,10 +69,6 @@ export async function GET() {
     }
     return res;
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Server error";
-    if (message.includes("INTERNAL_API_URL")) {
-      return NextResponse.json({ detail: "Auth proxy is not configured" }, { status: 500 });
-    }
-    return NextResponse.json({ detail: message }, { status: 500 });
+    return handleProxyError(e);
   }
 }
