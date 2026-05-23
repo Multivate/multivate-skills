@@ -41,7 +41,7 @@ async def lifespan(_: FastAPI):
         if _settings.auto_create_tables:
             Base.metadata.create_all(bind=engine)
             logger.info("Schema bootstrap: create_all() finished.")
-        apply_schema_patches(engine)
+        apply_schema_patches(engine, database_url=_settings.database_url)
     except OperationalError as exc:
         if _settings.auto_create_tables:
             dbu = _settings.database_url
@@ -131,14 +131,28 @@ def health() -> dict[str, str]:
 
 @app.get("/health/ready")
 def readiness(response: Response) -> dict[str, Any]:
-    """Readiness: verify database connectivity before receiving traffic."""
+    """Readiness: verify database connectivity and critical auth schema."""
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
+        row = db.execute(
+            text(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name = 'users' AND column_name = 'two_factor_enabled'"
+            )
+        ).first()
+        if row is None:
+            logger.warning("Readiness: users.two_factor_enabled column missing")
+            response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return {
+                "status": "not_ready",
+                "database": "ok",
+                "schema": "users.two_factor_enabled missing — redeploy API or run SQL patch",
+            }
     except Exception as exc:
         logger.warning("Readiness check failed: %s", exc)
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"status": "not_ready", "database": "unavailable"}
     finally:
         db.close()
-    return {"status": "ready", "database": "ok"}
+    return {"status": "ready", "database": "ok", "schema": "ok"}
