@@ -16,6 +16,7 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.logging import configure_logging
+from app.core.schema_patches import apply_schema_patches
 from app.middleware.request_id import RequestIdMiddleware
 from app.models.certificate import Certificate  # noqa: F401
 from app.models.course import Course  # noqa: F401
@@ -36,11 +37,13 @@ _settings = get_settings()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging(_settings.log_level)
-    if _settings.auto_create_tables:
-        try:
+    try:
+        if _settings.auto_create_tables:
             Base.metadata.create_all(bind=engine)
-            logger.info("Schema bootstrap: create_all() finished (development mode).")
-        except OperationalError as exc:
+            logger.info("Schema bootstrap: create_all() finished.")
+        apply_schema_patches(engine)
+    except OperationalError as exc:
+        if _settings.auto_create_tables:
             dbu = _settings.database_url
             hint = (
                 "Cannot reach the database. Start PostgreSQL (e.g. `docker compose up -d db` from the repo root) "
@@ -51,8 +54,9 @@ async def lifespan(_: FastAPI):
             raise RuntimeError(
                 "Database unreachable during startup (create_all). See log above for DATABASE_URL tail and fix."
             ) from exc
-    else:
-        logger.info("Schema bootstrap skipped (AUTO_CREATE_TABLES=false).")
+        raise
+    if not _settings.auto_create_tables:
+        logger.info("Schema bootstrap: create_all skipped (AUTO_CREATE_TABLES=false); patches applied.")
     yield
 
 
