@@ -22,15 +22,24 @@ export class UpstreamConnectionError extends Error {
   }
 }
 
+function isLocalApiUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  return lower.includes("localhost") || lower.includes("127.0.0.1");
+}
+
 export function getInternalApiUrl(): string {
   const fromEnv = process.env.INTERNAL_API_URL?.trim();
-  if (fromEnv) {
-    return normalizeApiBase(fromEnv);
-  }
+  const hardcoded = HARDCODED_PRODUCTION_API.trim();
+
   if (process.env.NODE_ENV === "development") {
+    if (fromEnv) return normalizeApiBase(fromEnv);
     return DEFAULT_DEV_API;
   }
-  const hardcoded = HARDCODED_PRODUCTION_API.trim();
+
+  // Production: ignore mistaken localhost env on Vercel; prefer hardcoded Render URL.
+  if (fromEnv && !isLocalApiUrl(fromEnv)) {
+    return normalizeApiBase(fromEnv);
+  }
   if (hardcoded) {
     return normalizeApiBase(hardcoded);
   }
@@ -40,14 +49,7 @@ export function getInternalApiUrl(): string {
 }
 
 function normalizeApiBase(url: string): string {
-  const base = url.replace(/\/$/, "");
-  if (process.env.NODE_ENV === "production") {
-    const lower = base.toLowerCase();
-    if (lower.includes("localhost") || lower.includes("127.0.0.1")) {
-      throw new Error("INTERNAL_API_URL must be your public Render URL on Vercel, not localhost.");
-    }
-  }
-  return base;
+  return url.replace(/\/$/, "");
 }
 
 /** Server-side fetch to FastAPI with timeout (Render free tier cold starts). */
