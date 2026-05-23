@@ -8,7 +8,7 @@ const DEFAULT_DEV_API = "http://127.0.0.1:8000";
  * Paste your Render web service URL here (Dashboard → Web Service → URL).
  * Used in production when INTERNAL_API_URL is not set on Vercel.
  */
-const HARDCODED_PRODUCTION_API = "";
+const HARDCODED_PRODUCTION_API = "https://multivate-vv3f.onrender.com";
 
 const UPSTREAM_TIMEOUT_MS = 28_000;
 
