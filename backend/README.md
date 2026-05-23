@@ -132,7 +132,17 @@ python scripts/ensure_dev_account.py
 
 Use email + password, then the **one-time code** sent to that mailbox, or use **`dev_otp`** from the login response / **`MULTIVATE_DEV_OTP`** in API logs when Resend is not configured in development.
 
-**Do not** use these defaults in production.
+**Do not** use these defaults in production for real users.
+
+**Admin on Render (live site):** the dev admin is not created automatically. Either:
+
+1. **Render Shell** (web service → Shell, root directory `backend`):  
+   `python scripts/ensure_dev_account.py`  
+   Then sign in with `admin@example.com` / `Multivate2026!` (plus email OTP if 2FA is on).
+
+2. **Promote your own account** (after you registered on the live site):  
+   `python scripts/promote_user_to_admin.py your@email.com`  
+   (run locally with **External Database URL** in `DATABASE_URL`, or from Render Shell). Sign out and sign in again.
 
 ### Production checklist
 
