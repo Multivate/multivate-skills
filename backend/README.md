@@ -146,6 +146,7 @@ Use email + password, then the **one-time code** sent to that mailbox, or use **
 
 | Symptom | Likely cause | Fix |
 |--------|----------------|-----|
+| **`gunicorn: command not found`** or **`your_application.wsgi`** | Wrong **Start Command** (Django placeholder) | **Settings → Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. **Root Directory:** `backend`. Or use **`bash scripts/start-render.sh`**. |
 | Build OK, then **“No open ports detected”** / deploy unhealthy | Process crashed on startup (not listening on `PORT`) | Check logs. Use **`uvicorn app.main:app --host 0.0.0.0 --port $PORT`** — **no `--reload`**. Root directory must be **`backend`** so `app` imports work. |
 | Crash immediately on boot | **`ENVIRONMENT=production`** with default / short **`SECRET_KEY`**, or **`AUTO_CREATE_TABLES=true`** | For a **first** deploy, use **`ENVIRONMENT=development`** and **`AUTO_CREATE_TABLES=true`**, or satisfy production rules (≥32 char secret, **`AUTO_CREATE_TABLES=false`**, migrations applied). |
 | **`/health/ready`** returns 503 | Database unreachable or wrong URL | Link Render Postgres to the web service so **`DATABASE_URL`** is set, or paste the **External** URL from the DB dashboard. Same region helps. |
