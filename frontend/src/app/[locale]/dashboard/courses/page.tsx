@@ -85,7 +85,7 @@ export default function DashboardCoursesPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <DashboardSavedCart />
         <div className="rounded-2xl border border-red-200/90 bg-red-50/80 p-8 text-center shadow-sm sm:p-10">
-          <h1 className="text-lg font-extrabold text-brand-ink">We couldn't load your courses</h1>
+          <h1 className="text-lg font-extrabold text-brand-ink">We could not load your courses</h1>
           <p className="mt-2 text-sm text-red-900/90">{error}</p>
           <Link href="/login" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
             Go to sign in

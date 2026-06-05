@@ -50,7 +50,7 @@ function PaymentsHistory() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (rows === null) {
     return <p className="text-sm text-slate-600">{t("loading")}</p>;
