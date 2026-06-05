@@ -20,12 +20,18 @@ from app.core.schema_patches import apply_schema_patches
 from app.middleware.request_id import RequestIdMiddleware
 from app.models.certificate import Certificate  # noqa: F401
 from app.models.course import Course  # noqa: F401
+from app.models.course_audit_log import CourseAuditLog  # noqa: F401
+from app.models.course_section import CourseSection  # noqa: F401
+from app.models.lesson_resource import LessonResource  # noqa: F401
+from app.models.video_watch_history import VideoWatchHistory  # noqa: F401
 from app.models.course_review import CourseReview  # noqa: F401
 from app.models.enrollment import Enrollment  # noqa: F401
 from app.models.inbox_message import InboxMessage  # noqa: F401
+from app.models.notification import Notification  # noqa: F401
 from app.models.lesson import Lesson  # noqa: F401
 from app.models.mfa_otp_challenge import MfaOtpChallenge  # noqa: F401
 from app.models.payment import Payment  # noqa: F401
+from app.models.payment_audit_log import PaymentAuditLog  # noqa: F401
 from app.models.instructor_teaching_profile import InstructorTeachingProfile  # noqa: F401
 from app.models.student_learning_profile import StudentLearningProfile  # noqa: F401
 from app.models.user import User  # noqa: F401
@@ -57,6 +63,18 @@ async def lifespan(_: FastAPI):
         raise
     if not _settings.auto_create_tables:
         logger.info("Schema bootstrap: create_all skipped (AUTO_CREATE_TABLES=false); patches applied.")
+
+    db = SessionLocal()
+    try:
+        from app.services.admin_bootstrap import ensure_platform_admin
+
+        outcome = ensure_platform_admin(db, sync_password=False)
+        logger.info("Platform admin bootstrap: %s", outcome)
+    except Exception:
+        logger.exception("Platform admin bootstrap failed (API will still start).")
+    finally:
+        db.close()
+
     yield
 
 
@@ -135,20 +153,6 @@ def readiness(response: Response) -> dict[str, Any]:
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
-        row = db.execute(
-            text(
-                "SELECT 1 FROM information_schema.columns "
-                "WHERE table_name = 'users' AND column_name = 'two_factor_enabled'"
-            )
-        ).first()
-        if row is None:
-            logger.warning("Readiness: users.two_factor_enabled column missing")
-            response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-            return {
-                "status": "not_ready",
-                "database": "ok",
-                "schema": "users.two_factor_enabled missing — redeploy API or run SQL patch",
-            }
     except Exception as exc:
         logger.warning("Readiness check failed: %s", exc)
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE

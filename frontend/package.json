@@ -4,6 +4,8 @@
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "predev": "node scripts/strip-locale-bom.mjs",
+    "prebuild": "node scripts/strip-locale-bom.mjs",
     "dev": "next dev --turbopack",
     "dev:webpack": "next dev",
     "dev:npx": "npx --yes pnpm@9.15.4 install && npx --yes pnpm@9.15.4 dev",

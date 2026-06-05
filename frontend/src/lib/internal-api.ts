@@ -13,7 +13,7 @@ const HARDCODED_PRODUCTION_API = "https://web-application-multivate-ulv3.onrende
 const UPSTREAM_TIMEOUT_MS = 28_000;
 
 const UPSTREAM_UNAVAILABLE =
-  "We couldn't reach the learning server. Please try again in a moment.";
+  "We couldn't reach the server right now. Please try again in a moment.";
 
 export class UpstreamConnectionError extends Error {
   constructor(readonly apiBase: string) {
@@ -76,7 +76,7 @@ export function handleProxyError(e: unknown): NextResponse {
     return NextResponse.json(
       {
         detail:
-          "Sign-in is not connected to the server yet. Set INTERNAL_API_URL on Vercel to your Render API URL.",
+          "Sign-in is not connected yet. Please try again in a few minutes.",
       },
       { status: 503 },
     );

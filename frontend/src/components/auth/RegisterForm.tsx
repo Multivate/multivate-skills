@@ -34,8 +34,18 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [pending, setPending] = useState(false);
-  const [signupSession, setSignupSession] = useState<{ token: string; masked: string; devOtp?: string } | null>(null);
+  const [signupSession, setSignupSession] = useState<{ token: string; masked: string } | null>(null);
   const [otpCode, setOtpCode] = useState("");
+  const [otpNotice, setOtpNotice] = useState<string | null>(null);
+
+  function applyOtpFallback(code: string | undefined) {
+    if (code && /^\d{6}$/.test(code)) {
+      setOtpCode(code);
+      setOtpNotice(t("otpFallbackCode", { code }));
+      return true;
+    }
+    return false;
+  }
 
   const [educationLevel, setEducationLevel] = useState("");
   const [currentSkills, setCurrentSkills] = useState("");
@@ -181,9 +191,10 @@ export function RegisterForm() {
       setSignupSession({
         token: started.signup_token,
         masked,
-        ...(started.dev_otp ? { devOtp: started.dev_otp } : {}),
       });
-      setOtpCode(started.dev_otp ?? "");
+      setOtpCode("");
+      setOtpNotice(null);
+      applyOtpFallback(started.dev_otp);
       setStep(4);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errGeneric"));
@@ -626,6 +637,13 @@ export function RegisterForm() {
 
             {step === 4 && signupSession ? (
               <form onSubmit={onOtpSubmit} className="space-y-6">
+                {otpNotice ? (
+                  <p className="rounded-lg border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-2 text-sm text-brand-ink dark:text-slate-200" role="status">
+                    {otpNotice}
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{t("otpSpamHint")}</p>
+                )}
                 <AuthInput
                   id="reg_otp"
                   label={t("otpCodeLabel")}
@@ -638,13 +656,6 @@ export function RegisterForm() {
                   onChange={setOtpCode}
                   placeholder={t("otpCodePh")}
                 />
-                {signupSession.devOtp ? (
-                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                    {t("otpDevBanner", { code: signupSession.devOtp })}
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500">{t("otpDevHint")}</p>
-                )}
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                   <button type="button" onClick={clearOtpAndBackToAccount} className={navBtnClass}>
                     {t("otpBack")}

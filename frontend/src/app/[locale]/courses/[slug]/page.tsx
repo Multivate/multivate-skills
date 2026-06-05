@@ -1,56 +1,50 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Check, Clock, Star } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CourseEnrollCta } from "@/components/courses/CourseEnrollCta";
-import {
-  courses,
-  getCatalogCourseBySlug,
-  type CourseCategory,
-} from "@/data/courses-catalog";
+import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { fetchBackendCourse, fetchBackendLessons } from "@/lib/backend-courses";
+import { formatCourseDuration, formatCoursePrice } from "@/lib/course-price";
 import { Link } from "@/i18n/navigation";
-
-export function generateStaticParams() {
-  return courses.map((c) => ({ slug: c.slug }));
-}
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
-type DisplayCourse = {
-  category: CourseCategory;
-  title: string;
-  description: string;
-  detail: string;
-  bullets: string[];
-  pill: string;
-  pillClass: string;
-  level: string;
-  lessons: number;
-  hours: string;
-  rating: string;
-  reviews: string;
-  instructor: string;
-  price: string;
-  wasPrice: string;
-  image: string;
-  imageAlt: string;
-};
+const TAB_IDS = new Set(["ai", "data", "cloud", "web", "design", "german", "career"]);
+
+function learningBullets(objectives: string | null | undefined, description: string): string[] {
+  if (objectives?.trim()) {
+    const lines = objectives
+      .split(/\r?\n/)
+      .map((line) => line.replace(/^[-•*]\s*/, "").trim())
+      .filter(Boolean);
+    if (lines.length > 0) return lines;
+  }
+  return description.trim() ? [description.trim()] : [];
+}
+
+function categoryLabel(
+  category: string | undefined,
+  tTabs: Awaited<ReturnType<typeof getTranslations>>,
+): string {
+  const key = (category ?? "general").toLowerCase();
+  if (TAB_IDS.has(key)) return tTabs(key as "ai");
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const live = await fetchBackendCourse(slug);
-  const staticC = getCatalogCourseBySlug(slug);
-  const title = live?.title ?? staticC?.title ?? "Course";
-  const description = live?.description ?? staticC?.description ?? "";
+  const course = await fetchBackendCourse(slug);
+  if (!course) {
+    return { title: "Course - Multivate" };
+  }
   return {
-    title: `${title} — Multivate`,
-    description,
+    title: `${course.title} - Multivate`,
+    description: course.description,
   };
 }
 
@@ -60,56 +54,19 @@ export default async function CourseDetailPage({ params }: Props) {
   const tDetail = await getTranslations({ locale, namespace: "courseDetail" });
   const tTabs = await getTranslations({ locale, namespace: "topCourses.tabs" });
 
-  const live = await fetchBackendCourse(slug);
-  const lessons = live ? await fetchBackendLessons(slug) : [];
-  const staticC = getCatalogCourseBySlug(slug);
-  if (!live && !staticC) notFound();
+  const course = await fetchBackendCourse(slug);
+  if (!course) notFound();
 
-  let c: DisplayCourse;
-  if (staticC) {
-    c = {
-      category: staticC.category,
-      title: live?.title ?? staticC.title,
-      description: live?.description ?? staticC.description,
-      detail: live ? live.description : staticC.detail,
-      bullets: [...staticC.bullets],
-      pill: staticC.pill,
-      pillClass: staticC.pillClass,
-      level: staticC.level,
-      lessons: live?.lessons_count ?? staticC.lessons,
-      hours: staticC.hours,
-      rating: staticC.rating,
-      reviews: staticC.reviews,
-      instructor: staticC.instructor,
-      price: staticC.price,
-      wasPrice: staticC.wasPrice,
-      image: live?.image_url ?? staticC.image,
-      imageAlt: live ? live.title : staticC.imageAlt,
-    };
-  } else {
-    if (!live) notFound();
-    c = {
-      category: "web",
-      title: live.title,
-      description: live.description,
-      detail: live.description,
-      bullets: [live.description],
-      pill: "Catalog",
-      pillClass: "bg-slate-100 text-slate-800 ring-1 ring-slate-200/90",
-      level: "Self-paced",
-      lessons: live.lessons_count,
-      hours: "Flexible",
-      rating: "—",
-      reviews: "—",
-      instructor: "Multivate",
-      price: "Enroll with your account",
-      wasPrice: "",
-      image: live.image_url,
-      imageAlt: live.title,
-    };
-  }
-
+  const lessons = await fetchBackendLessons(slug);
   const sortedLessons = [...lessons].sort((a, b) => a.position - b.position);
+  const bullets = learningBullets(course.learning_objectives, course.description);
+  const priceLabel = formatCoursePrice(
+    course.price_cents ?? 0,
+    course.currency ?? "NGN",
+    course.is_free ?? false,
+  );
+  const durationLabel = formatCourseDuration(course.duration_minutes ?? 0);
+  const levelLabel = course.level ? course.level.charAt(0).toUpperCase() + course.level.slice(1) : "All levels";
 
   return (
     <>
@@ -135,55 +92,45 @@ export default async function CourseDetailPage({ params }: Props) {
             <span className="mx-2 text-slate-300" aria-hidden>
               /
             </span>
-            <span className="line-clamp-1 text-slate-700">{c.title}</span>
+            <span className="line-clamp-1 text-slate-700">{course.title}</span>
           </nav>
 
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-brand-primary">
-                {tTabs(c.category)}
+                {categoryLabel(course.category, tTabs)}
               </p>
-              <h1 className="heading-section mt-2 text-2xl sm:text-3xl lg:text-[2rem]">{c.title}</h1>
-              <p className="mt-2 text-sm text-slate-500">{c.instructor}</p>
+              <h1 className="heading-section mt-2 text-2xl sm:text-3xl lg:text-[2rem]">{course.title}</h1>
+              {course.subtitle ? <p className="mt-2 text-base text-slate-600">{course.subtitle}</p> : null}
 
               <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-700">
-                <span className="inline-flex items-center gap-1 font-bold text-slate-900">
-                  {c.rating}
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-500" strokeWidth={1.5} />
-                </span>
-                <span className="text-slate-500">
-                  ({c.reviews} {tDetail("reviews")})
-                </span>
-                <span className="text-slate-300" aria-hidden>
-                  ·
-                </span>
-                <span className="font-medium text-slate-800">{c.level}</span>
+                <span className="font-medium text-slate-800">{levelLabel}</span>
                 <span className="text-slate-300" aria-hidden>
                   ·
                 </span>
                 <span className="inline-flex items-center gap-1 text-slate-600">
                   <Clock className="h-4 w-4 text-slate-400" strokeWidth={2} />
-                  {c.hours} · {c.lessons} {tDetail("lessonsUnit")}
+                  {durationLabel} · {course.lessons_count} {tDetail("lessonsUnit")}
                 </span>
               </div>
 
-              <span
-                className={`mt-4 inline-flex w-fit rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${c.pillClass}`}
-              >
-                {c.pill}
-              </span>
+              <p className="mt-6 text-base leading-relaxed text-slate-600">{course.description}</p>
 
-              <p className="mt-6 text-base leading-relaxed text-slate-600">{c.detail}</p>
-
-              <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-slate-900">{tDetail("whatYouLearn")}</h2>
-              <ul className="mt-3 space-y-3">
-                {c.bullets.map((line) => (
-                  <li key={line} className="flex gap-3 text-sm leading-relaxed text-slate-700">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" strokeWidth={2.5} />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
+              {bullets.length > 0 ? (
+                <>
+                  <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-slate-900">
+                    {tDetail("whatYouLearn")}
+                  </h2>
+                  <ul className="mt-3 space-y-3">
+                    {bullets.map((line) => (
+                      <li key={line} className="flex gap-3 text-sm leading-relaxed text-slate-700">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" strokeWidth={2.5} />
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
 
               {sortedLessons.length > 0 ? (
                 <>
@@ -205,28 +152,15 @@ export default async function CourseDetailPage({ params }: Props) {
 
             <aside className="rounded-2xl border border-slate-200/95 bg-white p-6 shadow-card lg:sticky lg:top-24">
               <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-slate-100">
-                <Image
-                  src={c.image}
-                  alt={c.imageAlt}
-                  fill
-                  className="object-cover"
+                <CourseThumbnail
+                  src={course.image_url}
+                  alt={course.title}
                   sizes="(min-width: 1024px) 22rem, 100vw"
-                  priority
+                  className="object-cover"
                 />
               </div>
-              <div className="mt-5 flex items-baseline gap-2">
-                <span className="text-2xl font-extrabold text-slate-900">{c.price}</span>
-                {c.wasPrice ? (
-                  <span className="text-base text-slate-400 line-through">{c.wasPrice}</span>
-                ) : null}
-              </div>
-              {live ? (
-                <CourseEnrollCta courseSlug={live.slug} />
-              ) : (
-                <Link href="/register" className="btn-primary-brand mt-5 block w-full text-center !py-3">
-                  {tDetail("getStarted")}
-                </Link>
-              )}
+              <p className="mt-5 text-2xl font-extrabold text-slate-900">{priceLabel}</p>
+              <CourseEnrollCta courseSlug={course.slug} />
               <Link
                 href="/dashboard/courses"
                 className="mt-4 block text-center text-sm font-semibold text-brand-primary hover:text-brand-primary-dark"

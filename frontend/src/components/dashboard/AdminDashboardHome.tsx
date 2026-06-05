@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { Link } from "@/i18n/navigation";
 import { BarChart3, BookOpen, GraduationCap, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ type AdminDashboard = {
   }[];
 };
 
-function money(cents: number, currency = "USD") {
+function money(cents: number, currency = "NGN") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
 }
 
@@ -50,17 +50,17 @@ export function AdminDashboardHome() {
         const body = await res.json().catch(() => null);
         if (cancelled) return;
         if (res.status === 401) {
-          setError("Session expired — sign in again.");
+          setError("Your session expired. Please sign in again.");
           return;
         }
         if (!res.ok) {
-          setError(typeof body?.detail === "string" ? body.detail : "Could not load admin dashboard.");
+          setError(typeof body?.detail === "string" ? body.detail : "We couldn't load the admin dashboard.");
           return;
         }
         setData(body as AdminDashboard);
         setError(null);
       } catch {
-        if (!cancelled) setError("Network error.");
+        if (!cancelled) setError("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -170,7 +170,7 @@ export function AdminDashboardHome() {
               data.top_courses.map((c) => (
                 <li key={c.slug} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-2">
                   <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200">
-                    <Image src={c.image_url} alt="" fill className="object-cover" sizes="64px" />
+                    <CourseThumbnail src={c.image_url} alt={c.title} sizes="64px" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-brand-ink">{c.title}</p>

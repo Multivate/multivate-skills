@@ -17,6 +17,7 @@ from app.models.user import User
 from app.core.security import create_mfa_pending_token, hash_password, verify_password
 from app.services import mail_service
 from app.services import otp_email
+from app.services.mail_service import EmailDeliveryError
 
 _logger = logging.getLogger(__name__)
 
@@ -122,6 +123,8 @@ def create_and_send_otp(
 
     try:
         dev_plain = mail_service.send_plain_email(user.email, subject, plain, html_body)
+    except EmailDeliveryError:
+        raise
     except Exception as exc:
         _logger.exception(
             "OTP send failed recipient=%s purpose=%s (%s)",
@@ -199,7 +202,10 @@ def start_enable_2fa(db: Session, user: User) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Two-factor authentication is already enabled",
         )
-    _, _ = create_and_send_otp(db, user, "enable")
+    try:
+        create_and_send_otp(db, user, "enable")
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
 
 def confirm_enable_2fa(db: Session, user: User, code: str) -> None:

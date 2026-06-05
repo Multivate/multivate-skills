@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { readApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
+import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 
 type UserRow = { id: string; name: string; email: string; role: string; is_active: boolean; created_at: string };
 type PaymentRow = {
@@ -13,7 +14,10 @@ type PaymentRow = {
   currency: string;
   status: string;
   created_at: string;
-  user_email: string;
+  user_email?: string;
+  student_code?: string | null;
+  payment_reference?: string | null;
+  transaction_reference?: string | null;
   course_slug: string | null;
   course_title: string | null;
 };
@@ -27,6 +31,7 @@ type EnrollRow = {
   instructor_email?: string | null;
 };
 type CourseRow = { slug: string; title: string; description: string; image_url: string; lessons_count: number };
+type PendingCourse = { slug: string; title: string; status: string; lessons_count: number; image_url: string };
 function ProfileField({ label, value, wide }: { label: string; value: string | null; wide?: boolean }) {
   if (value == null || value === "") return null;
   return (
@@ -86,6 +91,7 @@ export function AdminSectionContent({ section }: { section: string }) {
   const [payments, setPayments] = useState<PaymentRow[] | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollRow[] | null>(null);
   const [courses, setCourses] = useState<CourseRow[] | null>(null);
+  const [pendingCourses, setPendingCourses] = useState<PendingCourse[] | null>(null);
   const [instructors, setInstructors] = useState<UserRow[] | null>(null);
   const [studentProfiles, setStudentProfiles] = useState<StudentProfileRow[] | null>(null);
   const [instructorProfiles, setInstructorProfiles] = useState<InstructorProfileRow[] | null>(null);
@@ -97,11 +103,11 @@ export function AdminSectionContent({ section }: { section: string }) {
       setErr(null);
       try {
         if (section === "instructors") {
-          const res = await fetch("/api/admin/users?limit=200", { credentials: "include", cache: "no-store" });
+          const res = await fetch("/api/admin/users?limit=100", { credentials: "include", cache: "no-store" });
           const data = await res.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "Failed to load users.");
+            setErr(readApiError(data, "We couldn't load users."));
             setInstructors([]);
             return;
           }
@@ -117,7 +123,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           const data = await res.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "Failed to load student profiles.");
+            setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load student profiles.");
             setStudentProfiles([]);
             return;
           }
@@ -132,7 +138,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           const data = await res.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "Failed to load instructor profiles.");
+            setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load instructor profiles.");
             setInstructorProfiles([]);
             return;
           }
@@ -144,7 +150,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           const data = await res.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "Failed to load users.");
+            setErr(readApiError(data, "We couldn't load users."));
             setUsers([]);
             return;
           }
@@ -156,7 +162,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           const data = await res.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "Failed to load payments.");
+            setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load payments.");
             setPayments([]);
             return;
           }
@@ -168,7 +174,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           const data = await res.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "Failed to load enrollments.");
+            setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load enrollments.");
             setEnrollments([]);
             return;
           }
@@ -176,18 +182,27 @@ export function AdminSectionContent({ section }: { section: string }) {
           return;
         }
         if (section === "courses") {
-          const res = await fetch("/api/courses", { cache: "no-store" });
+          const [res, pendingRes] = await Promise.all([
+            fetch("/api/courses", { cache: "no-store" }),
+            fetch("/api/admin/courses/pending", { credentials: "include", cache: "no-store" }),
+          ]);
           const data = await res.json().catch(() => null);
+          const pendingData = await pendingRes.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr("Failed to load catalog.");
+            setErr("We couldn't load the catalog.");
             setCourses([]);
-            return;
+          } else {
+            setCourses(Array.isArray(data) ? data : []);
           }
-          setCourses(Array.isArray(data) ? data : []);
+          if (pendingRes.ok) {
+            setPendingCourses(Array.isArray(pendingData) ? pendingData : []);
+          } else {
+            setPendingCourses([]);
+          }
         }
       } catch {
-        if (!cancelled) setErr("Network error.");
+        if (!cancelled) setErr("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -209,13 +224,13 @@ export function AdminSectionContent({ section }: { section: string }) {
         const j2 = await d2.json().catch(() => null);
         if (cancelled) return;
         if (!d1.ok || !j1 || typeof j1 !== "object" || !("totals" in j1)) {
-          setDmErr(typeof (j1 as { detail?: string })?.detail === "string" ? (j1 as { detail: string }).detail : "Failed to load snapshot.");
+          setDmErr(typeof (j1 as { detail?: string })?.detail === "string" ? (j1 as { detail: string }).detail : "We couldn't load the overview.");
           setDmDash(null);
           setDmRows([]);
           return;
         }
         if (!d2.ok) {
-          setDmErr(typeof (j2 as { detail?: string })?.detail === "string" ? (j2 as { detail: string }).detail : "Failed to load enrollments.");
+          setDmErr(typeof (j2 as { detail?: string })?.detail === "string" ? (j2 as { detail: string }).detail : "We couldn't load enrollments.");
           setDmRows([]);
         } else {
           setDmRows(Array.isArray(j2) ? (j2 as EnrollRow[]) : []);
@@ -223,7 +238,7 @@ export function AdminSectionContent({ section }: { section: string }) {
         setDmDash(j1 as AdminDashSnapshot);
       } catch {
         if (!cancelled) {
-          setDmErr("Network error.");
+          setDmErr("Connection problem. Please try again.");
           setDmDash(null);
           setDmRows([]);
         }
@@ -314,11 +329,11 @@ export function AdminSectionContent({ section }: { section: string }) {
                     <td className="px-4 py-3 text-xs text-slate-600">
                       {e.instructor_name || e.instructor_email ? (
                         <>
-                          <span className="font-semibold text-brand-ink">{e.instructor_name ?? "—"}</span>
+                          <span className="font-semibold text-brand-ink">{e.instructor_name ?? "-"}</span>
                           <span className="block">{e.instructor_email ?? ""}</span>
                         </>
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </td>
                   </tr>
@@ -464,8 +479,7 @@ export function AdminSectionContent({ section }: { section: string }) {
     return (
       <NotConfiguredNotice title={section.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}>
         <p>
-          The Multivate API does not expose this workspace yet. There is no fabricated data — add a dedicated service
-          when you are ready to ship this module.
+          This section is not available yet. Check back after the next update.
         </p>
       </NotConfiguredNotice>
     );
@@ -505,32 +519,100 @@ export function AdminSectionContent({ section }: { section: string }) {
   if (section === "payments") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (payments === null) return <p className="text-sm text-slate-600">Loading payments…</p>;
+
+    async function approvePayment(id: string) {
+      const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/approve`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        setPayments((prev) =>
+          prev ? prev.map((p) => (p.id === id ? { ...p, status: "paid" } : p)) : prev,
+        );
+      }
+    }
+
+    async function rejectPayment(id: string) {
+      const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/reject`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "We could not match this payment to a transfer." }),
+      });
+      if (res.ok) {
+        setPayments((prev) =>
+          prev ? prev.map((p) => (p.id === id ? { ...p, status: "failed" } : p)) : prev,
+        );
+      }
+    }
+
+    const needsReview = (status: string) => status === "pending" || status === "awaiting_review";
+
     return (
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">When</th>
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Course</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {payments.map((p) => (
-              <tr key={p.id}>
-                <td className="px-4 py-3 text-xs text-slate-600">{new Date(p.created_at).toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs">{p.user_email}</td>
-                <td className="px-4 py-3 text-xs">{p.course_title ?? "—"}</td>
-                <td className="px-4 py-3 font-semibold">
-                  {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(p.amount_cents / 100)}
-                </td>
-                <td className="px-4 py-3 text-xs font-bold uppercase">{p.status}</td>
+      <div className="space-y-4">
+        <p className="rounded-xl border border-brand-secondary/30 bg-brand-secondary/5 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+          Confirm a payment only after you verify the bank transfer. Students are enrolled after you approve.
+        </p>
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+          <table className="w-full min-w-[960px] text-left text-sm">
+            <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">When</th>
+                <th className="px-4 py-3">Student</th>
+                <th className="px-4 py-3">Reference</th>
+                <th className="px-4 py-3">Bank txn</th>
+                <th className="px-4 py-3">Course</th>
+                <th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {payments.map((p) => (
+                <tr key={p.id}>
+                  <td className="px-4 py-3 text-xs text-slate-600">{new Date(p.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <p className="font-semibold">{p.user_email ?? "-"}</p>
+                    {p.student_code ? <p className="font-mono text-slate-500">{p.student_code}</p> : null}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs">{p.payment_reference ?? "-"}</td>
+                  <td className="px-4 py-3 font-mono text-xs">{p.transaction_reference ?? "-"}</td>
+                  <td className="px-4 py-3 text-xs">{p.course_title ?? "-"}</td>
+                  <td className="px-4 py-3 font-semibold">
+                    {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(
+                      p.amount_cents / 100,
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-bold uppercase">{p.status.replace(/_/g, " ")}</td>
+                  <td className="px-4 py-3">
+                    {needsReview(p.status) ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void approvePayment(p.id)}
+                          className="rounded-lg bg-admin-indigo px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90 active:scale-95"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void rejectPayment(p.id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-800 transition hover:bg-red-100 active:scale-95"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">-</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -569,11 +651,11 @@ export function AdminSectionContent({ section }: { section: string }) {
                   <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                     {e.instructor_name || e.instructor_email ? (
                       <>
-                        <p className="font-semibold text-brand-ink">{e.instructor_name ?? "—"}</p>
+                        <p className="font-semibold text-brand-ink">{e.instructor_name ?? "-"}</p>
                         <p className="text-xs text-slate-500">{e.instructor_email ?? ""}</p>
                       </>
                     ) : (
-                      <span className="text-xs text-slate-500">—</span>
+                      <span className="text-xs text-slate-500">-</span>
                     )}
                   </td>
                 </tr>
@@ -589,22 +671,75 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (courses === null) return <p className="text-sm text-slate-600">Loading catalog…</p>;
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {courses.map((c) => (
-          <div key={c.slug} className="flex gap-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm">
-            <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-              <Image src={c.image_url} alt="" fill className="object-cover" sizes="112px" />
+      <div className="space-y-10">
+        {pendingCourses && pendingCourses.length > 0 ? (
+          <section>
+            <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Awaiting approval</h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {pendingCourses.map((c) => (
+                <div key={c.slug} className="rounded-2xl border border-amber-200/90 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                  <p className="font-bold text-brand-ink">{c.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">{c.lessons_count} lessons · {c.slug}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700"
+                      onClick={async () => {
+                        const res = await fetch(`/api/admin/courses/${encodeURIComponent(c.slug)}/approve`, {
+                          method: "POST",
+                          credentials: "include",
+                        });
+                        if (res.ok) {
+                          setPendingCourses((prev) => prev?.filter((x) => x.slug !== c.slug) ?? []);
+                        }
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700"
+                      onClick={async () => {
+                        const reason = window.prompt("Optional note for the instructor") ?? "";
+                        const res = await fetch(`/api/admin/courses/${encodeURIComponent(c.slug)}/reject`, {
+                          method: "POST",
+                          credentials: "include",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ reason }),
+                        });
+                        if (res.ok) {
+                          setPendingCourses((prev) => prev?.filter((x) => x.slug !== c.slug) ?? []);
+                        }
+                      }}
+                    >
+                      Send back
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-brand-ink">{c.title}</p>
-              <p className="line-clamp-2 text-xs text-slate-600">{c.description}</p>
-              <p className="mt-1 text-xs text-slate-500">{c.lessons_count} lessons · {c.slug}</p>
-              <Link href={`/courses/${c.slug}`} className="mt-2 inline-block text-xs font-bold text-admin-indigo hover:underline">
-                View
-              </Link>
-            </div>
+          </section>
+        ) : null}
+        <section>
+          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Published catalog</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {courses.map((c) => (
+              <div key={c.slug} className="flex gap-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm">
+                <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                  <CourseThumbnail src={c.image_url} alt={c.title} sizes="112px" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-brand-ink">{c.title}</p>
+                  <p className="line-clamp-2 text-xs text-slate-600">{c.description}</p>
+                  <p className="mt-1 text-xs text-slate-500">{c.lessons_count} lessons · {c.slug}</p>
+                  <Link href={`/courses/${c.slug}`} className="mt-2 inline-block text-xs font-bold text-admin-indigo hover:underline">
+                    View
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        </section>
       </div>
     );
   }

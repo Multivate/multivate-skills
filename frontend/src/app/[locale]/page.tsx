@@ -6,18 +6,22 @@ import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { TopCoursesSection } from "@/components/landing/TopCoursesSection";
 import { TeachOnMultivateSection } from "@/components/landing/TeachOnMultivateSection";
+import { fetchBackendCatalog } from "@/lib/backend-courses";
+import { fetchBackendPublicReviews } from "@/lib/backend-reviews";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [courses, reviews] = await Promise.all([fetchBackendCatalog(), fetchBackendPublicReviews()]);
+
   return (
     <>
       <SiteHeader />
       <main>
         <HeroSection />
         <ChallengesSection />
-        <TopCoursesSection />
+        <TopCoursesSection initialCourses={courses} />
         <TeachOnMultivateSection />
         <HowItWorksSection />
-        <TestimonialsSection />
+        <TestimonialsSection initialReviews={reviews} />
       </main>
       <SiteFooter />
     </>

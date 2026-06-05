@@ -14,6 +14,10 @@ if _url.startswith("postgres://"):
 engine = create_engine(
     _url,
     pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_recycle=1800,
+    pool_timeout=30,
     echo=False,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

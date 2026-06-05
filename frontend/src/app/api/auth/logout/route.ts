@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { clearAuthCookies } from "@/app/api/auth/_cookie";
 
 const secure = process.env.NODE_ENV === "production";

@@ -136,3 +136,35 @@ def build_otp_email(
 </html>"""
 
     return plain, html_doc
+
+
+def send_password_reset_code(display_name: str, to_email: str, code: str) -> str | None:
+    """Send reset code; returns dev plaintext when email could not be sent."""
+    from app.core.config import get_settings
+    from app.services import mail_service
+    from email.utils import parseaddr
+
+    settings = get_settings()
+    subject = "Reset your Multivate password"
+    lead_in = "Use this code to choose a new password for your account."
+    code_context_line = "Your password reset code:"
+    raw = (settings.mail_support_url or "").strip()
+    if raw:
+        support_href = raw
+    else:
+        _, addr = parseaddr(settings.mail_from)
+        support_href = f"mailto:{addr}" if addr else "#"
+    footer_line = (settings.mail_footer_line or "").strip() or "Delivered by Multivate."
+    plain, html_body = build_otp_email(
+        recipient_first_name=display_name,
+        code=code,
+        subject=subject,
+        lead_in=lead_in,
+        code_context_line=code_context_line,
+        support_href=support_href,
+        footer_line=footer_line,
+        include_logo_cid=True,
+        expiry_minutes=15,
+    )
+    return mail_service.send_plain_email(to_email, subject, plain, html_body)
+

@@ -30,7 +30,7 @@ function readStorage(): CartLine[] {
         typeof (x as CartLine).slug === "string" &&
         typeof (x as CartLine).title === "string" &&
         typeof (x as CartLine).image === "string" &&
-        ((x as CartLine).source === "live" || (x as CartLine).source === "catalog"),
+        (x as CartLine).source === "live",
     );
   } catch {
     return [];

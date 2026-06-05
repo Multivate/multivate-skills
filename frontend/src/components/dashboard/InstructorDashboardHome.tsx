@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { BookOpen, Users, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 
 type InstructorDashboard = {
   totals: {
@@ -15,7 +15,7 @@ type InstructorDashboard = {
   courses: { slug: string; title: string; image_url: string; lessons_count: number; enrollment_count: number }[];
 };
 
-function money(cents: number, currency = "USD") {
+function money(cents: number, currency = "NGN") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
 }
 
@@ -31,17 +31,17 @@ export function InstructorDashboardHome() {
         const body = await res.json().catch(() => null);
         if (cancelled) return;
         if (res.status === 401 || res.status === 403) {
-          setError("You do not have access to the instructor workspace.");
+          setError("You do not have access to the instructor area.");
           return;
         }
         if (!res.ok) {
-          setError(typeof body?.detail === "string" ? body.detail : "Could not load instructor dashboard.");
+          setError(typeof body?.detail === "string" ? body.detail : "We couldn't load your dashboard.");
           return;
         }
         setData(body as InstructorDashboard);
         setError(null);
       } catch {
-        if (!cancelled) setError("Network error.");
+        if (!cancelled) setError("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -60,7 +60,7 @@ export function InstructorDashboardHome() {
   if (!data) {
     return (
       <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-sm">
-        <p className="text-sm font-medium text-slate-600">Loading teaching workspace…</p>
+        <p className="text-sm font-medium text-slate-600">Loading your dashboard…</p>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export function InstructorDashboardHome() {
                     <td className="py-4 pr-4">
                       <div className="flex items-center gap-3">
                         <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                          <Image src={c.image_url} alt="" fill className="object-cover" sizes="80px" />
+                          <CourseThumbnail src={c.image_url} alt={c.title} sizes="80px" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-brand-ink">{c.title}</p>

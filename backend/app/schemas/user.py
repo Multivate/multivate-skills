@@ -26,9 +26,19 @@ class UserPublic(BaseModel):
     role: UserRole
     is_active: bool
     two_factor_enabled: bool = False
+    avatar_url: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UpdateProfileRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=128)
 
 
 def user_public_from_orm(user: User) -> UserPublic:
@@ -43,5 +53,6 @@ def user_public_from_orm(user: User) -> UserPublic:
         role=user.role,
         is_active=user.is_active,
         two_factor_enabled=user.two_factor_enabled,
+        avatar_url=user.avatar_url,
         created_at=user.created_at,
     )

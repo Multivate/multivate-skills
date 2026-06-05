@@ -1,14 +1,24 @@
 import { getInternalApiUrl } from "@/lib/internal-api";
 
-/** Matches FastAPI `CourseOut` / `LessonOut`. */
+/** Matches FastAPI `CourseOut`. */
 export type BackendCourse = {
   id: string;
   slug: string;
   title: string;
+  subtitle?: string | null;
   description: string;
+  learning_objectives?: string | null;
   image_url: string;
   lessons_count: number;
   instructor_id: string | null;
+  category?: string;
+  level?: string;
+  language?: string;
+  duration_minutes?: number;
+  price_cents?: number;
+  currency?: string;
+  is_free?: boolean;
+  status?: string;
 };
 
 export type BackendLesson = {

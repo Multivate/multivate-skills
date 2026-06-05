@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formInputClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
 
 type MessageRow = {
   id: string;
@@ -26,7 +27,7 @@ export default function DashboardMessagesPage() {
     const res = await fetch("/api/messages/me", { credentials: "include", cache: "no-store" });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setError(typeof data?.detail === "string" ? data.detail : "Could not load messages.");
+      setError(typeof data?.detail === "string" ? data.detail : "We couldn't load your messages.");
       setRows([]);
       return;
     }
@@ -54,7 +55,7 @@ export default function DashboardMessagesPage() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setSent(typeof data?.detail === "string" ? data.detail : "Could not send.");
+        setSent(typeof data?.detail === "string" ? data.detail : "We couldn't send your message.");
         return;
       }
       setToEmail("");
@@ -63,7 +64,7 @@ export default function DashboardMessagesPage() {
       setSent("Message sent.");
       await load();
     } catch {
-      setSent("Network error.");
+      setSent("Connection problem. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -98,32 +99,32 @@ export default function DashboardMessagesPage() {
       <section className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm sm:p-8">
         <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Compose</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-semibold text-slate-800 sm:col-span-2">
+          <label className={`${formLabelClass} sm:col-span-2`}>
             Recipient email
             <input
               type="email"
               value={toEmail}
               onChange={(e) => setToEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className={formInputClass}
               placeholder="colleague@example.com"
               autoComplete="email"
             />
           </label>
-          <label className="block text-sm font-semibold text-slate-800 sm:col-span-2">
+          <label className={`${formLabelClass} sm:col-span-2`}>
             Subject
             <input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className={formInputClass}
             />
           </label>
-          <label className="block text-sm font-semibold text-slate-800 sm:col-span-2">
+          <label className={`${formLabelClass} sm:col-span-2`}>
             Message
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={5}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className={formTextareaClass}
             />
           </label>
         </div>

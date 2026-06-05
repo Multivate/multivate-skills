@@ -37,7 +37,7 @@ function GoogleGlyph() {
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
-  const { login, completeMfaLogin, user, loading } = useAuth();
+  const { login, completeMfaLogin, resendMfaLogin, user, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -45,8 +45,18 @@ export function LoginForm() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [mfa, setMfa] = useState<{ token: string; masked: string; devOtp?: string } | null>(null);
+  const [mfa, setMfa] = useState<{ token: string; masked: string } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  const [mfaNotice, setMfaNotice] = useState<string | null>(null);
+
+  function applyFallbackCode(code: string | undefined) {
+    if (code && /^\d{6}$/.test(code)) {
+      setMfaCode(code);
+      setMfaNotice(t("mfaFallbackCode", { code }));
+      return true;
+    }
+    return false;
+  }
 
   const from = pathnameWithoutLeadingLocale(searchParams.get("from") || "/dashboard");
 
@@ -66,9 +76,12 @@ export function LoginForm() {
         setMfa({
           token: outcome.mfaToken,
           masked: outcome.emailMasked,
-          ...(outcome.devOtp ? { devOtp: outcome.devOtp } : {}),
         });
-        setMfaCode(outcome.devOtp ?? "");
+        setMfaCode("");
+        setMfaNotice(null);
+        if (!applyFallbackCode(outcome.devOtp)) {
+          setMfaNotice(null);
+        }
         return;
       }
       router.replace(from.startsWith("/") ? from : "/dashboard");
@@ -79,6 +92,25 @@ export function LoginForm() {
       } else {
         setError(err instanceof Error ? err.message : t("errorGeneric"));
       }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function onMfaResend() {
+    if (!mfa) return;
+    setError(null);
+    setMfaNotice(null);
+    setPending(true);
+    try {
+      const next = await resendMfaLogin(mfa.token);
+      setMfa({ token: next.mfaToken, masked: next.emailMasked || mfa.masked });
+      setMfaCode("");
+      if (!applyFallbackCode(next.devOtp)) {
+        setMfaNotice(t("mfaSentAgain"));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errorGeneric"));
     } finally {
       setPending(false);
     }
@@ -123,6 +155,13 @@ export function LoginForm() {
 
           {mfa ? (
             <form onSubmit={onMfaSubmit} className="mt-8 space-y-5">
+              {mfaNotice ? (
+                <p className="rounded-lg border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-2 text-sm text-brand-ink dark:text-slate-200" role="status">
+                  {mfaNotice}
+                </p>
+              ) : (
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t("mfaSpamHint")}</p>
+              )}
               {error ? (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200" role="alert">
                   {error}
@@ -140,15 +179,16 @@ export function LoginForm() {
                 onChange={setMfaCode}
                 placeholder={t("mfaCodePh")}
               />
-              {mfa.devOtp ? (
-                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-                  {t("mfaDevOtpBanner", { code: mfa.devOtp })}
-                </p>
-              ) : (
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t("mfaDevHint")}</p>
-              )}
               <button type="submit" disabled={pending} className="btn-cta-accent">
                 {pending ? t("mfaSubmitting") : t("mfaSubmit")}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={onMfaResend}
+                className="w-full text-sm font-semibold text-brand-secondary transition hover:text-brand-primary disabled:opacity-60"
+              >
+                {pending ? t("mfaSubmitting") : t("mfaSendAgain")}
               </button>
               <button
                 type="button"
@@ -201,15 +241,9 @@ export function LoginForm() {
                     />
                     {t("remember")}
                   </label>
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-brand-primary hover:underline"
-                    onClick={() => {
-                      /* Placeholder until password reset flow exists */
-                    }}
-                  >
+                  <Link href="/forgot-password" className="text-sm font-semibold text-brand-primary hover:underline">
                     {t("forgot")}
-                  </button>
+                  </Link>
                 </div>
 
                 <button type="submit" disabled={pending} className="btn-cta-accent">

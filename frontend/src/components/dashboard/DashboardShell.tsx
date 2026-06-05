@@ -5,7 +5,6 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
-  Bell,
   BookOpen,
   GraduationCap,
   LayoutDashboard,
@@ -21,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/auth-context";
 import { adminNav } from "@/components/dashboard/admin-nav";
 import { instructorNav } from "@/components/dashboard/instructor-nav";
@@ -344,16 +344,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   </label>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-                  <button
-                    type="button"
-                    className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700"
-                    aria-label={tDash("shell.notificationsAdmin")}
-                  >
-                    <Bell className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {workspace === "admin" ? "3" : "5"}
-                    </span>
-                  </button>
+                  <NotificationBell label={tDash("shell.notificationsAdmin")} />
                   <Link
                     href="/dashboard/settings"
                     className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 dark:border-slate-700 dark:bg-slate-800 sm:flex"
@@ -392,13 +383,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                  <button
-                    type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white"
-                    aria-label={tDash("shell.notifications")}
-                  >
-                    <Bell className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
-                  </button>
+                  <NotificationBell label={tDash("shell.notifications")} />
                   <div className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-sm font-bold text-brand-panel dark:border-slate-700 dark:bg-slate-800 dark:text-violet-200 sm:flex">
                     {initial}
                   </div>

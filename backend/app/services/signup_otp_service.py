@@ -28,6 +28,7 @@ from app.schemas.auth import (
 )
 from app.schemas.user import user_public_from_orm
 from app.services import mail_service, otp_email
+from app.services.mail_service import EmailDeliveryError
 
 _logger = logging.getLogger(__name__)
 
@@ -128,6 +129,10 @@ def start_student_signup(db: Session, data: StudentRegisterRequest) -> RegisterS
     dev_plain: str | None = None
     try:
         dev_plain = _send_signup_verification_email(email, data.name, code)
+    except EmailDeliveryError as exc:
+        r.delete(_redis_key(token))
+        _logger.warning("Signup OTP email blocked recipient=%s: %s", email, exc)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except Exception as exc:
         _logger.exception("Signup OTP email failed for %s", email)
         if get_settings().environment != "development":
@@ -159,6 +164,10 @@ def start_instructor_signup(db: Session, data: InstructorRegisterRequest) -> Reg
     dev_plain: str | None = None
     try:
         dev_plain = _send_signup_verification_email(email, data.name, code)
+    except EmailDeliveryError as exc:
+        r.delete(_redis_key(token))
+        _logger.warning("Signup OTP email blocked recipient=%s: %s", email, exc)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except Exception as exc:
         _logger.exception("Signup OTP email failed for %s", email)
         if get_settings().environment != "development":

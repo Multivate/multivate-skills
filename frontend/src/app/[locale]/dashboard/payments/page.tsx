@@ -4,15 +4,19 @@ import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
-import { PaymentsCheckoutPanel } from "@/components/dashboard/PaymentsCheckoutPanel";
+import { BankTransferCheckoutPanel } from "@/components/dashboard/BankTransferCheckoutPanel";
 
 type PaymentRow = {
   id: string;
   amount_cents: number;
   currency: string;
   status: string;
+  payment_reference?: string | null;
+  transaction_reference?: string | null;
+  paid_at?: string | null;
   created_at: string;
   course_id: string | null;
+  course_title?: string | null;
 };
 
 function PaymentsHistory() {
@@ -68,9 +72,20 @@ function PaymentsHistory() {
                 <span className="font-semibold text-brand-ink">
                   {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(p.amount_cents / 100)}
                 </span>
-                <p className="mt-1 font-mono text-xs text-slate-500">ID {p.id}</p>
+                {p.payment_reference ? (
+                  <p className="mt-1 font-mono text-xs text-brand-secondary">{p.payment_reference}</p>
+                ) : null}
+                {p.course_title ? <p className="mt-1 text-xs text-slate-500">{p.course_title}</p> : null}
               </div>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${
+                  p.status === "paid" || p.status === "completed"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : p.status === "failed"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-amber-100 text-amber-900"
+                }`}
+              >
                 {p.status}
               </span>
               <span className="text-xs text-slate-500">{new Date(p.created_at).toLocaleString()}</span>
@@ -94,7 +109,7 @@ export default function DashboardPaymentsPage() {
           </section>
         }
       >
-        <PaymentsCheckoutPanel />
+        <BankTransferCheckoutPanel />
       </Suspense>
 
       <header>

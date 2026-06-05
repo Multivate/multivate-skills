@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, aliased
 
 from app.models.course import Course
 from app.models.enrollment import Enrollment
+from app.models.enrollment_status import EnrollmentStatus
 from app.models.lesson import Lesson
 from app.models.student_learning_profile import StudentLearningProfile
 from app.models.user import User
@@ -47,7 +48,7 @@ def list_my_courses(db: Session, user_id: UUID) -> list[MyCourseItem]:
         select(Course, Enrollment, instructor_user)
         .join(Enrollment, Enrollment.course_id == Course.id)
         .outerjoin(instructor_user, instructor_user.id == Course.instructor_id)
-        .where(Enrollment.user_id == user_id)
+        .where(Enrollment.user_id == user_id, Enrollment.status == EnrollmentStatus.ENROLLED)
         .order_by(Enrollment.created_at.desc())
     )
     rows = db.execute(stmt).all()
@@ -66,7 +67,7 @@ def update_progress(db: Session, user_id: UUID, course_slug: str, payload: Progr
     enr = db.execute(
         select(Enrollment).where(Enrollment.user_id == user_id, Enrollment.course_id == course.id)
     ).scalar_one_or_none()
-    if not enr:
+    if not enr or enr.status != EnrollmentStatus.ENROLLED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not enrolled in this course")
 
     cap = _max_lessons_for_course(db, course)

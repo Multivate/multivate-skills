@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getInternalApiUrl } from "@/lib/internal-api";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 

@@ -33,8 +33,7 @@ class Settings(BaseSettings):
 
     cors_origins: str = (
         "http://localhost:3000,http://127.0.0.1:3000,"
-        "http://localhost:3001,http://127.0.0.1:3001,"
-        "http://localhost:3002,http://localhost:3003"
+        "https://multivate.com.ng,https://www.multivate.com.ng"
     )
 
     auto_create_tables: bool = Field(
@@ -49,11 +48,11 @@ class Settings(BaseSettings):
         description="Resend API key. Required in staging/production to send OTP mail.",
     )
     resend_from: str = Field(
-        default="",
-        description='Verified sender, e.g. "Multivate <onboarding@resend.dev>" or noreply@your-domain.com.',
+        default="Multivate <info@multivate.com.ng>",
+        description='Verified sender, e.g. "Multivate <info@multivate.com.ng>".',
     )
     mail_from: str = Field(
-        default="Multivate <noreply@localhost>",
+        default="Multivate <info@multivate.com.ng>",
         validation_alias=AliasChoices("MAIL_FROM", "SMTP_FROM"),
         description="Fallback From / mailto identity when RESEND_FROM is empty (local dev).",
     )
@@ -63,8 +62,24 @@ class Settings(BaseSettings):
         description="Footer line in OTP HTML emails.",
     )
     mail_support_url: str = Field(
-        default="",
-        description="Optional https:// or mailto: link for “Contact us” in OTP emails; defaults to mailto: parsed from MAIL_FROM.",
+        default="mailto:info@multivate.com.ng",
+        description="Optional https:// or mailto: link for “Contact us” in OTP emails.",
+    )
+
+    # Bank transfer (shown to students during enrollment checkout)
+    bank_name: str = Field(default="Wema Bank")
+    bank_account_name: str = Field(default="Multivate Technological Services and Consultancy Limited")
+    bank_account_number: str = Field(default="0125918288")
+    bank_transfer_currency: str = Field(default="NGN", min_length=3, max_length=3)
+
+    # Local media storage (non-secret paths — swap to S3/R2 later)
+    media_root: str = Field(
+        default="media",
+        description="Directory under backend/ for uploaded course thumbnails and videos.",
+    )
+    media_stream_token_minutes: int = Field(
+        default=120,
+        description="Signed stream token lifetime for protected lesson videos.",
     )
 
     @model_validator(mode="after")

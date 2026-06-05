@@ -55,8 +55,8 @@ export function DashboardSavedCart() {
               <Link href={`/courses/${line.slug}`} className="font-bold text-brand-ink hover:text-brand-primary">
                 {line.title}
               </Link>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {line.source === "live" ? t("badgeLive") : t("badgeCatalog")}
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-brand-secondary">
+                {t("badgeLive")}
               </p>
               {line.priceLabel ? <p className="mt-1 text-sm font-bold text-slate-800">{line.priceLabel}</p> : null}
             </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useState } from "react";
+import { formInputClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
 
 export function CreateCourseForm() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export function CreateCourseForm() {
             ? data.detail
             : Array.isArray(data?.detail)
               ? data.detail.map((x: unknown) => JSON.stringify(x)).join("; ")
-              : "Could not create course.";
+              : "We couldn't create the course. Try again.";
         setError(detail);
         return;
       }
@@ -48,7 +49,7 @@ export function CreateCourseForm() {
       router.push(`/courses/${s}`);
       router.refresh();
     } catch {
-      setError("Network error.");
+      setError("Connection problem. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -57,53 +58,44 @@ export function CreateCourseForm() {
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <p className="text-sm text-slate-600">
-        Creates a catalog row via <code className="rounded bg-slate-100 px-1">POST /api/v1/courses</code>. Slug must be
-        lowercase letters, numbers, and single hyphens (e.g. <code className="rounded bg-slate-100 px-1">fullstack-react</code>).
+        For the full experience, use Course Studio. This quick form still creates a draft course with a URL slug (lowercase letters, numbers, and hyphens only).
       </p>
       <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
-        <label className="block text-sm font-semibold text-slate-800">
-          Slug
+        <label className={formLabelClass}>
+          URL slug
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className={formInputClass}
             autoComplete="off"
+            placeholder="fullstack-react"
           />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={formLabelClass}>
           Title
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-          />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className={formInputClass} />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className={formLabelClass}>
           Description
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-          />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={formTextareaClass} />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
-          Image URL
+        <label className={formLabelClass}>
+          Cover image URL
           <input
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className={formInputClass}
             placeholder="https://…"
           />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
-          Initial lessons count (denormalized; syncs when you add lesson rows)
+        <label className={formLabelClass}>
+          Lesson count (optional)
           <input
             type="number"
             min={0}
             value={lessonsCount}
             onChange={(e) => setLessonsCount(Number(e.target.value) || 0)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className={formInputClass}
           />
         </label>
         {error ? <p className="text-sm text-red-800">{error}</p> : null}
@@ -113,7 +105,7 @@ export function CreateCourseForm() {
           onClick={() => void submit()}
           className="btn-primary-brand w-full !py-3 disabled:opacity-60"
         >
-          {busy ? "Publishing…" : "Publish course"}
+          {busy ? "Saving…" : "Save draft"}
         </button>
       </div>
     </div>

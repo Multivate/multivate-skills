@@ -18,6 +18,7 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<LoginOutcome>;
   completeMfaLogin: (mfaToken: string, code: string) => Promise<AuthUser>;
+  resendMfaLogin: (mfaToken: string) => Promise<{ mfaToken: string; emailMasked: string; devOtp?: string }>;
   registerStart: (payload: RegisterPayload) => Promise<RegisterStartResult>;
   registerVerify: (role: "student" | "instructor", signupToken: string, code: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
@@ -55,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return u;
   }, []);
 
+  const resendMfaLogin = useCallback(async (mfaToken: string) => {
+    return authApi.resendMfaLogin(mfaToken);
+  }, []);
+
   const registerStart = useCallback(async (payload: RegisterPayload) => {
     return authApi.registerStart(payload);
   }, []);
@@ -76,12 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       completeMfaLogin,
+      resendMfaLogin,
       registerStart,
       registerVerify,
       logout,
       refreshUser,
     }),
-    [user, loading, login, completeMfaLogin, registerStart, registerVerify, logout, refreshUser],
+    [user, loading, login, completeMfaLogin, resendMfaLogin, registerStart, registerVerify, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

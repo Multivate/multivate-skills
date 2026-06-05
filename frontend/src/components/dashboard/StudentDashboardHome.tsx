@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -61,12 +61,12 @@ export function StudentDashboardHome() {
         const data = await res.json().catch(() => null);
         if (cancelled) return;
         if (res.status === 401) {
-          setError("Session expired — sign in again.");
+          setError("Your session expired. Please sign in again.");
           setItems([]);
           return;
         }
         if (!res.ok) {
-          setError(typeof data?.detail === "string" ? data.detail : "Could not load courses.");
+          setError(typeof data?.detail === "string" ? data.detail : "We couldn't load your courses.");
           setItems([]);
           return;
         }
@@ -74,7 +74,7 @@ export function StudentDashboardHome() {
         setItems(Array.isArray(data) ? (data as MyCourseItem[]) : []);
       } catch {
         if (!cancelled) {
-          setError("Network error.");
+          setError("Connection problem. Please try again.");
           setItems([]);
         }
       }
@@ -118,7 +118,7 @@ export function StudentDashboardHome() {
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 px-4 py-3 shadow-sm sm:px-5">
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          <span className="font-semibold text-brand-ink dark:text-slate-100">{tProfile("bannerTitle")}</span> — {tProfile("bannerBody")}
+          <span className="font-semibold text-brand-ink dark:text-slate-100">{tProfile("bannerTitle")}</span>. {tProfile("bannerBody")}
         </p>
       </div>
       <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -174,7 +174,7 @@ export function StudentDashboardHome() {
                       {row.instructor_name?.trim() ? row.instructor_name : tRel("unassigned")}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">
-                      {row.instructor_email?.trim() ? row.instructor_email : "—"}
+                      {row.instructor_email?.trim() ? row.instructor_email : "-"}
                     </td>
                   </tr>
                 ))}
@@ -208,12 +208,11 @@ export function StudentDashboardHome() {
                 className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm transition hover:border-slate-300 hover:shadow-md"
               >
                 <div className="relative aspect-[16/10] w-full bg-slate-100">
-                  <Image
+                  <CourseThumbnail
                     src={row.image_url}
                     alt={row.image_alt}
-                    fill
-                    className="object-cover transition duration-300 group-hover:scale-[1.02]"
                     sizes="(min-width: 1536px) 22vw, (min-width: 640px) 45vw, 100vw"
+                    className="object-cover transition duration-300 group-hover:scale-[1.02]"
                   />
                   <span
                     className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${

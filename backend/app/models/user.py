@@ -26,6 +26,8 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     two_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    student_code: Mapped[str | None] = mapped_column(String(32), unique=True, index=True, nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

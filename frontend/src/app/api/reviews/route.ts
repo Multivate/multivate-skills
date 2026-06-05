@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { forwardAuthenticatedUpstream } from "@/app/api/_bffAuth";
 
 export async function POST(req: Request) {

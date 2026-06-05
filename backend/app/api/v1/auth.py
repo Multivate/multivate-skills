@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,9 @@ from app.core.deps import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
+    ForgotPasswordResetRequest,
+    ForgotPasswordStartRequest,
+    ForgotPasswordStartResponse,
     InstructorRegisterRequest,
     LoginMfaRequired,
     LoginRequest,
@@ -20,8 +23,8 @@ from app.schemas.auth import (
     StudentRegisterRequest,
     TokenPair,
 )
-from app.schemas.user import UserPublic, user_public_from_orm
-from app.services import auth_service, signup_otp_service
+from app.schemas.user import ChangePasswordRequest, UpdateProfileRequest, UserPublic, user_public_from_orm
+from app.services import auth_service, signup_otp_service, account_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -80,6 +83,19 @@ def login_mfa_verify(
     return auth_service.complete_mfa_login(db, data)
 
 
+class MfaResendBody(BaseModel):
+    mfa_token: str
+
+
+@router.post("/login/mfa/resend", response_model=LoginMfaRequired)
+def login_mfa_resend(
+    body: MfaResendBody,
+    db: Annotated[Session, Depends(get_db)],
+) -> LoginMfaRequired:
+    """Send a fresh sign-in code for an in-progress MFA session."""
+    return auth_service.resend_login_mfa(db, body.mfa_token)
+
+
 @router.post("/mfa/enable/start", status_code=204)
 def mfa_enable_start(
     db: Annotated[Session, Depends(get_db)],
@@ -124,3 +140,46 @@ def refresh_session(
 @router.get("/me", response_model=UserPublic)
 def read_me(current: Annotated[User, Depends(get_current_user)]) -> UserPublic:
     return user_public_from_orm(current)
+
+
+@router.patch("/me", response_model=UserPublic)
+def update_me(
+    payload: UpdateProfileRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> UserPublic:
+    return account_service.update_profile(db, user, payload)
+
+
+@router.post("/me/avatar", response_model=UserPublic)
+async def upload_avatar(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    file: UploadFile = File(...),
+) -> UserPublic:
+    return await account_service.upload_avatar(db, user, file)
+
+
+@router.post("/change-password", status_code=204)
+def change_password(
+    payload: ChangePasswordRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    account_service.change_password(db, user, payload)
+
+
+@router.post("/forgot-password/start", response_model=ForgotPasswordStartResponse)
+def forgot_password_start(
+    payload: ForgotPasswordStartRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> ForgotPasswordStartResponse:
+    return account_service.start_forgot_password(db, payload)
+
+
+@router.post("/forgot-password/reset", status_code=204)
+def forgot_password_reset(
+    payload: ForgotPasswordResetRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> None:
+    account_service.reset_forgot_password(db, payload)

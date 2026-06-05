@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from jose import JWTError
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app.models.instructor_teaching_profile import InstructorTeachingProfile
 from app.models.role import UserRole
@@ -30,6 +30,7 @@ from app.core.config import get_settings
 from app.services import instructor_profile_service
 from app.services import learning_service
 from app.services import mfa_service
+from app.services.mail_service import EmailDeliveryError
 
 
 def _tokens_for_user(user: User) -> TokenPair:
@@ -66,7 +67,10 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequir
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
     _require_profile_for_session(db, user)
     if user.two_factor_enabled:
-        mfa_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
+        try:
+            mfa_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
+        except EmailDeliveryError as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
         settings = get_settings()
         include_dev_otp = settings.environment == "development" and bool(dev_plain)
         return LoginMfaRequired(
@@ -85,6 +89,37 @@ def complete_mfa_login(db: Session, data: MfaVerifyRequest) -> AuthResponse:
     return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
 
 
+def resend_login_mfa(db: Session, mfa_token: str) -> LoginMfaRequired:
+    from jose import JWTError
+
+    from app.core.security import decode_mfa_pending_token
+
+    try:
+        user_id, _ = decode_mfa_pending_token(mfa_token)
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your sign-in session expired. Sign in again.",
+        ) from exc
+    user = db.get(User, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sign in again to request a new code.",
+        )
+    try:
+        new_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    settings = get_settings()
+    include_dev_otp = settings.environment == "development" and bool(dev_plain)
+    return LoginMfaRequired(
+        mfa_token=new_token,
+        email_masked=masked,
+        dev_otp=dev_plain if include_dev_otp else None,
+    )
+
+
 def start_mfa_enable(db: Session, user: User) -> None:
     mfa_service.start_enable_2fa(db, user)
 
@@ -98,7 +133,22 @@ def disable_mfa(db: Session, user: User, data: MfaDisableRequest) -> None:
 
 
 def get_user_by_id(db: Session, user_id: UUID) -> User | None:
-    return db.get(User, user_id)
+    return db.execute(
+        select(User)
+        .options(
+            load_only(
+                User.id,
+                User.name,
+                User.email,
+                User.role,
+                User.is_active,
+                User.two_factor_enabled,
+                User.student_code,
+                User.avatar_url,
+            )
+        )
+        .where(User.id == user_id)
+    ).scalar_one_or_none()
 
 
 def refresh_tokens_for_user(db: Session, refresh_token: str) -> TokenPair:

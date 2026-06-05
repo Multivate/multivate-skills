@@ -1,4 +1,4 @@
-export type CartSource = "live" | "catalog";
+export type CartSource = "live";
 
 export type CartLine = {
   slug: string;
@@ -8,4 +8,4 @@ export type CartLine = {
   source: CartSource;
 };
 
-export const CART_STORAGE_KEY = "multivate_cart_v1";
+export const CART_STORAGE_KEY = "multivate_cart_v2";

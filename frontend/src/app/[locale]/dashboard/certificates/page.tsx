@@ -33,13 +33,13 @@ export default function DashboardCertificatesPage() {
     const cData = await cRes.json().catch(() => null);
     const kData = await kRes.json().catch(() => null);
     if (!cRes.ok) {
-      setError(typeof cData?.detail === "string" ? cData.detail : "Could not load courses.");
+      setError(typeof cData?.detail === "string" ? cData.detail : "We couldn't load your courses.");
       setCourses([]);
       setCerts([]);
       return;
     }
     if (!kRes.ok) {
-      setError(typeof kData?.detail === "string" ? kData.detail : "Could not load certificates.");
+      setError(typeof kData?.detail === "string" ? kData.detail : "We couldn't load your certificates.");
       setCourses(Array.isArray(cData) ? cData : []);
       setCerts([]);
       return;
@@ -66,13 +66,13 @@ export default function DashboardCertificatesPage() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setClaimMsg(typeof data?.detail === "string" ? data.detail : "Could not issue certificate.");
+        setClaimMsg(typeof data?.detail === "string" ? data.detail : "We couldn't issue the certificate.");
         return;
       }
       setClaimMsg("Certificate issued. You can share your credential code with employers or schools.");
       await load();
     } catch {
-      setClaimMsg("Network error.");
+      setClaimMsg("Connection problem. Please try again.");
     } finally {
       setClaiming(null);
     }

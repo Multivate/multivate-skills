@@ -22,4 +22,4 @@ class PaymentOut(BaseModel):
 class PaymentCreate(BaseModel):
     course_slug: str = Field(min_length=1, max_length=128)
     amount_cents: int = Field(ge=0)
-    currency: str = Field(default="USD", min_length=3, max_length=3)
+    currency: str = Field(default="NGN", min_length=3, max_length=3)

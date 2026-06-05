@@ -7,6 +7,8 @@ from sqlalchemy import DateTime, ForeignKey, Integer, Uuid, func, UniqueConstrai
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
+from app.models.enrollment_status import EnrollmentStatus
+from app.models.enum_column import value_string_enum
 
 
 class Enrollment(Base):
@@ -28,6 +30,14 @@ class Enrollment(Base):
     )
     lesson_done: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     progress_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[EnrollmentStatus] = mapped_column(
+        value_string_enum(EnrollmentStatus),
+        nullable=False,
+        default=EnrollmentStatus.ENROLLED,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

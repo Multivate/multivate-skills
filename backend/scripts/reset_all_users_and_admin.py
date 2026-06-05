@@ -40,7 +40,14 @@ from app.models.user import User
 
 # ensure_dev_account lives in this directory; import after sys.path fix above.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ensure_dev_account import upsert_dev_admin
+from ensure_dev_account import main as ensure_admin_main  # noqa: E402
+
+
+def upsert_dev_admin(db):
+    from app.services.admin_bootstrap import ensure_platform_admin
+
+    result = ensure_platform_admin(db, sync_password=True)
+    return f"{result.upper()} admin@multivate.com.ng role=admin"
 
 
 def _require_confirm() -> None:

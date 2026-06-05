@@ -1,16 +1,25 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_roles
 from app.models.role import UserRole
 from app.models.user import User
-from app.schemas.review import ReviewCreate, ReviewOut
+from app.schemas.review import PublicReviewOut, ReviewCreate, ReviewOut
 from app.services import review_service
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
+
+
+@router.get("/public", response_model=list[PublicReviewOut])
+def list_public_reviews(
+    db: Annotated[Session, Depends(get_db)],
+    limit: Annotated[int, Query(ge=1, le=24)] = 12,
+) -> list[PublicReviewOut]:
+    """Recent learner reviews with comments on published courses (homepage)."""
+    return review_service.list_public_testimonials(db, limit=limit)
 
 
 @router.post("", response_model=ReviewOut)

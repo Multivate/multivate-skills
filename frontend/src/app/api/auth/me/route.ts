@@ -1,74 +1,10 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import { fetchInternal, handleProxyError } from "@/lib/internal-api";
-import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
-
-const secure = process.env.NODE_ENV === "production";
+import { forwardAuthenticatedUpstream } from "@/app/api/_bffAuth";
 
 export async function GET() {
-  try {
-    const cookieStore = await cookies();
-    let access = cookieStore.get("access_token")?.value;
-    const refreshToken = cookieStore.get("refresh_token")?.value;
+  return forwardAuthenticatedUpstream("/api/v1/auth/me", { method: "GET" });
+}
 
-    if (!access && !refreshToken) {
-      return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-    }
-
-    let rotated: { access: string; refresh: string } | null = null;
-
-    const refreshPair = async (): Promise<boolean> => {
-      if (!refreshToken) return false;
-      const r = await fetchInternal("/api/v1/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
-      const body = await r.json().catch(() => ({}));
-      if (!r.ok) return false;
-      const a = body.access_token;
-      const rf = body.refresh_token;
-      if (typeof a !== "string" || typeof rf !== "string") return false;
-      rotated = { access: a, refresh: rf };
-      access = a;
-      return true;
-    };
-
-    const callMe = (token: string) =>
-      fetchInternal("/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-
-    if (!access) {
-      if (!(await refreshPair())) {
-        const res = NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-        clearAuthCookies(res, secure);
-        return res;
-      }
-    }
-
-    let upstream = await callMe(access!);
-    if (upstream.status === 401) {
-      if (!(await refreshPair())) {
-        const data = await upstream.json().catch(() => ({}));
-        const res = NextResponse.json(data, { status: upstream.status });
-        clearAuthCookies(res, secure);
-        return res;
-      }
-      upstream = await callMe(access!);
-    }
-
-    const data = await upstream.json().catch(() => ({}));
-    const res = NextResponse.json(data, { status: upstream.status });
-    const rotatedTokens = rotated as { access: string; refresh: string } | null;
-    if (upstream.ok && rotatedTokens) {
-      setAuthCookies(res, rotatedTokens.access, rotatedTokens.refresh, secure);
-    } else if (upstream.status === 401) {
-      clearAuthCookies(res, secure);
-    }
-    return res;
-  } catch (e) {
-    return handleProxyError(e);
-  }
+export async function PATCH(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  return forwardAuthenticatedUpstream("/api/v1/auth/me", { method: "PATCH", jsonBody: body });
 }

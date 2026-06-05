@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 import { fetchInternal, handleProxyError } from "@/lib/internal-api";
 

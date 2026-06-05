@@ -16,8 +16,8 @@ import {
 export const instructorNav: { href: string; id: string; icon: LucideIcon }[] = [
   { href: "/dashboard", id: "home", icon: LayoutDashboard },
   { href: "/dashboard/courses", id: "myCourses", icon: BookOpen },
-  { href: "/dashboard/instructor/create-course", id: "createCourse", icon: PlusCircle },
-  { href: "/dashboard/instructor/content-upload", id: "contentUpload", icon: Upload },
+  { href: "/dashboard/instructor/studio", id: "courseStudio", icon: PlusCircle },
+  { href: "/dashboard/instructor/create-course", id: "createCourse", icon: Upload },
   { href: "/dashboard/instructor/students", id: "students", icon: Users },
   { href: "/dashboard/instructor/analytics", id: "analytics", icon: BarChart3 },
   { href: "/dashboard/instructor/earnings", id: "earnings", icon: Wallet },

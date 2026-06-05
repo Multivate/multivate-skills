@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.models.enrollment import Enrollment
 from app.models.payment import Payment, PaymentStatus
 from app.models.role import UserRole
@@ -29,11 +30,12 @@ def list_my_payments(db: Session, user_id: UUID) -> list[PaymentOut]:
 
 def create_payment(db: Session, user_id: UUID, payload: PaymentCreate) -> PaymentOut:
     course = course_service.get_course_or_404(db, payload.course_slug)
+    currency = get_settings().bank_transfer_currency.upper()
     row = Payment(
         user_id=user_id,
         course_id=course.id,
         amount_cents=payload.amount_cents,
-        currency=payload.currency.upper(),
+        currency=currency,
         status=PaymentStatus.PENDING,
     )
     db.add(row)
@@ -59,7 +61,7 @@ def checkout_and_enroll(db: Session, user: User, payload: PaymentCreate) -> Paym
         user_id=user.id,
         course_id=course.id,
         amount_cents=payload.amount_cents,
-        currency=payload.currency.upper(),
+        currency=get_settings().bank_transfer_currency.upper(),
         status=PaymentStatus.COMPLETED,
         external_ref="in_app_checkout_v1",
     )

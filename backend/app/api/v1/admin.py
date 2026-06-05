@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -6,13 +7,16 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import require_roles
+from app.models.payment import PaymentStatus
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.analytics import AdminDashboardOut, PaymentAdminRow, RecentEnrollmentRow
+from app.schemas.bank_transfer import AdminPaymentApproveIn, AdminPaymentRejectIn, PaymentVerifyOut, StudentPaymentOut
 from app.schemas.instructor_profile import InstructorTeachingProfileAdminRow
+from app.schemas.studio import AdminCourseRejectIn, CourseStudioBasicsOut, StudioCourseListItem
 from app.schemas.student_profile import StudentLearningProfileAdminRow
 from app.schemas.user import UserPublic, user_public_from_orm
-from app.services import analytics_service, instructor_profile_service, learning_service
+from app.services import analytics_service, bank_transfer_service, course_studio_service, instructor_profile_service, learning_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -34,8 +38,44 @@ def list_admin_enrollments(
     return analytics_service.admin_enrollments_list(db, limit=limit)
 
 
-@router.get("/payments", response_model=list[PaymentAdminRow])
+@router.get("/payments", response_model=list[StudentPaymentOut])
 def list_admin_payments(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    status_filter: PaymentStatus | None = Query(None, alias="status"),
+    search: str | None = Query(None, max_length=128),
+) -> list[StudentPaymentOut]:
+    return bank_transfer_service.list_admin_payments(
+        db, status_filter=status_filter, search=search, skip=skip, limit=limit
+    )
+
+
+@router.patch("/payments/{payment_id}/approve", response_model=PaymentVerifyOut)
+def approve_payment(
+    payment_id: UUID,
+    body: AdminPaymentApproveIn,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> PaymentVerifyOut:
+    return bank_transfer_service.admin_approve_payment(
+        db, admin, payment_id, body.transaction_reference
+    )
+
+
+@router.patch("/payments/{payment_id}/reject", response_model=PaymentVerifyOut)
+def reject_payment(
+    payment_id: UUID,
+    body: AdminPaymentRejectIn,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> PaymentVerifyOut:
+    return bank_transfer_service.admin_reject_payment(db, admin, payment_id, body.reason)
+
+
+@router.get("/payments/legacy", response_model=list[PaymentAdminRow])
+def list_admin_payments_legacy(
     db: Annotated[Session, Depends(get_db)],
     _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
     skip: int = Query(0, ge=0),
@@ -74,3 +114,30 @@ def list_admin_users(
     stmt = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
     rows = list(db.scalars(stmt).unique().all())
     return [user_public_from_orm(u) for u in rows]
+
+
+@router.get("/courses/pending", response_model=list[StudioCourseListItem])
+def list_pending_courses(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> list[StudioCourseListItem]:
+    return course_studio_service.admin_list_pending(db)
+
+
+@router.post("/courses/{slug}/approve", response_model=CourseStudioBasicsOut)
+def approve_course(
+    slug: str,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> CourseStudioBasicsOut:
+    return course_studio_service.admin_approve_course(db, slug, admin)
+
+
+@router.post("/courses/{slug}/reject", response_model=CourseStudioBasicsOut)
+def reject_course(
+    slug: str,
+    body: AdminCourseRejectIn,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> CourseStudioBasicsOut:
+    return course_studio_service.admin_reject_course(db, slug, body.reason, admin)

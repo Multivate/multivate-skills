@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
-import { CreateCourseForm } from "@/components/dashboard/CreateCourseForm";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
 
 type StudentRow = {
@@ -38,7 +37,7 @@ type ReviewRow = {
   created_at: string;
 };
 
-function money(cents: number, currency = "USD") {
+function money(cents: number, currency = "NGN") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
 }
 
@@ -60,7 +59,7 @@ function InstructorContentUpload() {
         const data = await res.json().catch(() => null);
         if (cancelled) return;
         if (!res.ok) {
-          setErr(typeof data?.detail === "string" ? data.detail : "Could not load your courses.");
+          setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load your courses.");
           setDash(null);
           return;
         }
@@ -72,7 +71,7 @@ function InstructorContentUpload() {
           setCourseSlug((prev) => (prev ? prev : courses[0].slug));
         }
       } catch {
-        if (!cancelled) setErr("Network error.");
+        if (!cancelled) setErr("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -100,15 +99,15 @@ function InstructorContentUpload() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setSaveMsg(typeof data?.detail === "string" ? data.detail : "Could not create lesson.");
+        setSaveMsg(typeof data?.detail === "string" ? data.detail : "We couldn't save the lesson. Try again.");
         return;
       }
-      setSaveMsg("Lesson created. Lesson list on the public course page updates from the API.");
+      setSaveMsg("Lesson saved. It will show on the public course page.");
       setTitle("");
       setBody("");
       setDuration(0);
     } catch {
-      setSaveMsg("Network error.");
+      setSaveMsg("Connection problem. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -120,7 +119,7 @@ function InstructorContentUpload() {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
         <p className="text-sm leading-relaxed text-slate-600">
-          Publish a course first, then you can attach lessons and media from this workspace.
+          Create a course first, then add lessons and media here.
         </p>
         <Link
           href="/dashboard/instructor/create-course"
@@ -208,13 +207,13 @@ export function InstructorSectionContent({ section }: { section: string }) {
         const data = await res.json().catch(() => null);
         if (cancelled) return;
         if (!res.ok) {
-          setErr(typeof data?.detail === "string" ? data.detail : "Could not load students.");
+          setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load students.");
           setStudents([]);
           return;
         }
         setStudents(Array.isArray(data) ? data : []);
       } catch {
-        if (!cancelled) setErr("Network error.");
+        if (!cancelled) setErr("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -231,13 +230,13 @@ export function InstructorSectionContent({ section }: { section: string }) {
         const data = await res.json().catch(() => null);
         if (cancelled) return;
         if (!res.ok) {
-          setErr(typeof data?.detail === "string" ? data.detail : "Could not load instructor data.");
+          setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load your stats.");
           setDash(null);
           return;
         }
         setDash(data as InstructorDashboard);
       } catch {
-        if (!cancelled) setErr("Network error.");
+        if (!cancelled) setErr("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -254,14 +253,14 @@ export function InstructorSectionContent({ section }: { section: string }) {
         const data = await res.json().catch(() => null);
         if (cancelled) return;
         if (!res.ok) {
-          setErr(typeof data?.detail === "string" ? data.detail : "Could not load reviews.");
+          setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load reviews.");
           setReviews([]);
           return;
         }
         setErr(null);
         setReviews(Array.isArray(data) ? data : []);
       } catch {
-        if (!cancelled) setErr("Network error.");
+        if (!cancelled) setErr("Connection problem. Please try again.");
       }
     })();
     return () => {
@@ -270,7 +269,14 @@ export function InstructorSectionContent({ section }: { section: string }) {
   }, [section]);
 
   if (section === "create-course") {
-    return <CreateCourseForm />;
+    return (
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center shadow-sm">
+        <p className="text-sm text-slate-600">Course creation now lives in the full studio experience.</p>
+        <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand mt-4 inline-flex !min-w-0 text-sm">
+          Open course studio
+        </Link>
+      </div>
+    );
   }
 
   if (section === "content-upload") {
@@ -408,7 +414,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
           </p>
         </div>
         <Link href="/dashboard/payments" className="inline-flex text-sm font-semibold text-instructor-purple hover:underline">
-          Open billing & payments →
+          Open billing and payments
         </Link>
       </div>
     );
@@ -421,7 +427,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
       return (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/50">
           <p className="text-sm leading-relaxed text-slate-600">
-            Learners can leave a rating after they enroll. Share your courses widely — feedback will show up here.
+            Learners can leave a rating after they enroll. Share your courses and feedback will show up here.
           </p>
           <Link href="/dashboard/instructor/analytics" className="mt-4 inline-block text-sm font-bold text-instructor-purple hover:underline">
             View analytics
@@ -455,7 +461,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
                   <p className="text-xs text-slate-500">{r.reviewer_email}</p>
                 </td>
                 <td className="px-4 py-3 font-bold tabular-nums text-brand-ink">{r.rating} / 5</td>
-                <td className="max-w-xs px-4 py-3 text-slate-700">{r.comment ? r.comment : "—"}</td>
+                <td className="max-w-xs px-4 py-3 text-slate-700">{r.comment ? r.comment : "-"}</td>
               </tr>
             ))}
           </tbody>

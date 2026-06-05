@@ -67,7 +67,7 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
     revenue_completed_cents = int(
         db.scalar(
             select(func.coalesce(func.sum(Payment.amount_cents), 0)).where(
-                Payment.status == PaymentStatus.COMPLETED
+                Payment.status.in_([PaymentStatus.COMPLETED, PaymentStatus.PAID])
             )
         )
         or 0
@@ -169,7 +169,7 @@ def instructor_dashboard(db: Session, instructor_id: UUID) -> InstructorDashboar
     revenue_completed_cents = int(
         db.scalar(
             select(func.coalesce(func.sum(Payment.amount_cents), 0)).where(
-                Payment.status == PaymentStatus.COMPLETED,
+                Payment.status.in_([PaymentStatus.COMPLETED, PaymentStatus.PAID]),
                 Payment.course_id.in_(course_id_sq),
             )
         )

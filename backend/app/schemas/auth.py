@@ -74,3 +74,19 @@ class RegisterStartResponse(BaseModel):
 class RegisterVerifyRequest(BaseModel):
     signup_token: str
     code: str = Field(..., min_length=1, max_length=32)
+
+
+class ForgotPasswordStartRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordStartResponse(BaseModel):
+    reset_token: str
+    email_masked: str
+    dev_otp: str | None = None
+
+
+class ForgotPasswordResetRequest(BaseModel):
+    reset_token: str
+    code: str = Field(..., min_length=1, max_length=32)
+    new_password: str = Field(..., min_length=8, max_length=128)

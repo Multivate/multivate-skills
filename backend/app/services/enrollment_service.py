@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.enrollment import Enrollment
+from app.models.enrollment_status import EnrollmentStatus
 from app.models.role import UserRole
 from app.models.user import User
 from app.services import course_service
@@ -17,12 +18,30 @@ def enroll_by_slug(db: Session, user: User, course_slug: str) -> None:
             detail="Only student accounts can enroll in courses as learners.",
         )
     course = course_service.get_course_or_404(db, course_slug)
+    if not course.is_free and course.price_cents > 0:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="This course requires payment. Use enrollment start with bank transfer.",
+        )
     existing = db.execute(
         select(Enrollment).where(Enrollment.user_id == user.id, Enrollment.course_id == course.id)
     ).scalar_one_or_none()
-    if existing:
+    if existing and existing.status == EnrollmentStatus.ENROLLED:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled")
-    db.add(Enrollment(user_id=user.id, course_id=course.id, lesson_done=0, progress_pct=0))
+    if existing:
+        existing.status = EnrollmentStatus.ENROLLED
+        db.add(existing)
+        db.commit()
+        return
+    db.add(
+        Enrollment(
+            user_id=user.id,
+            course_id=course.id,
+            status=EnrollmentStatus.ENROLLED,
+            lesson_done=0,
+            progress_pct=0,
+        )
+    )
     db.commit()
 
 

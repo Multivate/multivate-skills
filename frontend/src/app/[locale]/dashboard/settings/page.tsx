@@ -3,14 +3,16 @@
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PasswordField } from "@/components/auth/PasswordField";
 import { useAuth } from "@/contexts/auth-context";
+import { readApiError } from "@/lib/api-error";
 import type { AuthUser } from "@/types/user";
 
 const PREFS_EMAIL = "multivate_prefs_product_email";
 const PREFS_REMINDERS = "multivate_prefs_course_reminders";
 
-type Section = "account" | "preferences" | "billing" | "session";
+type Section = "account" | "security" | "preferences" | "billing" | "session";
 
 export default function DashboardSettingsPage() {
   const t = useTranslations("dashboard.settings");
@@ -23,6 +25,16 @@ export default function DashboardSettingsPage() {
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [reminders, setReminders] = useState(true);
   const [prefsSaved, setPrefsSaved] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [profileErr, setProfileErr] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
+  const [passwordErr, setPasswordErr] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -33,34 +45,16 @@ export default function DashboardSettingsPage() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    if (!user) {
       setMeLoading(true);
-      setMeErr(null);
-      try {
-        const res = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
-        const data = await res.json().catch(() => null);
-        if (cancelled) return;
-        if (!res.ok) {
-          setMeErr(typeof data?.detail === "string" ? data.detail : "Could not load profile.");
-          setMe(null);
-          return;
-        }
-        if (data && typeof data === "object" && "email" in data && "role" in data) {
-          const u = data as AuthUser;
-          setMe(u);
-          void refreshUser();
-        }
-      } catch {
-        if (!cancelled) setMeErr("Could not load profile.");
-      } finally {
-        if (!cancelled) setMeLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshUser]);
+      void refreshUser().finally(() => setMeLoading(false));
+      return;
+    }
+    setMe(user);
+    setEditName(user.name);
+    setMeLoading(false);
+    setMeErr(null);
+  }, [user, refreshUser]);
 
   const display = me ?? user;
 
@@ -77,6 +71,7 @@ export default function DashboardSettingsPage() {
       {(
         [
           ["account", t("navAccount")],
+          ["security", t("navSecurity")],
           ["preferences", t("navPreferences")],
           ["billing", t("navBilling")],
           ["session", t("navSession")],
@@ -103,6 +98,76 @@ export default function DashboardSettingsPage() {
       return iso;
     }
   };
+
+  const avatarSrc = display?.avatar_url
+    ? display.avatar_url.startsWith("/")
+      ? display.avatar_url.replace("/api/v1/media/public/", "/api/media/public/")
+      : display.avatar_url
+    : null;
+
+  async function saveProfile() {
+    setProfileErr(null);
+    setProfileMsg(null);
+    const res = await fetch("/api/auth/me", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editName.trim() }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      setProfileErr(readApiError(body, "We couldn't update your profile."));
+      return;
+    }
+    setMe(body as AuthUser);
+    setProfileMsg(t("profileSaved"));
+    void refreshUser();
+  }
+
+  async function uploadAvatar(file: File) {
+    setAvatarBusy(true);
+    setProfileErr(null);
+    setProfileMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/auth/me/avatar", { method: "POST", credentials: "include", body: fd });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setProfileErr(readApiError(body, "We couldn't upload your photo."));
+        return;
+      }
+      setMe(body as AuthUser);
+      setProfileMsg(t("photoSaved"));
+      void refreshUser();
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function savePassword() {
+    setPasswordErr(null);
+    setPasswordMsg(null);
+    if (newPassword !== confirmPassword) {
+      setPasswordErr(t("passwordMismatch"));
+      return;
+    }
+    const res = await fetch("/api/auth/change-password", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    if (res.status === 204) {
+      setPasswordMsg(t("passwordSaved"));
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      return;
+    }
+    const body = await res.json().catch(() => null);
+    setPasswordErr(readApiError(body, "We couldn't update your password."));
+  }
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -157,6 +222,100 @@ export default function DashboardSettingsPage() {
               ) : !meLoading ? (
                 <p className="mt-6 text-sm text-slate-600">Not signed in.</p>
               ) : null}
+            </section>
+          )}
+
+          {section === "security" && (
+            <section className="space-y-6">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800/90 dark:bg-slate-900">
+                <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">{t("securityTitle")}</h2>
+                <p className="mt-1 text-sm text-slate-600">{t("securitySubtitle")}</p>
+                {profileErr ? <p className="mt-4 text-sm font-medium text-red-800">{profileErr}</p> : null}
+                {profileMsg ? <p className="mt-4 text-sm font-medium text-emerald-800">{profileMsg}</p> : null}
+                <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 ring-2 ring-brand-secondary/30">
+                    {avatarSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-brand-secondary">
+                        {(display?.name ?? "?").slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-brand-ink">{t("photoLabel")}</p>
+                    <p className="mt-1 text-xs text-slate-500">{t("photoHint")}</p>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void uploadAvatar(f);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={avatarBusy}
+                      onClick={() => fileRef.current?.click()}
+                      className="mt-3 rounded-xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-sm font-semibold text-brand-ink transition hover:bg-brand-secondary/20 active:scale-[0.98]"
+                    >
+                      {avatarBusy ? t("uploadingPhoto") : t("uploadPhoto")}
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-8">
+                  <label htmlFor="settings-name" className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    {t("editNameLabel")}
+                  </label>
+                  <input
+                    id="settings-name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="mt-2 w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none ring-brand-secondary/30 focus:border-brand-secondary focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveProfile()}
+                    className="btn-primary-brand mt-4 !px-5 !py-2.5 text-sm"
+                  >
+                    {t("saveProfile")}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800/90 dark:bg-slate-900">
+                {passwordErr ? <p className="mb-4 text-sm font-medium text-red-800">{passwordErr}</p> : null}
+                {passwordMsg ? <p className="mb-4 text-sm font-medium text-emerald-800">{passwordMsg}</p> : null}
+                <div className="space-y-4 max-w-md">
+                  <PasswordField
+                    label={t("currentPassword")}
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={setCurrentPassword}
+                    placeholder="Current password"
+                  />
+                  <PasswordField
+                    label={t("newPassword")}
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    placeholder={t("newPasswordPh")}
+                  />
+                  <PasswordField
+                    label={t("confirmPassword")}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    placeholder={t("newPasswordPh")}
+                  />
+                  <button type="button" onClick={() => void savePassword()} className="btn-primary-brand !px-5 !py-2.5 text-sm">
+                    {t("changePassword")}
+                  </button>
+                </div>
+              </div>
             </section>
           )}
 

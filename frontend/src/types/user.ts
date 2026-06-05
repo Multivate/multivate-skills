@@ -7,6 +7,7 @@ export type AuthUser = {
   role: UserRole;
   is_active: boolean;
   two_factor_enabled?: boolean;
+  avatar_url?: string | null;
   created_at: string;
 };
 

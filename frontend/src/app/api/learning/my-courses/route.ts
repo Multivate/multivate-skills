@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+﻿import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getInternalApiUrl } from "@/lib/internal-api";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
@@ -72,7 +72,7 @@ export async function GET() {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Server error";
     if (message.includes("INTERNAL_API_URL")) {
-      return NextResponse.json({ detail: "API proxy is not configured" }, { status: 500 });
+      return NextResponse.json({ detail: "We couldn't reach the server. Please try again." }, { status: 500 });
     }
     return NextResponse.json({ detail: message }, { status: 500 });
   }

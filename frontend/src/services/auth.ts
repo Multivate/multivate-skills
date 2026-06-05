@@ -169,6 +169,29 @@ export async function completeMfaLogin(mfaToken: string, code: string): Promise<
   return data.user as AuthUser;
 }
 
+export async function resendMfaLogin(mfaToken: string): Promise<{ mfaToken: string; emailMasked: string; devOtp?: string }> {
+  const res = await fetch("/api/auth/login/mfa/resend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ mfa_token: mfaToken }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(formatError(data, "We couldn't send a new code"));
+  }
+  const token = typeof data.mfa_token === "string" ? data.mfa_token : "";
+  if (!token) {
+    throw new Error("Invalid response from server");
+  }
+  const devOtp = typeof data.dev_otp === "string" && /^\d{6}$/.test(data.dev_otp) ? data.dev_otp : undefined;
+  return {
+    mfaToken: token,
+    emailMasked: typeof data.email_masked === "string" ? data.email_masked : "",
+    ...(devOtp ? { devOtp } : {}),
+  };
+}
+
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const res = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
   if (res.status === 401) return null;

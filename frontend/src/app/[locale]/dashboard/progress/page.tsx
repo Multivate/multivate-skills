@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
+import { formInputClass, formLabelClass } from "@/lib/form-styles";
 
 type MyCourseItem = {
   slug: string;
@@ -23,7 +24,7 @@ export default function DashboardProgressPage() {
     const res = await fetch("/api/learning/my-courses", { credentials: "include", cache: "no-store" });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setError(typeof data?.detail === "string" ? data.detail : "Could not load.");
+      setError(typeof data?.detail === "string" ? data.detail : "We couldn't load your progress.");
       setItems([]);
       return;
     }
@@ -99,7 +100,7 @@ export default function DashboardProgressPage() {
                 ) : null}
               </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className={`${formLabelClass} text-xs`}>
                   Lessons completed
                   <input
                     type="number"
@@ -107,10 +108,10 @@ export default function DashboardProgressPage() {
                     max={c.lessons}
                     defaultValue={c.lesson_done}
                     id={`ld-${c.slug}`}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className={formInputClass}
                   />
                 </label>
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className={`${formLabelClass} text-xs`}>
                   Progress (%)
                   <input
                     type="number"
@@ -118,7 +119,7 @@ export default function DashboardProgressPage() {
                     max={100}
                     defaultValue={c.progress_pct}
                     id={`pct-${c.slug}`}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className={formInputClass}
                   />
                 </label>
               </div>

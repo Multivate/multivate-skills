@@ -21,3 +21,13 @@ class ReviewOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": False}
+
+
+class PublicReviewOut(BaseModel):
+    id: UUID
+    course_slug: str
+    course_title: str
+    reviewer_display_name: str
+    rating: int
+    comment: str
+    created_at: datetime

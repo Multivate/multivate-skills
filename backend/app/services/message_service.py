@@ -12,6 +12,9 @@ from app.models.user import User
 from app.schemas.message import MessageCreate, MessageOut
 
 
+from app.services import notification_service
+
+
 def send_message(db: Session, sender_id: UUID, payload: MessageCreate) -> MessageOut:
     if payload.recipient_email.lower().strip() == "":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid recipient")
@@ -30,6 +33,14 @@ def send_message(db: Session, sender_id: UUID, payload: MessageCreate) -> Messag
     db.commit()
     db.refresh(row)
     sender = db.execute(select(User).where(User.id == sender_id)).scalar_one()
+    notification_service.create_notification(
+        db,
+        user_id=recipient.id,
+        kind="message",
+        title=f"New message from {sender.name}",
+        body=payload.subject.strip() or "You have a new message.",
+        link_href="/dashboard/messages",
+    )
     return _serialize(row, viewer_id=sender_id, correspondent=recipient)
 
 
