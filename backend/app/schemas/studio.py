@@ -18,6 +18,10 @@ class StudioCourseListItem(BaseModel):
     updated_at: datetime
 
 
+class CoverImageUrlIn(BaseModel):
+    image_url: str = Field(min_length=8, max_length=2048)
+
+
 class CourseStudioBasicsIn(BaseModel):
     slug: str | None = Field(default=None, max_length=128)
     title: str = Field(min_length=1, max_length=255)

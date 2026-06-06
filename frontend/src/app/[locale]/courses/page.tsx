@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
+import { CatalogCourseCard } from "@/components/courses/CatalogCourseCard";
 import { fetchBackendCatalog } from "@/lib/backend-courses";
-import { formatCoursePrice } from "@/lib/course-price";
 import { Link } from "@/i18n/navigation";
 
 type PageProps = {
@@ -37,8 +36,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
   const searchQ = rawSearch.trim();
 
   const t = await getTranslations({ locale, namespace: "coursesPage" });
-  const tLessons = await getTranslations({ locale, namespace: "topCourses" });
-  const tCommon = await getTranslations({ locale, namespace: "common" });
+  const tTabs = await getTranslations({ locale, namespace: "topCourses.tabs" });
 
   const courses = await fetchBackendCatalog();
   const filtered = searchQ
@@ -81,46 +79,18 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
             </div>
           ) : null}
 
-          <ul className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((c) => (
-              <li key={c.slug}>
-                <Link
-                  href={`/courses/${c.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/95 bg-white shadow-card transition hover:border-slate-300 hover:shadow-md"
-                >
-                  <div className="relative aspect-[16/10] w-full shrink-0 bg-slate-100">
-                    <CourseThumbnail
-                      src={c.image_url}
-                      alt={c.title}
-                      sizes="(min-width: 1280px) 28vw, (min-width: 640px) 45vw, 100vw"
-                      className="object-cover transition duration-300 group-hover:scale-[1.02]"
-                    />
-                  </div>
-                  <div className="flex flex-1 flex-col p-5 sm:p-6">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-brand-primary">{t("liveBadge")}</p>
-                    <h2 className="mt-1 text-base font-bold leading-snug text-slate-900 sm:text-lg">{c.title}</h2>
-                    {c.subtitle ? (
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-500">{c.subtitle}</p>
-                    ) : null}
-                    <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600">{c.description}</p>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-700">
-                        {tLessons("lessons", { count: c.lessons_count })}
-                      </p>
-                      <p className="text-sm font-extrabold text-slate-900">
-                        {formatCoursePrice(c.price_cents ?? 0, c.currency ?? "NGN", c.is_free ?? false)}
-                      </p>
-                    </div>
-                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-primary">
-                      {tCommon("viewCourse")}
-                      <span aria-hidden className="transition group-hover:translate-x-0.5">
-                        →
-                      </span>
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
+          <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {filtered.map((c) => {
+              const catKey = (c.category ?? "general").toLowerCase();
+              const categoryLabel = ["ai", "data", "cloud", "web", "design", "german", "career"].includes(catKey)
+                ? tTabs(catKey as "ai")
+                : c.category ?? undefined;
+              return (
+                <li key={c.slug}>
+                  <CatalogCourseCard course={c} layout="grid" categoryLabel={categoryLabel} />
+                </li>
+              );
+            })}
           </ul>
 
           {filtered.length === 0 ? (

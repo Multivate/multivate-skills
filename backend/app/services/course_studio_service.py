@@ -289,6 +289,39 @@ async def upload_thumbnail(db: Session, slug: str, file: UploadFile, actor: User
     return _basics_out(course)
 
 
+def _validate_external_cover_url(raw: str) -> str:
+    from urllib.parse import urlparse
+
+    url = raw.strip()
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Use a link that starts with https://")
+    host = (parsed.hostname or "").lower()
+    path = parsed.path.lower()
+    if host in {"images.unsplash.com", "img.youtube.com", "i.imgur.com", "cdn.pixabay.com"}:
+        return url
+    if re.search(r"\.(jpg|jpeg|png|webp|gif|avif)(\?|$)", path, re.I):
+        return url
+    if re.search(r"\.(jpg|jpeg|png|webp|gif|avif)(\?|$)", url, re.I):
+        return url
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Paste a direct image link (jpg, png, or webp), for example from Unsplash.",
+    )
+
+
+def set_cover_image_url(db: Session, slug: str, image_url: str, actor: User) -> CourseStudioBasicsOut:
+    course = course_service.get_course_for_management(db, slug, actor)
+    course_service.assert_can_manage_course(actor, course)
+    course.image_url = _validate_external_cover_url(image_url)
+    db.add(course)
+    _audit(db, course.id, actor.id, "cover_url_set")
+    db.commit()
+    db.refresh(course)
+    logger.info("Studio cover URL set slug=%s", slug)
+    return _basics_out(course)
+
+
 def create_section(db: Session, slug: str, payload: SectionCreateIn, actor: User) -> SectionOut:
     course = course_service.get_course_for_management(db, slug, actor)
     course_service.assert_can_manage_course(actor, course)

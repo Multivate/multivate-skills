@@ -115,6 +115,7 @@ export function CourseStudio({ initialSlug }: Props) {
   const [isFree, setIsFree] = useState(false);
   const [customSlug, setCustomSlug] = useState("");
   const [promoVideoUrl, setPromoVideoUrl] = useState("");
+  const [coverUrlInput, setCoverUrlInput] = useState("");
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
@@ -149,6 +150,7 @@ export function CourseStudio({ initialSlug }: Props) {
     setPriceCents(c.price_cents);
     setIsFree(c.is_free);
     setPromoVideoUrl(c.promo_video_url ?? "");
+    setCoverUrlInput(c.image_url?.startsWith("http") ? c.image_url : "");
     setThumbPreview(c.image_url || null);
     setError(null);
   }, []);
@@ -237,6 +239,29 @@ export function CourseStudio({ initialSlug }: Props) {
     } finally {
       setBusy(false);
       window.setTimeout(() => setUploadPct(null), 800);
+    }
+  };
+
+  const saveCoverUrl = async () => {
+    if (!slug || !coverUrlInput.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/cover-url`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: coverUrlInput.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(typeof data?.detail === "string" ? data.detail : "We couldn't use that image link.");
+        return;
+      }
+      await loadCourse(slug);
+      showToast("Cover updated");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -411,7 +436,9 @@ export function CourseStudio({ initialSlug }: Props) {
 
       {step === 1 ? (
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-sm text-slate-600">Upload a clear cover image. JPG, PNG, or WEBP, up to 6 MB.</p>
+          <p className="text-sm text-slate-600">
+            Upload a cover or paste an image link (recommended for live courses — links stay visible after server updates).
+          </p>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div
               className="group relative flex aspect-video cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-brand-accent/60 hover:bg-violet-50/40"
@@ -446,6 +473,23 @@ export function CourseStudio({ initialSlug }: Props) {
                   <p className="mt-2 text-xs font-medium text-slate-600">Uploading… {uploadPct}%</p>
                 </div>
               ) : null}
+              <label className={formLabelClass}>
+                Or paste image link
+                <input
+                  value={coverUrlInput}
+                  onChange={(e) => setCoverUrlInput(e.target.value)}
+                  placeholder="https://images.unsplash.com/…"
+                  className={formInputClass}
+                />
+              </label>
+              <button
+                type="button"
+                disabled={busy || !coverUrlInput.trim()}
+                onClick={() => void saveCoverUrl()}
+                className="btn-outline-brand w-full disabled:opacity-60"
+              >
+                Save image link
+              </button>
               <button type="button" onClick={() => setStep(2)} className="btn-primary-brand w-full">
                 Continue to curriculum
               </button>

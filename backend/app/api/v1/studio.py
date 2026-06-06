@@ -15,6 +15,7 @@ from app.schemas.studio import (
     CourseStudioBasicsIn,
     CourseStudioBasicsOut,
     CourseStudioDetailOut,
+    CoverImageUrlIn,
     LessonReorderIn,
     LessonResourceOut,
     LessonStudioIn,
@@ -83,6 +84,16 @@ async def upload_thumbnail(
     file: UploadFile = File(...),
 ) -> CourseStudioBasicsOut:
     return await course_studio_service.upload_thumbnail(db, slug, file, user)
+
+
+@router.put("/courses/{slug}/cover-url", response_model=CourseStudioBasicsOut)
+def set_cover_url(
+    slug: str,
+    payload: CoverImageUrlIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> CourseStudioBasicsOut:
+    return course_studio_service.set_cover_image_url(db, slug, payload.image_url, user)
 
 
 @router.post("/courses/{slug}/sections", response_model=SectionOut, status_code=status.HTTP_201_CREATED)
