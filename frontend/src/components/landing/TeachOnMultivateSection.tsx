@@ -33,13 +33,19 @@ export async function TeachOnMultivateSection() {
                 </div>
               </li>
             </ul>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href="/register?intent=instructor"
                 className="btn-primary-brand inline-flex items-center justify-center gap-2 !py-3 sm:w-auto"
               >
                 {t("ctaInstructor")}
                 <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.25} />
+              </Link>
+              <Link
+                href="/login?from=%2Fdashboard%2Finstructor%2Fstudio"
+                className="inline-flex items-center justify-center rounded-xl border-2 border-brand-accent/40 bg-white px-5 py-3 text-sm font-semibold text-brand-ink shadow-sm transition hover:border-brand-accent hover:bg-brand-accent/5 dark:border-brand-accent/50 dark:bg-slate-900 dark:text-slate-100"
+              >
+                {t("ctaStudio")}
               </Link>
               <Link
                 href="/courses"

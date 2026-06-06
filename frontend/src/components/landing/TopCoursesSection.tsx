@@ -10,14 +10,18 @@ import type { BackendCourse } from "@/lib/backend-courses";
 import type { CartLine } from "@/lib/cart-types";
 import { formatCourseDuration, formatCoursePrice } from "@/lib/course-price";
 
+const CARD_WIDTH_PX = 220;
+
 function CourseCard({
   course,
   tTop,
   tCommon,
+  tCart,
 }: {
   course: BackendCourse;
   tTop: ReturnType<typeof useTranslations>;
   tCommon: ReturnType<typeof useTranslations>;
+  tCart: ReturnType<typeof useTranslations>;
 }) {
   const priceLabel = formatCoursePrice(
     course.price_cents ?? 0,
@@ -33,42 +37,49 @@ function CourseCard({
   };
 
   return (
-    <article className="group relative z-10 flex min-h-[24rem] min-w-[min(100%,280px)] shrink-0 snap-center flex-col rounded-2xl border border-slate-200/95 bg-white shadow-card transition hover:-translate-y-0.5 hover:border-brand-secondary/40 hover:shadow-md sm:min-w-[260px] lg:min-w-[280px]">
-      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-2xl bg-slate-100">
+    <article className="group relative z-10 flex w-[210px] min-w-[210px] max-w-[78vw] shrink-0 snap-center flex-col overflow-hidden rounded-xl border border-slate-200/95 bg-white shadow-card transition hover:-translate-y-0.5 hover:border-brand-accent/35 hover:shadow-md sm:w-[220px] sm:min-w-[220px] sm:max-w-none">
+      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100">
         <CourseThumbnail
           src={course.image_url}
           alt={course.title}
-          sizes="(min-width: 1280px) 22vw, (min-width: 1024px) 24vw, 280px"
+          compact
+          sizes="220px"
           className="object-cover transition duration-300 group-hover:scale-[1.02]"
         />
       </div>
 
-      <div className="flex flex-1 flex-col rounded-b-2xl border-t border-slate-100 p-5 sm:p-6">
-        <h3 className="text-[0.95rem] font-bold leading-snug text-slate-900 sm:text-base lg:min-h-[2.75rem] lg:text-[1.05rem]">
-          {course.title}
-        </h3>
-        {course.subtitle ? <p className="mt-1 line-clamp-1 text-xs text-slate-500">{course.subtitle}</p> : null}
+      <div className="flex flex-col p-3.5 sm:p-4">
+        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-slate-900">{course.title}</h3>
+        {course.subtitle ? (
+          <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-slate-500">{course.subtitle}</p>
+        ) : null}
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-slate-600">
+        <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] font-medium text-slate-600">
           <span>{tTop("lessons", { count: course.lessons_count })}</span>
           <span className="text-slate-300" aria-hidden>
             ·
           </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock className="h-3 w-3 text-brand-secondary" strokeWidth={2} />
+          <span className="inline-flex items-center gap-0.5">
+            <Clock className="h-3 w-3 text-brand-accent" strokeWidth={2} />
             {formatCourseDuration(course.duration_minutes ?? 0)}
           </span>
         </div>
 
-        <p className="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600">{course.description}</p>
+        <p className="mt-2.5 text-base font-extrabold leading-none text-slate-900">{priceLabel}</p>
 
-        <p className="mt-4 text-lg font-extrabold text-slate-900">{priceLabel}</p>
-
-        <div className="mt-auto flex flex-col gap-2 pt-4">
-          <Link href={`/courses/${course.slug}`} className="btn-primary-brand w-full !py-3 text-[0.8125rem]">
+        <div className="mt-3 flex flex-col gap-1.5">
+          <Link
+            href={`/courses/${course.slug}`}
+            className="inline-flex w-full min-h-[2.25rem] items-center justify-center rounded-lg bg-brand-primary px-3 py-2 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-brand-primary-dark sm:text-sm"
+          >
             {tCommon("viewCourse")}
           </Link>
-          <AddToCartButton item={cartLine} variant="outline" className="!w-full" />
+          <AddToCartButton
+            item={cartLine}
+            variant="outline"
+            className="!min-h-[2.25rem] !w-full !rounded-lg !py-2 !text-xs !font-semibold !text-slate-800 sm:!text-sm"
+            addLabel={tCart("add")}
+          />
         </div>
       </div>
     </article>
@@ -79,6 +90,7 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
   const tTop = useTranslations("topCourses");
   const tExplore = useTranslations("landing.explore");
   const tCommon = useTranslations("common");
+  const tCart = useTranslations("cart");
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [courses, setCourses] = useState<BackendCourse[]>(initialCourses);
   const [loading, setLoading] = useState(initialCourses.length === 0);
@@ -108,7 +120,7 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
     const el = scrollerRef.current;
     if (!el) return;
     el.scrollBy({
-      left: dir * Math.max(260, el.clientWidth * 0.75),
+      left: dir * Math.max(CARD_WIDTH_PX, el.clientWidth * 0.6),
       behavior: "smooth",
     });
   }, []);
@@ -139,6 +151,8 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
     setDot(best);
   }, []);
 
+  const singleCourse = courses.length === 1;
+
   return (
     <section id="courses" className="section-y surface-section">
       <div className="container-page">
@@ -167,48 +181,62 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
           </div>
         ) : (
           <>
-            <div className="relative mt-10 overflow-visible">
-              <button
-                type="button"
-                aria-label={tTop("scrollLeft")}
-                onClick={() => scrollBy(-1)}
-                className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-secondary/40 hover:bg-brand-secondary/5 md:flex"
-              >
-                <ChevronLeft className="h-5 w-5" strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                aria-label={tTop("scrollRight")}
-                onClick={() => scrollBy(1)}
-                className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-secondary/40 hover:bg-brand-secondary/5 md:flex"
-              >
-                <ChevronRight className="h-5 w-5" strokeWidth={2} />
-              </button>
+            <div className={`relative mt-8 overflow-visible ${singleCourse ? "mx-auto max-w-[240px] sm:max-w-none" : ""}`}>
+              {!singleCourse ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label={tTop("scrollLeft")}
+                    onClick={() => scrollBy(-1)}
+                    className="absolute left-0 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
+                  >
+                    <ChevronLeft className="h-5 w-5" strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={tTop("scrollRight")}
+                    onClick={() => scrollBy(1)}
+                    className="absolute right-0 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
+                  >
+                    <ChevronRight className="h-5 w-5" strokeWidth={2} />
+                  </button>
+                </>
+              ) : null}
 
               <div
                 ref={scrollerRef}
                 onScroll={onScroll}
-                className="flex gap-4 overflow-x-auto overflow-y-visible pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory md:gap-5 md:pl-12 md:pr-12 lg:gap-6 [&::-webkit-scrollbar]:hidden"
+                className={`flex gap-3 overflow-x-auto overflow-y-visible pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory sm:gap-4 ${
+                  singleCourse ? "justify-center md:justify-start" : "md:pl-11 md:pr-11"
+                } [&::-webkit-scrollbar]:hidden`}
               >
                 {courses.map((course) => (
-                  <CourseCard key={course.slug} course={course} tTop={tTop} tCommon={tCommon} />
+                  <CourseCard
+                    key={course.slug}
+                    course={course}
+                    tTop={tTop}
+                    tCommon={tCommon}
+                    tCart={tCart}
+                  />
                 ))}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-center gap-2 lg:hidden">
-              {courses.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={tTop("goToCourse", { n: i + 1 })}
-                  onClick={() => scrollToCard(i)}
-                  className={`h-2 w-2 rounded-full transition ${
-                    i === dot ? "w-6 bg-brand-primary" : "bg-slate-300"
-                  }`}
-                />
-              ))}
-            </div>
+            {!singleCourse ? (
+              <div className="mt-5 flex justify-center gap-2 lg:hidden">
+                {courses.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={tTop("goToCourse", { n: i + 1 })}
+                    onClick={() => scrollToCard(i)}
+                    className={`h-2 w-2 rounded-full transition ${
+                      i === dot ? "w-6 bg-brand-primary" : "bg-slate-300"
+                    }`}
+                  />
+                ))}
+              </div>
+            ) : null}
           </>
         )}
       </div>

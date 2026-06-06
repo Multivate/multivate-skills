@@ -13,14 +13,21 @@ export function AddToCartButton({
   variant = "outline",
   className = "",
   studentOnly = true,
+  addLabel,
+  removeLabel,
 }: {
   item: CartLine;
   variant?: Variant;
   className?: string;
   /** When true, hide for signed-in instructors and admins (cart is for learners). */
   studentOnly?: boolean;
+  /** Optional explicit label (avoids empty text if translations hydrate late). */
+  addLabel?: string;
+  removeLabel?: string;
 }) {
   const t = useTranslations("cart");
+  const addText = addLabel ?? t("add");
+  const removeText = removeLabel ?? t("remove");
   const { user } = useAuth();
   const { addItem, hasSlug, removeItem } = useCart();
   const inCart = hasSlug(item.slug);
@@ -44,7 +51,7 @@ export function AddToCartButton({
         className={`${base} border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 ${className}`}
       >
         <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
-        {t("remove")}
+        {removeText}
       </button>
     );
   }
@@ -56,7 +63,7 @@ export function AddToCartButton({
       className={`${base} ${className}`}
     >
       <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
-      {t("add")}
+      {addText}
     </button>
   );
 }

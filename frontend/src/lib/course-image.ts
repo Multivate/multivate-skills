@@ -40,6 +40,13 @@ export function resolveCourseImageUrl(raw: string | null | undefined): string | 
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+
+    const mediaMarker = "/media/public/";
+    const mediaIdx = parsed.pathname.indexOf(mediaMarker);
+    if (mediaIdx >= 0) {
+      return `/api/media/public/${parsed.pathname.slice(mediaIdx + mediaMarker.length)}`;
+    }
+
     if (ALLOWED_HOSTS.has(parsed.hostname)) return url;
     if (/\.(jpg|jpeg|png|webp|gif|avif|svg)(\?|$)/i.test(parsed.pathname)) return url;
   } catch {
