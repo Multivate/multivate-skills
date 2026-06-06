@@ -32,7 +32,7 @@ function ThumbnailPlaceholder({ compact }: { compact?: boolean }) {
 }
 
 /** Use native img for proxied uploads and most HTTPS URLs — more reliable than next/image for API routes. */
-function useNativeImageTag(resolved: string): boolean {
+function preferNativeImageTag(resolved: string): boolean {
   if (resolved.startsWith("/api/media/public/")) return true;
   if (resolved.startsWith("http://") || resolved.startsWith("https://")) {
     try {
@@ -55,6 +55,7 @@ export function CourseThumbnail({
 }: Props) {
   const resolved = resolveCourseImageUrl(src);
   const [failed, setFailed] = useState(false);
+  const nativeImg = resolved ? preferNativeImageTag(resolved) : false;
 
   if (!resolved || failed) {
     return <ThumbnailPlaceholder compact={compact} />;
@@ -62,7 +63,7 @@ export function CourseThumbnail({
 
   const imgClass = `absolute inset-0 h-full w-full ${className}`;
 
-  if (useNativeImageTag(resolved)) {
+  if (nativeImg) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
