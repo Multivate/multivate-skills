@@ -114,7 +114,7 @@ export function InstructorDashboardHome() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h3 className="text-lg font-extrabold tracking-tight text-brand-ink">Courses you instruct</h3>
           <Link
-            href="/dashboard/instructor/create-course"
+            href="/dashboard/instructor/studio/new"
             className="text-sm font-semibold text-instructor-purple hover:underline"
           >
             Create course

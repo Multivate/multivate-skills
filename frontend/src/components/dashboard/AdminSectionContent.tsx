@@ -109,6 +109,10 @@ export function AdminSectionContent({ section }: { section: string }) {
   const [adminReviews, setAdminReviews] = useState<ReviewRow[] | null>(null);
   const [analyticsDash, setAnalyticsDash] = useState<AdminDashSnapshot | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [paymentBusyId, setPaymentBusyId] = useState<string | null>(null);
+  const [paymentMsg, setPaymentMsg] = useState<string | null>(null);
+  const [courseMsg, setCourseMsg] = useState<string | null>(null);
+  const [courseBusySlug, setCourseBusySlug] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,22 +200,23 @@ export function AdminSectionContent({ section }: { section: string }) {
         }
         if (section === "courses") {
           const [res, pendingRes] = await Promise.all([
-            fetch("/api/courses", { cache: "no-store" }),
+            fetch("/api/courses", { credentials: "include", cache: "no-store" }),
             fetch("/api/admin/courses/pending", { credentials: "include", cache: "no-store" }),
           ]);
           const data = await res.json().catch(() => null);
           const pendingData = await pendingRes.json().catch(() => null);
           if (cancelled) return;
           if (!res.ok) {
-            setErr("We couldn't load the catalog.");
+            setErr(readApiError(data, "We couldn't load the catalog."));
             setCourses([]);
           } else {
             setCourses(Array.isArray(data) ? data : []);
           }
-          if (pendingRes.ok) {
-            setPendingCourses(Array.isArray(pendingData) ? pendingData : []);
-          } else {
+          if (!pendingRes.ok) {
+            setErr((prev) => prev ?? readApiError(pendingData, "We couldn't load courses waiting for review."));
             setPendingCourses([]);
+          } else {
+            setPendingCourses(Array.isArray(pendingData) ? pendingData : []);
           }
           return;
         }
@@ -639,31 +644,59 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (payments === null) return <p className="text-sm text-slate-600">Loading payments…</p>;
 
+    async function reloadPayments() {
+      const res = await fetch("/api/admin/payments?limit=100", { credentials: "include", cache: "no-store" });
+      const data = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(data)) {
+        setPayments(data as PaymentRow[]);
+      }
+    }
+
     async function approvePayment(id: string) {
-      const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/approve`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (res.ok) {
-        setPayments((prev) =>
-          prev ? prev.map((p) => (p.id === id ? { ...p, status: "paid" } : p)) : prev,
-        );
+      setPaymentMsg(null);
+      setPaymentBusyId(id);
+      try {
+        const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/approve`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          setPaymentMsg(readApiError(data, "We couldn't approve that payment. Please try again."));
+          return;
+        }
+        setPaymentMsg("Payment approved — the student is now enrolled.");
+        await reloadPayments();
+      } catch {
+        setPaymentMsg("Connection problem. Please try again.");
+      } finally {
+        setPaymentBusyId(null);
       }
     }
 
     async function rejectPayment(id: string) {
-      const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/reject`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "We could not match this payment to a transfer." }),
-      });
-      if (res.ok) {
-        setPayments((prev) =>
-          prev ? prev.map((p) => (p.id === id ? { ...p, status: "failed" } : p)) : prev,
-        );
+      setPaymentMsg(null);
+      setPaymentBusyId(id);
+      try {
+        const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/reject`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: "We could not match this payment to a transfer." }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          setPaymentMsg(readApiError(data, "We couldn't reject that payment. Please try again."));
+          return;
+        }
+        setPaymentMsg("Payment rejected.");
+        await reloadPayments();
+      } catch {
+        setPaymentMsg("Connection problem. Please try again.");
+      } finally {
+        setPaymentBusyId(null);
       }
     }
 
@@ -674,6 +707,17 @@ export function AdminSectionContent({ section }: { section: string }) {
         <p className="rounded-xl border border-brand-secondary/30 bg-brand-secondary/5 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
           Confirm a payment only after you verify the bank transfer. Students are enrolled after you approve.
         </p>
+        {paymentMsg ? (
+          <p
+            className={`rounded-xl px-4 py-3 text-sm font-medium ${
+              paymentMsg.startsWith("Payment approved") || paymentMsg.startsWith("Payment rejected")
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border border-red-200 bg-red-50 text-red-900"
+            }`}
+          >
+            {paymentMsg}
+          </p>
+        ) : null}
         <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
@@ -710,15 +754,17 @@ export function AdminSectionContent({ section }: { section: string }) {
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
+                          disabled={paymentBusyId === p.id}
                           onClick={() => void approvePayment(p.id)}
-                          className="rounded-lg bg-admin-indigo px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90 active:scale-95"
+                          className="rounded-lg bg-admin-indigo px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90 active:scale-95 disabled:opacity-50"
                         >
-                          Approve
+                          {paymentBusyId === p.id ? "Saving…" : "Approve"}
                         </button>
                         <button
                           type="button"
+                          disabled={paymentBusyId === p.id}
                           onClick={() => void rejectPayment(p.id)}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-800 transition hover:bg-red-100 active:scale-95"
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-800 transition hover:bg-red-100 active:scale-95 disabled:opacity-50"
                         >
                           Reject
                         </button>
@@ -789,8 +835,78 @@ export function AdminSectionContent({ section }: { section: string }) {
   if (section === "courses") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (courses === null) return <p className="text-sm text-slate-600">Loading catalog…</p>;
+
+    async function reloadCatalog() {
+      const [res, pendingRes] = await Promise.all([
+        fetch("/api/courses", { credentials: "include", cache: "no-store" }),
+        fetch("/api/admin/courses/pending", { credentials: "include", cache: "no-store" }),
+      ]);
+      const data = await res.json().catch(() => null);
+      const pendingData = await pendingRes.json().catch(() => null);
+      if (res.ok && Array.isArray(data)) setCourses(data as CourseRow[]);
+      if (pendingRes.ok && Array.isArray(pendingData)) setPendingCourses(pendingData as PendingCourse[]);
+    }
+
+    async function approveCourse(slug: string) {
+      setCourseMsg(null);
+      setCourseBusySlug(slug);
+      try {
+        const res = await fetch(`/api/admin/courses/${encodeURIComponent(slug)}/approve`, {
+          method: "POST",
+          credentials: "include",
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          setCourseMsg(readApiError(data, "We couldn't approve that course."));
+          return;
+        }
+        setCourseMsg("Course approved — it will appear in the catalog shortly.");
+        await reloadCatalog();
+      } catch {
+        setCourseMsg("Connection problem. Please try again.");
+      } finally {
+        setCourseBusySlug(null);
+      }
+    }
+
+    async function rejectCourse(slug: string) {
+      const reason = window.prompt("Optional note for the instructor") ?? "";
+      setCourseMsg(null);
+      setCourseBusySlug(slug);
+      try {
+        const res = await fetch(`/api/admin/courses/${encodeURIComponent(slug)}/reject`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          setCourseMsg(readApiError(data, "We couldn't send that course back."));
+          return;
+        }
+        setCourseMsg("Course sent back to the instructor.");
+        await reloadCatalog();
+      } catch {
+        setCourseMsg("Connection problem. Please try again.");
+      } finally {
+        setCourseBusySlug(null);
+      }
+    }
+
     return (
       <div className="space-y-10">
+        {courseMsg ? (
+          <p
+            className={`rounded-xl px-4 py-3 text-sm font-medium ${
+              courseMsg.includes("approved") || courseMsg.includes("sent back")
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border border-red-200 bg-red-50 text-red-900"
+            }`}
+          >
+            {courseMsg}
+          </p>
+        ) : null}
         {pendingCourses && pendingCourses.length > 0 ? (
           <section>
             <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Awaiting approval</h2>
@@ -800,36 +916,25 @@ export function AdminSectionContent({ section }: { section: string }) {
                   <p className="font-bold text-brand-ink">{c.title}</p>
                   <p className="mt-1 text-xs text-slate-600">{c.lessons_count} lessons · {c.slug}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/learn/${c.slug}?preview=1`}
+                      className="rounded-lg border border-brand-primary/30 bg-violet-50 px-3 py-1.5 text-xs font-bold text-brand-primary transition hover:bg-violet-100"
+                    >
+                      Preview
+                    </Link>
                     <button
                       type="button"
-                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700"
-                      onClick={async () => {
-                        const res = await fetch(`/api/admin/courses/${encodeURIComponent(c.slug)}/approve`, {
-                          method: "POST",
-                          credentials: "include",
-                        });
-                        if (res.ok) {
-                          setPendingCourses((prev) => prev?.filter((x) => x.slug !== c.slug) ?? []);
-                        }
-                      }}
+                      disabled={courseBusySlug === c.slug}
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      onClick={() => void approveCourse(c.slug)}
                     >
-                      Approve
+                      {courseBusySlug === c.slug ? "Saving…" : "Approve"}
                     </button>
                     <button
                       type="button"
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700"
-                      onClick={async () => {
-                        const reason = window.prompt("Optional note for the instructor") ?? "";
-                        const res = await fetch(`/api/admin/courses/${encodeURIComponent(c.slug)}/reject`, {
-                          method: "POST",
-                          credentials: "include",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ reason }),
-                        });
-                        if (res.ok) {
-                          setPendingCourses((prev) => prev?.filter((x) => x.slug !== c.slug) ?? []);
-                        }
-                      }}
+                      disabled={courseBusySlug === c.slug}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-50"
+                      onClick={() => void rejectCourse(c.slug)}
                     >
                       Send back
                     </button>
@@ -838,26 +943,39 @@ export function AdminSectionContent({ section }: { section: string }) {
               ))}
             </div>
           </section>
-        ) : null}
+        ) : (
+          <section className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
+            <p className="text-sm text-slate-600">No courses are waiting for review right now.</p>
+          </section>
+        )}
         <section>
           <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Published catalog</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {courses.map((c) => (
-              <div key={c.slug} className="flex gap-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm">
-                <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                  <CourseThumbnail src={c.image_url} alt={c.title} sizes="112px" />
+          {courses.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-600">No live courses yet. Approve a submitted course to show it here.</p>
+          ) : (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {courses.map((c) => (
+                <div key={c.slug} className="flex gap-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm">
+                  <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                    <CourseThumbnail src={c.image_url} alt={c.title} sizes="112px" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-brand-ink">{c.title}</p>
+                    <p className="line-clamp-2 text-xs text-slate-600">{c.description}</p>
+                    <p className="mt-1 text-xs text-slate-500">{c.lessons_count} lessons · {c.slug}</p>
+                    <div className="mt-2 flex flex-wrap gap-3">
+                      <Link href={`/courses/${c.slug}`} className="text-xs font-bold text-admin-indigo hover:underline">
+                        Course page
+                      </Link>
+                      <Link href={`/learn/${c.slug}`} className="text-xs font-bold text-brand-accent hover:underline">
+                        Watch
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-brand-ink">{c.title}</p>
-                  <p className="line-clamp-2 text-xs text-slate-600">{c.description}</p>
-                  <p className="mt-1 text-xs text-slate-500">{c.lessons_count} lessons · {c.slug}</p>
-                  <Link href={`/courses/${c.slug}`} className="mt-2 inline-block text-xs font-bold text-admin-indigo hover:underline">
-                    View
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     );

@@ -44,7 +44,7 @@ def _embed_url(lesson: Lesson) -> str | None:
     if lesson.video_source == VideoSource.YOUTUBE:
         m = _YT_RE.search(lesson.video_url)
         if m:
-            return f"https://www.youtube.com/embed/{m.group(1)}"
+            return f"https://www.youtube-nocookie.com/embed/{m.group(1)}?rel=0&modestbranding=1&playsinline=1"
     if lesson.video_source == VideoSource.VIMEO:
         m = _VIMEO_RE.search(lesson.video_url)
         if m:
@@ -90,17 +90,21 @@ def can_access_course_content(db: Session, user: User | None, course: Course, *,
 def can_access_lesson(
     db: Session, user: User | None, course: Course, lesson: Lesson, *, preview_mode: bool = False
 ) -> bool:
+    if user and user.role == UserRole.ADMIN:
+        return True
     if lesson.is_previewable and course.status == CourseStatus.PUBLISHED:
         return True
-    if preview_mode and user and course.instructor_id == user.id:
+    if preview_mode and user and (
+        user.role == UserRole.ADMIN or (course.instructor_id is not None and course.instructor_id == user.id)
+    ):
         return True
-    return can_access_course_content(db, user, course)
+    return can_access_course_content(db, user, course, preview_ok=preview_mode)
 
 
 def get_player_curriculum(
     db: Session, slug: str, user: User | None, *, preview: bool = False
 ) -> PlayerCurriculumOut:
-    course = course_service.get_course_or_404(db, slug)
+    course = course_service.get_course_or_404(db, slug, user=user)
     if preview:
         if not user or (user.role != UserRole.ADMIN and course.instructor_id != user.id):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Preview not allowed")
@@ -167,7 +171,7 @@ def get_player_curriculum(
 def get_player_lesson(
     db: Session, slug: str, lesson_id: UUID, user: User | None, *, preview: bool = False
 ) -> dict:
-    course = course_service.get_course_or_404(db, slug)
+    course = course_service.get_course_or_404(db, slug, user=user)
     lesson = db.get(Lesson, lesson_id)
     if not lesson or lesson.course_id != course.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")

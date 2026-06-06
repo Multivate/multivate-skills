@@ -204,7 +204,7 @@ export function StudentDashboardHome() {
             {items.map((row) => (
               <Link
                 key={row.slug}
-                href={`/courses/${row.slug}`}
+                href={`/learn/${row.slug}`}
                 className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm transition hover:border-slate-300 hover:shadow-md"
               >
                 <div className="relative aspect-[16/10] w-full bg-slate-100">

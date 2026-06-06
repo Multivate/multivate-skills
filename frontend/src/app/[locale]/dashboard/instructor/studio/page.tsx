@@ -71,27 +71,41 @@ export default function InstructorStudioListPage() {
         {rows?.map((row) => {
           const img = resolveCourseImageUrl(row.image_url);
           return (
-            <Link
+            <div
               key={row.slug}
-              href={`/dashboard/instructor/studio/${row.slug}`}
               className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-brand-primary/30 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
             >
-              <div className="relative aspect-video bg-slate-100">
-                {img ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={img} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-slate-400">No cover yet</div>
-                )}
-                <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-bold text-slate-700">
-                  {statusLabel(row.status)}
-                </span>
-              </div>
+              <Link href={`/dashboard/instructor/studio/${row.slug}`} className="block">
+                <div className="relative aspect-video bg-slate-100">
+                  {img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={img} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-slate-400">No cover yet</div>
+                  )}
+                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-bold text-slate-700">
+                    {statusLabel(row.status)}
+                  </span>
+                </div>
+              </Link>
               <div className="p-4">
-                <h2 className="font-bold text-brand-ink group-hover:text-brand-primary">{row.title}</h2>
+                <Link href={`/dashboard/instructor/studio/${row.slug}`} className="font-bold text-brand-ink group-hover:text-brand-primary">
+                  {row.title}
+                </Link>
                 <p className="mt-1 text-xs text-slate-500">{row.lessons_count} lessons</p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <Link href={`/dashboard/instructor/studio/${row.slug}`} className="text-xs font-bold text-brand-primary hover:underline">
+                    Edit
+                  </Link>
+                  <Link
+                    href={row.status === "published" ? `/learn/${row.slug}` : `/learn/${row.slug}?preview=1`}
+                    className="text-xs font-bold text-brand-accent hover:underline"
+                  >
+                    {row.status === "published" ? "Watch" : "Preview"}
+                  </Link>
+                </div>
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>

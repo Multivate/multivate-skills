@@ -3,18 +3,15 @@
 import { Link, useRouter } from "@/i18n/navigation";
 import {
   ChevronRight,
-  GripVertical,
   ImagePlus,
   Loader2,
   Play,
-  Plus,
   Send,
   Sparkles,
-  Trash2,
-  Video,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { formInputClass, formInputCompactClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
+import { CourseStudioCurriculum } from "@/components/studio/CourseStudioCurriculum";
+import { formInputClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
 import { resolveCourseImageUrl } from "@/lib/course-image";
 
 const CATEGORIES = [
@@ -117,14 +114,11 @@ export function CourseStudio({ initialSlug }: Props) {
   const [priceCents, setPriceCents] = useState(990000);
   const [isFree, setIsFree] = useState(false);
   const [customSlug, setCustomSlug] = useState("");
+  const [promoVideoUrl, setPromoVideoUrl] = useState("");
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const [newSectionTitle, setNewSectionTitle] = useState("");
-  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
-  const dragLesson = useRef<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -154,6 +148,7 @@ export function CourseStudio({ initialSlug }: Props) {
     setTags(c.tags ?? "");
     setPriceCents(c.price_cents);
     setIsFree(c.is_free);
+    setPromoVideoUrl(c.promo_video_url ?? "");
     setThumbPreview(c.image_url || null);
     setError(null);
   }, []);
@@ -161,6 +156,12 @@ export function CourseStudio({ initialSlug }: Props) {
   useEffect(() => {
     if (initialSlug) void loadCourse(initialSlug);
   }, [initialSlug, loadCourse]);
+
+  useEffect(() => {
+    if (step === 2 && slug && !course && !busy) {
+      void loadCourse(slug);
+    }
+  }, [step, slug, course, busy, loadCourse]);
 
   const basicsPayload = useMemo(
     () => ({
@@ -176,10 +177,10 @@ export function CourseStudio({ initialSlug }: Props) {
       price_cents: isFree ? 0 : priceCents,
       currency: "NGN",
       is_free: isFree,
-      promo_video_url: course?.promo_video_url ?? null,
+      promo_video_url: promoVideoUrl.trim() || null,
       slug: customSlug.trim() || undefined,
     }),
-    [title, subtitle, description, objectives, category, level, language, tags, priceCents, isFree, course, customSlug],
+    [title, subtitle, description, objectives, category, level, language, tags, priceCents, isFree, promoVideoUrl, customSlug],
   );
 
   const saveBasics = async () => {
@@ -239,117 +240,6 @@ export function CourseStudio({ initialSlug }: Props) {
     }
   };
 
-  const addSection = async () => {
-    if (!slug || !newSectionTitle.trim()) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/sections`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newSectionTitle.trim() }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that section.");
-        return;
-      }
-      setNewSectionTitle("");
-      await loadCourse(slug);
-      showToast("Section added");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const addLesson = async (sectionId: string | null) => {
-    if (!slug) return;
-    const lessonTitle = window.prompt("Lesson title");
-    if (!lessonTitle?.trim()) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/lessons`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          section_id: sectionId,
-          title: lessonTitle.trim(),
-          lesson_type: "video",
-        }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that lesson.");
-        return;
-      }
-      await loadCourse(slug);
-      setSelectedLesson((data as { id: string }).id);
-      showToast("Lesson added");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const updateLesson = async (lessonId: string, patch: Record<string, unknown>) => {
-    if (!slug) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/studio/lessons/${lessonId}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't update that lesson.");
-        return;
-      }
-      await loadCourse(slug);
-      showToast("Lesson updated");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const uploadLessonVideo = async (lessonId: string, file: File) => {
-    if (!slug) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    setBusy(true);
-    setUploadPct(10);
-    try {
-      const res = await fetch(`/api/studio/lessons/${lessonId}/video`, {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      setUploadPct(100);
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "Video upload failed.");
-        return;
-      }
-      await loadCourse(slug);
-      showToast("Video uploaded");
-    } finally {
-      setBusy(false);
-      window.setTimeout(() => setUploadPct(null), 800);
-    }
-  };
-
-  const reorderLessons = async (ordered: string[]) => {
-    if (!slug) return;
-    await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/lessons/reorder`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lesson_ids: ordered }),
-    });
-    await loadCourse(slug);
-  };
-
   const submitReview = async () => {
     if (!slug) return;
     setBusy(true);
@@ -366,21 +256,6 @@ export function CourseStudio({ initialSlug }: Props) {
       setBusy(false);
     }
   };
-
-  const activeLesson = course?.lessons.find((l) => l.id === selectedLesson) ?? course?.lessons[0] ?? null;
-
-  const groupedLessons = useMemo(() => {
-    if (!course) return [];
-    const sections = [...course.sections].sort((a, b) => a.position - b.position);
-    const rows: { key: string; title: string; lessons: Lesson[] }[] = sections.map((s) => ({
-      key: s.id,
-      title: s.title,
-      lessons: course.lessons.filter((l) => l.section_id === s.id).sort((a, b) => a.position - b.position),
-    }));
-    const loose = course.lessons.filter((l) => !l.section_id).sort((a, b) => a.position - b.position);
-    if (loose.length) rows.unshift({ key: "loose", title: "General", lessons: loose });
-    return rows;
-  }, [course]);
 
   const thumbDisplay = useMemo(() => {
     if (!thumbPreview) return null;
@@ -469,6 +344,15 @@ export function CourseStudio({ initialSlug }: Props) {
             <label className={formLabelClass}>
               What students will learn
               <textarea value={objectives} onChange={(e) => setObjectives(e.target.value)} rows={3} placeholder="One objective per line" className={formTextareaClass} />
+            </label>
+            <label className={formLabelClass}>
+              Promo video link (optional)
+              <input
+                value={promoVideoUrl}
+                onChange={(e) => setPromoVideoUrl(e.target.value)}
+                placeholder="YouTube or Vimeo link for the course page"
+                className={formInputClass}
+              />
             </label>
           </div>
           <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -570,121 +454,24 @@ export function CourseStudio({ initialSlug }: Props) {
         </div>
       ) : null}
 
-      {step === 2 && course ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                value={newSectionTitle}
-                onChange={(e) => setNewSectionTitle(e.target.value)}
-                placeholder="New section title"
-                className={`flex-1 ${formInputCompactClass}`}
-              />
-              <button type="button" onClick={() => void addSection()} className="inline-flex items-center gap-1 rounded-lg bg-brand-accent px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-                <Plus className="h-4 w-4" /> Section
-              </button>
-            </div>
-            {groupedLessons.map((group) => (
-              <div key={group.key} className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-bold text-brand-ink">{group.title}</h3>
-                  <button type="button" onClick={() => void addLesson(group.key === "loose" ? null : group.key)} className="text-xs font-bold text-brand-primary hover:underline">
-                    + Lesson
-                  </button>
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {group.lessons.map((lesson) => (
-                    <li
-                      key={lesson.id}
-                      draggable
-                      onDragStart={() => {
-                        dragLesson.current = lesson.id;
-                      }}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => {
-                        if (!dragLesson.current || !course) return;
-                        const ids = course.lessons.sort((a, b) => a.position - b.position).map((l) => l.id);
-                        const from = ids.indexOf(dragLesson.current);
-                        const to = ids.indexOf(lesson.id);
-                        if (from < 0 || to < 0) return;
-                        ids.splice(from, 1);
-                        ids.splice(to, 0, dragLesson.current);
-                        void reorderLessons(ids);
-                      }}
-                      onClick={() => setSelectedLesson(lesson.id)}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
-                        selectedLesson === lesson.id
-                          ? "border-brand-primary bg-violet-50 dark:bg-violet-950/30"
-                          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                      }`}
-                    >
-                      <GripVertical className="h-4 w-4 shrink-0 text-slate-400" />
-                      <Video className="h-4 w-4 shrink-0 text-brand-accent" />
-                      <span className="flex-1 font-medium">{lesson.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+      {step === 2 && slug && course ? (
+        <CourseStudioCurriculum
+          slug={slug}
+          course={course}
+          busy={busy}
+          uploadPct={uploadPct}
+          setBusy={setBusy}
+          setUploadPct={setUploadPct}
+          setError={setError}
+          loadCourse={loadCourse}
+          showToast={showToast}
+          onContinueToReview={() => setStep(3)}
+        />
+      ) : null}
 
-          {activeLesson ? (
-            <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <h3 className="font-bold text-brand-ink">Edit lesson</h3>
-              <label className="block text-sm font-semibold">
-                Title
-                <input
-                  defaultValue={activeLesson.title}
-                  onBlur={(e) => void updateLesson(activeLesson.id, { title: e.target.value })}
-                  className={formInputClass}
-                />
-              </label>
-              <label className="block text-sm font-semibold">
-                Video source
-                <select
-                  defaultValue={activeLesson.video_source ?? "youtube"}
-                  onChange={(e) => void updateLesson(activeLesson.id, { video_source: e.target.value, lesson_type: "video" })}
-                  className={formInputClass}
-                >
-                  <option value="youtube">YouTube</option>
-                  <option value="vimeo">Vimeo</option>
-                  <option value="url">Custom link</option>
-                  <option value="upload">Upload file</option>
-                </select>
-              </label>
-              {activeLesson.video_source !== "upload" ? (
-                <label className="block text-sm font-semibold">
-                  Video URL
-                  <input
-                    defaultValue={activeLesson.video_url ?? ""}
-                    onBlur={(e) => void updateLesson(activeLesson.id, { video_url: e.target.value })}
-                    className={formInputClass}
-                  />
-                </label>
-              ) : (
-                <label className="block text-sm font-semibold">
-                  Upload video
-                  <input
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime"
-                    className="mt-1 w-full text-sm"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void uploadLessonVideo(activeLesson.id, f);
-                    }}
-                  />
-                </label>
-              )}
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  defaultChecked={activeLesson.is_previewable}
-                  onChange={(e) => void updateLesson(activeLesson.id, { is_previewable: e.target.checked })}
-                />
-                Free preview lesson
-              </label>
-            </div>
-          ) : null}
+      {step === 2 && slug && !course ? (
+        <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <p className="animate-pulse text-sm text-slate-500">Loading curriculum…</p>
         </div>
       ) : null}
 
@@ -701,6 +488,9 @@ export function CourseStudio({ initialSlug }: Props) {
                 <li>{course.lessons.length} lessons</li>
                 <li>{course.sections.length} sections</li>
                 <li>{course.image_url ? "Cover image added" : "Cover image missing"}</li>
+                <li>
+                  {course.lessons.filter((l) => l.video_url).length} of {course.lessons.length} lessons have video
+                </li>
               </ul>
               <div className="mt-6 flex flex-wrap gap-3">
                 <button type="button" disabled={busy || course.status === "pending_review"} onClick={() => void submitReview()} className="btn-primary-brand !min-w-0 inline-flex items-center gap-2 disabled:opacity-60">
@@ -708,10 +498,14 @@ export function CourseStudio({ initialSlug }: Props) {
                   {course.status === "pending_review" ? "In review" : "Submit for review"}
                 </button>
                 {course.status === "published" ? (
-                  <Link href={`/courses/${course.slug}`} className="btn-outline-brand !min-w-0">
-                    View live page
+                  <Link href={`/learn/${course.slug}`} className="btn-outline-brand !min-w-0">
+                    Open course
                   </Link>
-                ) : null}
+                ) : (
+                  <Link href={`/learn/${course.slug}?preview=1`} className="btn-outline-brand !min-w-0">
+                    Preview lessons
+                  </Link>
+                )}
               </div>
             </div>
           </div>

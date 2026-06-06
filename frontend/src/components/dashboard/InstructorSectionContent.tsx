@@ -280,7 +280,16 @@ export function InstructorSectionContent({ section }: { section: string }) {
   }
 
   if (section === "content-upload") {
-    return <InstructorContentUpload />;
+    return (
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <p className="text-sm leading-relaxed text-slate-600">
+          Add lessons and videos in Course Studio — upload a file or paste a YouTube, Vimeo, or video link. Students watch inside the app.
+        </p>
+        <Link href="/dashboard/instructor/studio" className="btn-primary-brand mt-5 inline-flex !min-w-0 text-sm !no-underline">
+          Open course studio
+        </Link>
+      </div>
+    );
   }
 
   if (section === "students") {

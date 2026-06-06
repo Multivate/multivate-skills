@@ -13,6 +13,7 @@ import {
   Play,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ProtectedVideoPlayer } from "@/components/player/ProtectedVideoPlayer";
 import { formTextareaClass } from "@/lib/form-styles";
 
 type LessonRow = {
@@ -68,13 +69,11 @@ type Props = {
 const SPEEDS = [0.5, 1, 1.25, 1.5, 2];
 
 export function CoursePlayer({ slug, lessonId, preview = false }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
   const [detail, setDetail] = useState<LessonDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [speed, setSpeed] = useState(1);
   const [notes, setNotes] = useState("");
-  const [videoError, setVideoError] = useState<string | null>(null);
   const [rightTab, setRightTab] = useState<"notes" | "bookmarks" | "downloads" | "discussions">("notes");
   const progressTimer = useRef<number | null>(null);
 
@@ -106,11 +105,6 @@ export function CoursePlayer({ slug, lessonId, preview = false }: Props) {
       return;
     }
     setDetail(lesData as LessonDetail);
-    setVideoError(null);
-    const start = (lesData as LessonDetail).progress.position_seconds;
-    window.setTimeout(() => {
-      if (videoRef.current && start > 0) videoRef.current.currentTime = start;
-    }, 200);
   }, [slug, lessonId, qs]);
 
   useEffect(() => {
@@ -122,43 +116,23 @@ export function CoursePlayer({ slug, lessonId, preview = false }: Props) {
   }, [loadLesson]);
 
   const saveProgress = useCallback(
-    async (completed = false) => {
+    async (completed = false, positionSeconds?: number) => {
       if (!detail) return;
-      const el = videoRef.current;
+      const pos = positionSeconds ?? detail.progress.position_seconds;
       await fetch("/api/player/progress", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lesson_id: detail.lesson.id,
-          position_seconds: Math.floor(el?.currentTime ?? 0),
-          watch_time_seconds: Math.floor(el?.currentTime ?? 0),
+          position_seconds: Math.floor(pos),
+          watch_time_seconds: Math.floor(pos),
           completed,
         }),
       });
     },
     [detail],
   );
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    const onTime = () => {
-      if (progressTimer.current) window.clearTimeout(progressTimer.current);
-      progressTimer.current = window.setTimeout(() => void saveProgress(false), 4000);
-    };
-    const onEnded = () => void saveProgress(true);
-    el.addEventListener("timeupdate", onTime);
-    el.addEventListener("ended", onEnded);
-    return () => {
-      el.removeEventListener("timeupdate", onTime);
-      el.removeEventListener("ended", onEnded);
-    };
-  }, [saveProgress, detail]);
-
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.playbackRate = speed;
-  }, [speed, detail]);
 
   const grouped = useMemo(() => {
     if (!curriculum) return [];
@@ -235,45 +209,25 @@ export function CoursePlayer({ slug, lessonId, preview = false }: Props) {
       </aside>
 
       <main className="flex flex-1 flex-col">
-        <div className="relative aspect-video w-full bg-black" onContextMenu={(e) => e.preventDefault()}>
-          {embedSrc ? (
-            <iframe
-              src={embedSrc}
+        <div className="relative aspect-video w-full bg-black">
+          {embedSrc || streamSrc || directSrc ? (
+            <ProtectedVideoPlayer
+              key={streamSrc ?? directSrc ?? embedSrc ?? lessonId}
+              src={streamSrc ?? directSrc}
+              embedUrl={embedSrc}
               title={detail.lesson.title}
-              className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
+              initialTime={detail.progress.position_seconds}
+              playbackRate={speed}
+              onTimeUpdate={(seconds) => {
+                if (progressTimer.current) window.clearTimeout(progressTimer.current);
+                progressTimer.current = window.setTimeout(() => void saveProgress(false, seconds), 4000);
+              }}
+              onEnded={() => void saveProgress(true)}
             />
-          ) : streamSrc || directSrc ? (
-            <>
-              <video
-                key={streamSrc ?? directSrc ?? lessonId}
-                ref={videoRef}
-                src={streamSrc ?? directSrc ?? undefined}
-                controls
-                controlsList="nodownload noremoteplayback"
-                className="h-full w-full bg-black object-contain"
-                playsInline
-                preload="metadata"
-                onError={() =>
-                  setVideoError(
-                    "We couldn't play this video. If you just uploaded it, try again in a moment or re-upload the lesson file.",
-                  )
-                }
-                onLoadedData={() => setVideoError(null)}
-              />
-              {videoError ? (
-                <div className="absolute inset-x-0 bottom-0 bg-black/80 px-4 py-3 text-center text-sm text-white">
-                  {videoError}
-                </div>
-              ) : null}
-            </>
           ) : detail.lesson.live_url ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-white">
-              <p className="text-sm">Join your live session</p>
-              <a href={detail.lesson.live_url} target="_blank" rel="noreferrer" className="rounded-xl bg-brand-accent px-5 py-2.5 text-sm font-semibold">
-                Open session
-              </a>
+            <div className="flex h-full flex-col items-center justify-center gap-3 bg-slate-900 p-6 text-white">
+              <p className="text-sm">Live session</p>
+              <ProtectedVideoPlayer embedUrl={detail.lesson.live_url} title={detail.lesson.title} className="max-h-full w-full" />
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-white/80">

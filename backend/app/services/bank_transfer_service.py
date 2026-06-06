@@ -287,6 +287,8 @@ def _complete_payment(
     actor: User | None,
     transaction_reference: str,
     verification_payload: dict,
+    *,
+    skip_amount_check: bool = False,
 ) -> PaymentVerifyOut:
     if payment.status in (PaymentStatus.PAID, PaymentStatus.COMPLETED):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Payment already verified")
@@ -299,15 +301,18 @@ def _complete_payment(
         select(Payment.id).where(
             Payment.transaction_reference == transaction_reference,
             Payment.id != payment.id,
+            Payment.status.in_(
+                [PaymentStatus.PAID, PaymentStatus.COMPLETED, PaymentStatus.AWAITING_REVIEW],
+            ),
         )
     ).scalar_one_or_none()
     if dup:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Transaction reference already used")
 
     course = db.get(Course, payment.course_id) if payment.course_id else None
-    if course:
+    if course and not skip_amount_check:
         expected_amount, expected_currency = _course_price(course)
-        if payment.amount_cents != expected_amount or payment.currency != expected_currency:
+        if payment.amount_cents != expected_amount or payment.currency.upper() != expected_currency.upper():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment amount mismatch")
 
     now = _utcnow()
@@ -344,15 +349,22 @@ def _complete_payment(
 
     student = db.get(User, payment.user_id)
     if student and course:
-        _send_enrollment_confirmed_email(student, course)
-        notification_service.create_notification(
-            db,
-            user_id=student.id,
-            kind="payment_approved",
-            title="You are enrolled",
-            body=f"Your payment for {course.title} was confirmed. You can start learning now.",
-            link_href=f"/dashboard/courses",
-        )
+        try:
+            _send_enrollment_confirmed_email(student, course)
+            notification_service.create_notification(
+                db,
+                user_id=student.id,
+                kind="payment_approved",
+                title="You are enrolled",
+                body=f"Your payment for {course.title} was confirmed. You can start learning now.",
+                link_href="/dashboard/courses",
+            )
+        except Exception:
+            _logger.exception(
+                "Post-approval notifications failed payment_id=%s user_id=%s",
+                payment.id,
+                student.id,
+            )
 
     if not student:
         raise HTTPException(status_code=500, detail="Payment owner missing")
@@ -449,18 +461,48 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
     )
 
 
+def _unique_admin_transaction_reference(db: Session, payment: Payment) -> str:
+    existing = (payment.transaction_reference or "").strip()
+    if existing:
+        clash = db.execute(
+            select(Payment.id).where(
+                Payment.transaction_reference == existing,
+                Payment.id != payment.id,
+                Payment.status.in_(
+                    [PaymentStatus.PAID, PaymentStatus.COMPLETED, PaymentStatus.AWAITING_REVIEW],
+                ),
+            )
+        ).scalar_one_or_none()
+        if not clash:
+            return existing
+    for _ in range(12):
+        txn = f"ADMIN-{secrets.token_hex(4).upper()}"
+        taken = db.execute(select(Payment.id).where(Payment.transaction_reference == txn)).scalar_one_or_none()
+        if not taken:
+            return txn
+    raise HTTPException(status_code=500, detail="Could not assign transaction reference")
+
+
 def admin_approve_payment(db: Session, admin: User, payment_id: UUID, transaction_reference: str | None) -> PaymentVerifyOut:
     payment = db.get(Payment, payment_id)
     if not payment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
-    txn = (transaction_reference or payment.transaction_reference or f"ADMIN-{secrets.token_hex(4).upper()}").strip()
+    txn = (transaction_reference or "").strip() or _unique_admin_transaction_reference(db, payment)
     verification_payload = {
         "method": "admin_manual",
         "verified_at": _utcnow().isoformat(),
         "transaction_reference": txn,
         "verifier_admin_id": str(admin.id),
     }
-    return _complete_payment(db, payment, admin, txn, verification_payload)
+    _logger.info("Admin approving payment id=%s admin=%s txn=%s", payment_id, admin.id, txn)
+    return _complete_payment(
+        db,
+        payment,
+        admin,
+        txn,
+        verification_payload,
+        skip_amount_check=True,
+    )
 
 
 def admin_reject_payment(db: Session, admin: User, payment_id: UUID, reason: str | None = None) -> PaymentVerifyOut:

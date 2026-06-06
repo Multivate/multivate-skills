@@ -251,6 +251,7 @@ def stream_video(token: str, db: Annotated[Session, Depends(get_db)]) -> FileRes
             "Content-Disposition": "inline",
             "Cache-Control": "no-store",
             "X-Content-Type-Options": "nosniff",
+            "Accept-Ranges": "bytes",
         },
     )
 

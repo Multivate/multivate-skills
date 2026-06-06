@@ -19,6 +19,9 @@ backend/.venv/
 *.db
 *.sqlite3
 
+# Uploaded course media (local / ephemeral on Render)
+backend/media/
+
 # Node / Next.js
 frontend/node_modules/
 frontend/.next/
