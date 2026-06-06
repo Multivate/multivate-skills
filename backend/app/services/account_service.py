@@ -109,7 +109,7 @@ def start_forgot_password(db: Session, payload: ForgotPasswordStartRequest) -> F
     return ForgotPasswordStartResponse(
         reset_token=reset_token,
         email_masked=_mask_email(email),
-        dev_otp=dev_otp,
+        dev_otp=mail_service.expose_dev_otp_if_allowed(dev_otp),
     )
 
 

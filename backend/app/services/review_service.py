@@ -109,6 +109,18 @@ def list_public_testimonials(db: Session, *, limit: int = 12) -> list[PublicRevi
     return out
 
 
+def list_admin_reviews(db: Session, *, limit: int = 100) -> list[ReviewOut]:
+    stmt = (
+        select(CourseReview, Course, User)
+        .join(Course, Course.id == CourseReview.course_id)
+        .join(User, User.id == CourseReview.user_id)
+        .order_by(CourseReview.created_at.desc())
+        .limit(limit)
+    )
+    rows = db.execute(stmt).all()
+    return [_to_out(r, c, u) for r, c, u in rows]
+
+
 def list_instructor_reviews(db: Session, instructor_id: UUID) -> list[ReviewOut]:
     stmt = (
         select(CourseReview, Course, User)

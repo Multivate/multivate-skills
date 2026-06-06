@@ -38,15 +38,6 @@ export function RegisterForm() {
   const [otpCode, setOtpCode] = useState("");
   const [otpNotice, setOtpNotice] = useState<string | null>(null);
 
-  function applyOtpFallback(code: string | undefined) {
-    if (code && /^\d{6}$/.test(code)) {
-      setOtpCode(code);
-      setOtpNotice(t("otpFallbackCode", { code }));
-      return true;
-    }
-    return false;
-  }
-
   const [educationLevel, setEducationLevel] = useState("");
   const [currentSkills, setCurrentSkills] = useState("");
   const [skillsToLearn, setSkillsToLearn] = useState("");
@@ -194,7 +185,6 @@ export function RegisterForm() {
       });
       setOtpCode("");
       setOtpNotice(null);
-      applyOtpFallback(started.dev_otp);
       setStep(4);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errGeneric"));

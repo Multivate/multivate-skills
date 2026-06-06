@@ -142,11 +142,11 @@ def start_student_signup(db: Session, data: StudentRegisterRequest) -> RegisterS
                 detail="Could not send verification email. Set RESEND_API_KEY and RESEND_FROM, then try again.",
             ) from exc
         dev_plain = code
-    include_dev = get_settings().environment == "development" and bool(dev_plain)
+    include_dev = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
     return RegisterStartResponse(
         signup_token=token,
         email_masked=_mask_email(email),
-        dev_otp=dev_plain if include_dev and len(str(dev_plain)) == 6 else None,
+        dev_otp=dev_plain if include_dev else None,
     )
 
 
@@ -177,11 +177,11 @@ def start_instructor_signup(db: Session, data: InstructorRegisterRequest) -> Reg
                 detail="Could not send verification email. Set RESEND_API_KEY and RESEND_FROM, then try again.",
             ) from exc
         dev_plain = code
-    include_dev = get_settings().environment == "development" and bool(dev_plain)
+    include_dev = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
     return RegisterStartResponse(
         signup_token=token,
         email_masked=_mask_email(email),
-        dev_otp=dev_plain if include_dev and len(str(dev_plain)) == 6 else None,
+        dev_otp=dev_plain if include_dev else None,
     )
 
 

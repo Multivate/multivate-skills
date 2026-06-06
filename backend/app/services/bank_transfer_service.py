@@ -413,24 +413,31 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
     course = db.get(Course, payment.course_id) if payment.course_id else None
     student = db.get(User, payment.user_id)
     if course and student:
-        notification_service.notify_admins(
-            db,
-            kind="payment_claim",
-            title="Payment waiting for review",
-            body=(
-                f"{student.name} says they paid for {course.title}. "
-                f"Reference {payment.payment_reference or '-'} · Txn {txn}"
-            ),
-            link_href="/dashboard/admin/payments",
-        )
-        notification_service.create_notification(
-            db,
-            user_id=student.id,
-            kind="payment_submitted",
-            title="Payment received",
-            body="We got your payment details. We will notify you once access is granted.",
-            link_href="/dashboard/payments",
-        )
+        try:
+            notification_service.notify_admins(
+                db,
+                kind="payment_claim",
+                title="Payment waiting for review",
+                body=(
+                    f"{student.name} says they paid for {course.title}. "
+                    f"Reference {payment.payment_reference or '-'} · Txn {txn}"
+                ),
+                link_href="/dashboard/admin/payments",
+            )
+            notification_service.create_notification(
+                db,
+                user_id=student.id,
+                kind="payment_submitted",
+                title="Payment received",
+                body="We got your payment details. We will notify you once access is granted.",
+                link_href="/dashboard/payments",
+            )
+        except Exception:
+            _logger.exception(
+                "Payment notifications failed ref=%s user_id=%s",
+                payment.payment_reference,
+                student.id,
+            )
 
     if not student:
         student = db.get(User, payment.user_id)

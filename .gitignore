@@ -4,6 +4,9 @@
 !.env.example
 !**/.env.example
 
+# Leftover duplicate folder — do not commit
+multivate-edtech/
+
 # Python / FastAPI
 backend/.venv/
 **/__pycache__/

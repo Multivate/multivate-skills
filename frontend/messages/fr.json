@@ -215,7 +215,11 @@
       "mfaSubmitting": "Vérification…",
       "mfaBack": "Utiliser un autre compte",
       "mfaDevHint": "Sans RESEND_API_KEY, le code s’affiche dans le terminal uvicorn (MULTIVATE_DEV_OTP=… ou corps du message).",
-      "mfaDevOtpBanner": "Développement local : pas d’e-mail. Code : {code} (également prérempli ci-dessus)."
+      "mfaDevOtpBanner": "Développement local : pas d’e-mail. Code : {code} (également prérempli ci-dessus).",
+      "mfaSendAgain": "Pas reçu ? Renvoyer le code",
+      "mfaSentAgain": "Nous avons envoyé un nouveau code à votre e-mail.",
+      "mfaSpamHint": "Introuvable ? Vérifiez les indésirables ou promotions et cherchez Multivate.",
+      "mfaFallbackCode": "Nous n'avons pas pu joindre votre boîte mail. Utilisez ce code : {code}"
     },
     "register": {
       "badge": "Apprenez. Progressez. Réussissez.",
@@ -274,7 +278,9 @@
       "errEducation": "Veuillez sélectionner votre niveau d’études le plus élevé.",
       "errLearningGoals": "Veuillez décrire vos objectifs d’apprentissage.",
       "errPreferredFormats": "Veuillez décrire comment vous préférez apprendre.",
-      "errCareerDirection": "Veuillez décrire votre orientation de carrière."
+      "errCareerDirection": "Veuillez décrire votre orientation de carrière.",
+      "otpSpamHint": "Introuvable ? Vérifiez les indésirables ou promotions et cherchez Multivate.",
+      "otpFallbackCode": "Nous n'avons pas pu joindre votre boîte mail. Utilisez ce code : {code}"
     },
     "forgotPassword": {
       "badge": "Récupération de compte",

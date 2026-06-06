@@ -23,15 +23,6 @@ export default function ForgotPasswordPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  function applyFallbackCode(code: unknown) {
-    if (typeof code === "string" && /^\d{6}$/.test(code)) {
-      setCode(code);
-      setNotice(t("fallbackCode", { code }));
-      return true;
-    }
-    return false;
-  }
-
   async function requestCode(targetEmail: string, isResend = false) {
     setError(null);
     if (!isResend) setNotice(null);
@@ -51,9 +42,7 @@ export default function ForgotPasswordPage() {
       setMasked(String(body?.email_masked ?? targetEmail));
       setCode("");
       setStep("reset");
-      if (!applyFallbackCode(body?.dev_otp)) {
-        setNotice(isResend ? t("sentAgain") : null);
-      }
+      setNotice(isResend ? t("sentAgain") : null);
       return true;
     } catch {
       setError(t("networkError"));

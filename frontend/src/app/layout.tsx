@@ -1,4 +1,5 @@
 import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,6 +8,13 @@ const inter = Inter({
   display: "swap",
   variable: "--font-sans",
 });
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/MULTIVATE MAIN LOGO.png",
+    apple: "/MULTIVATE MAIN LOGO.png",
+  },
+};
 
 export default function RootLayout({
   children,

@@ -29,6 +29,7 @@ from app.core.security import (
 from app.core.config import get_settings
 from app.services import instructor_profile_service
 from app.services import learning_service
+from app.services import mail_service
 from app.services import mfa_service
 from app.services.mail_service import EmailDeliveryError
 
@@ -72,7 +73,7 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequir
         except EmailDeliveryError as exc:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
         settings = get_settings()
-        include_dev_otp = settings.environment == "development" and bool(dev_plain)
+        include_dev_otp = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
         return LoginMfaRequired(
             mfa_token=mfa_token,
             email_masked=masked,
@@ -112,7 +113,7 @@ def resend_login_mfa(db: Session, mfa_token: str) -> LoginMfaRequired:
     except EmailDeliveryError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     settings = get_settings()
-    include_dev_otp = settings.environment == "development" and bool(dev_plain)
+    include_dev_otp = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
     return LoginMfaRequired(
         mfa_token=new_token,
         email_masked=masked,

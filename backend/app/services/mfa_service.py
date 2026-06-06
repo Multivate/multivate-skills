@@ -132,7 +132,13 @@ def create_and_send_otp(
             purpose,
             type(exc).__name__,
         )
-        if get_settings().environment == "development":
+        settings = get_settings()
+        if (settings.resend_api_key or "").strip():
+            raise HTTPException(
+                status_code=503,
+                detail="We couldn't send a verification code to your email. Please try again in a moment.",
+            ) from exc
+        if settings.environment == "development":
             _logger.warning("DEV: returning plaintext OTP for %s (email not sent).", user.email)
             return ch, code
         raise HTTPException(

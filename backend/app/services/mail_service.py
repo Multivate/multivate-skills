@@ -177,3 +177,16 @@ def send_plain_email(to_address: str, subject: str, body: str, html_body: str | 
 
     _logger.info("Email sent ok to=%s subject=%r", to_address, subject)
     return None
+
+
+def expose_dev_otp_if_allowed(plaintext_code: str | None) -> str | None:
+    """Return OTP for local dev only when Resend is not configured."""
+    code = (plaintext_code or "").strip()
+    if len(code) != 6 or not code.isdigit():
+        return None
+    settings = get_settings()
+    if (settings.resend_api_key or "").strip():
+        return None
+    if settings.environment != "development":
+        return None
+    return code

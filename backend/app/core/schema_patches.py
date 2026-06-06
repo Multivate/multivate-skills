@@ -98,5 +98,16 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
 
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
+        _run(
+            conn,
+            "UPDATE payments SET status = 'pending' WHERE status IS NULL OR status NOT IN "
+            "('pending', 'awaiting_review', 'paid', 'completed', 'failed')",
+        )
+        _run(
+            conn,
+            "UPDATE enrollments SET status = 'enrolled' WHERE status IS NULL OR status NOT IN "
+            "('pending_payment', 'enrolled', 'cancelled')",
+        )
 
+    Base.metadata.create_all(bind=engine)
     logger.info("Schema patches: column/table patches finished")

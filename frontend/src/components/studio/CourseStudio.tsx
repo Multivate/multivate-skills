@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formInputClass, formInputCompactClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
+import { resolveCourseImageUrl } from "@/lib/course-image";
 
 const CATEGORIES = [
   "Artificial Intelligence",
@@ -381,6 +382,12 @@ export function CourseStudio({ initialSlug }: Props) {
     return rows;
   }, [course]);
 
+  const thumbDisplay = useMemo(() => {
+    if (!thumbPreview) return null;
+    if (thumbPreview.startsWith("blob:")) return thumbPreview;
+    return resolveCourseImageUrl(thumbPreview) ?? thumbPreview;
+  }, [thumbPreview]);
+
   return (
     <div className="space-y-6">
       {toast ? (
@@ -526,9 +533,9 @@ export function CourseStudio({ initialSlug }: Props) {
               className="group relative flex aspect-video cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-brand-accent/60 hover:bg-violet-50/40"
               onClick={() => fileRef.current?.click()}
             >
-              {thumbPreview ? (
+              {thumbDisplay ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumbPreview} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+                <img src={thumbDisplay} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
               ) : (
                 <>
                   <ImagePlus className="h-10 w-10 text-brand-accent" />

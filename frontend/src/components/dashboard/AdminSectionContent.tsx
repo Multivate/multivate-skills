@@ -81,6 +81,17 @@ type AdminDashSnapshot = {
   };
 };
 
+type ReviewRow = {
+  id: string;
+  course_slug: string;
+  course_title: string;
+  reviewer_name: string;
+  reviewer_email: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+};
+
 export function AdminSectionContent({ section }: { section: string }) {
   const tDash = useTranslations("dashboard");
   const tDm = useTranslations("dashboard.dataMgmt");
@@ -95,6 +106,8 @@ export function AdminSectionContent({ section }: { section: string }) {
   const [instructors, setInstructors] = useState<UserRow[] | null>(null);
   const [studentProfiles, setStudentProfiles] = useState<StudentProfileRow[] | null>(null);
   const [instructorProfiles, setInstructorProfiles] = useState<InstructorProfileRow[] | null>(null);
+  const [adminReviews, setAdminReviews] = useState<ReviewRow[] | null>(null);
+  const [analyticsDash, setAnalyticsDash] = useState<AdminDashSnapshot | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -200,6 +213,30 @@ export function AdminSectionContent({ section }: { section: string }) {
           } else {
             setPendingCourses([]);
           }
+          return;
+        }
+        if (section === "reviews") {
+          const res = await fetch("/api/admin/reviews?limit=200", { credentials: "include", cache: "no-store" });
+          const data = await res.json().catch(() => null);
+          if (cancelled) return;
+          if (!res.ok) {
+            setErr(readApiError(data, "We couldn't load reviews."));
+            setAdminReviews([]);
+            return;
+          }
+          setAdminReviews(Array.isArray(data) ? (data as ReviewRow[]) : []);
+          return;
+        }
+        if (section === "analytics") {
+          const res = await fetch("/api/admin/dashboard", { credentials: "include", cache: "no-store" });
+          const data = await res.json().catch(() => null);
+          if (cancelled) return;
+          if (!res.ok || !data || typeof data !== "object" || !("totals" in data)) {
+            setErr(readApiError(data, "We couldn't load analytics."));
+            setAnalyticsDash(null);
+            return;
+          }
+          setAnalyticsDash(data as AdminDashSnapshot);
         }
       } catch {
         if (!cancelled) setErr("Connection problem. Please try again.");
@@ -475,7 +512,89 @@ export function AdminSectionContent({ section }: { section: string }) {
     );
   }
 
-  if (section === "certificates" || section === "analytics" || section === "reviews" || section === "system-logs") {
+  if (section === "analytics") {
+    if (err) return <p className="text-sm text-red-800">{err}</p>;
+    if (analyticsDash === null) return <p className="text-sm text-slate-600">Loading analytics…</p>;
+    const { totals } = analyticsDash;
+    const money = (cents: number) =>
+      new Intl.NumberFormat(undefined, { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(cents / 100);
+    return (
+      <div className="space-y-8">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Users</p>
+            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_users}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Courses</p>
+            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_courses}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Enrollments</p>
+            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_enrollments}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed revenue</p>
+            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{money(totals.revenue_completed_cents)}</p>
+          </div>
+          <div className="rounded-2xl border border-admin-indigo/20 bg-violet-50/80 p-5 shadow-sm dark:border-admin-indigo/30 dark:bg-violet-950/20">
+            <p className="text-xs font-bold uppercase tracking-wide text-admin-indigo">Pending payments</p>
+            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.payments_pending_count}</p>
+          </div>
+        </section>
+        <p className="text-sm text-slate-600">
+          Platform-wide totals. Open enrollments or payments for detailed rows.
+        </p>
+      </div>
+    );
+  }
+
+  if (section === "reviews") {
+    if (err) return <p className="text-sm text-red-800">{err}</p>;
+    if (adminReviews === null) return <p className="text-sm text-slate-600">Loading reviews…</p>;
+    if (adminReviews.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/50">
+          <p className="text-sm leading-relaxed text-slate-600">No learner reviews yet. They appear here after enrolled students rate a course.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">Course</th>
+              <th className="px-4 py-3">Learner</th>
+              <th className="px-4 py-3">Rating</th>
+              <th className="px-4 py-3">Comment</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {adminReviews.map((r) => (
+              <tr key={r.id}>
+                <td className="px-4 py-3 text-xs text-slate-600">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3">
+                  <Link href={`/courses/${r.course_slug}`} className="font-semibold text-admin-indigo hover:underline">
+                    {r.course_title}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <p className="font-semibold text-brand-ink">{r.reviewer_name}</p>
+                  <p className="text-xs text-slate-500">{r.reviewer_email}</p>
+                </td>
+                <td className="px-4 py-3 font-bold tabular-nums text-brand-ink">{r.rating} / 5</td>
+                <td className="max-w-xs px-4 py-3 text-slate-700">{r.comment ? r.comment : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (section === "certificates" || section === "system-logs") {
     return (
       <NotConfiguredNotice title={section.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}>
         <p>

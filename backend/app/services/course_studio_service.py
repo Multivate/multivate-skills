@@ -91,6 +91,7 @@ def _basics_out(course: Course) -> CourseStudioBasicsOut:
     )
 
 
+def _audit(db: Session, course_id: UUID, actor_id: UUID, action: str, detail: str | None = None) -> None:
     db.add(CourseAuditLog(course_id=course_id, actor_user_id=actor_id, action=action, detail=detail))
     logger.info("Course audit course_id=%s action=%s actor=%s detail=%s", course_id, action, actor_id, detail)
 

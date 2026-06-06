@@ -49,15 +49,6 @@ export function LoginForm() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaNotice, setMfaNotice] = useState<string | null>(null);
 
-  function applyFallbackCode(code: string | undefined) {
-    if (code && /^\d{6}$/.test(code)) {
-      setMfaCode(code);
-      setMfaNotice(t("mfaFallbackCode", { code }));
-      return true;
-    }
-    return false;
-  }
-
   const from = pathnameWithoutLeadingLocale(searchParams.get("from") || "/dashboard");
 
   useEffect(() => {
@@ -72,16 +63,13 @@ export function LoginForm() {
     setPending(true);
     try {
       const outcome = await login(email.trim(), password);
-      if ("mfaRequired" in outcome && outcome.mfaRequired) {
+        if ("mfaRequired" in outcome && outcome.mfaRequired) {
         setMfa({
           token: outcome.mfaToken,
           masked: outcome.emailMasked,
         });
         setMfaCode("");
         setMfaNotice(null);
-        if (!applyFallbackCode(outcome.devOtp)) {
-          setMfaNotice(null);
-        }
         return;
       }
       router.replace(from.startsWith("/") ? from : "/dashboard");
@@ -106,9 +94,7 @@ export function LoginForm() {
       const next = await resendMfaLogin(mfa.token);
       setMfa({ token: next.mfaToken, masked: next.emailMasked || mfa.masked });
       setMfaCode("");
-      if (!applyFallbackCode(next.devOtp)) {
-        setMfaNotice(t("mfaSentAgain"));
-      }
+      setMfaNotice(t("mfaSentAgain"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errorGeneric"));
     } finally {

@@ -13,10 +13,11 @@ from app.models.user import User
 from app.schemas.analytics import AdminDashboardOut, PaymentAdminRow, RecentEnrollmentRow
 from app.schemas.bank_transfer import AdminPaymentApproveIn, AdminPaymentRejectIn, PaymentVerifyOut, StudentPaymentOut
 from app.schemas.instructor_profile import InstructorTeachingProfileAdminRow
+from app.schemas.review import ReviewOut
 from app.schemas.studio import AdminCourseRejectIn, CourseStudioBasicsOut, StudioCourseListItem
 from app.schemas.student_profile import StudentLearningProfileAdminRow
 from app.schemas.user import UserPublic, user_public_from_orm
-from app.services import analytics_service, bank_transfer_service, course_studio_service, instructor_profile_service, learning_service
+from app.services import analytics_service, bank_transfer_service, course_studio_service, instructor_profile_service, learning_service, review_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -114,6 +115,15 @@ def list_admin_users(
     stmt = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
     rows = list(db.scalars(stmt).unique().all())
     return [user_public_from_orm(u) for u in rows]
+
+
+@router.get("/reviews", response_model=list[ReviewOut])
+def list_admin_reviews(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    limit: int = Query(100, ge=1, le=500),
+) -> list[ReviewOut]:
+    return review_service.list_admin_reviews(db, limit=limit)
 
 
 @router.get("/courses/pending", response_model=list[StudioCourseListItem])
