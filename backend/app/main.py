@@ -25,7 +25,8 @@ from app.models.course_section import CourseSection  # noqa: F401
 from app.models.lesson_resource import LessonResource  # noqa: F401
 from app.models.video_watch_history import VideoWatchHistory  # noqa: F401
 from app.models.course_review import CourseReview  # noqa: F401
-from app.models.enrollment import Enrollment  # noqa: F401
+from app.models.discount_code import DiscountCode  # noqa: F401
+from app.models.discount_redemption import DiscountRedemption  # noqa: F401
 from app.models.inbox_message import InboxMessage  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.lesson import Lesson  # noqa: F401

@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.course import Course
+from app.models.discount_code import DiscountCode
 from app.models.enrollment import Enrollment
 from app.models.enrollment_status import EnrollmentStatus
 from app.models.payment import Payment, PaymentStatus
@@ -28,7 +29,7 @@ from app.schemas.bank_transfer import (
     PaymentVerifyOut,
     StudentPaymentOut,
 )
-from app.services import course_service, mail_service, notification_service
+from app.services import course_service, discount_service, mail_service, notification_service
 
 _logger = logging.getLogger(__name__)
 
@@ -87,17 +88,19 @@ def _course_price(course: Course) -> tuple[int, str]:
 
 def _instructions_for(payment: Payment, course: Course, student_code: str) -> BankTransferInstructions:
     s = get_settings()
-    amount, currency = _course_price(course)
     return BankTransferInstructions(
         bank_name=s.bank_name,
         account_name=s.bank_account_name,
         account_number=s.bank_account_number,
-        amount_cents=amount,
-        currency=currency,
+        amount_cents=payment.amount_cents,
+        currency=payment.currency.upper(),
         payment_reference=payment.payment_reference or "",
         student_code=student_code,
         course_title=course.title,
         course_slug=course.slug,
+        original_amount_cents=payment.original_amount_cents,
+        discount_cents=payment.discount_cents or 0,
+        coupon_code=payment.coupon_code,
     )
 
 
@@ -124,20 +127,66 @@ def _payment_out(
         currency=payment.currency,
         status=payment.status,
         payment_method=payment.payment_method,
+        coupon_code=payment.coupon_code,
+        original_amount_cents=payment.original_amount_cents,
+        discount_cents=payment.discount_cents or 0,
         paid_at=payment.paid_at,
         created_at=payment.created_at,
         updated_at=payment.updated_at,
     )
 
 
-def start_enrollment(db: Session, user: User, course_slug: str) -> EnrollmentStartOut:
+def _apply_coupon_pricing(
+    db: Session,
+    user: User,
+    course: Course,
+    coupon_code: str | None,
+) -> tuple[int, str, int, int, DiscountCode | None, str | None]:
+    """Returns amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code."""
+    amount_cents, currency = _course_price(course)
+    original_cents = amount_cents
+    discount_cents = 0
+    discount_row = None
+    normalized_code: str | None = None
+    if coupon_code and amount_cents > 0:
+        discount_row = discount_service.get_discount_for_checkout(db, coupon_code, user, course)
+        amount_cents, discount_cents = discount_service.apply_discount_amount(discount_row, original_cents)
+        normalized_code = discount_row.code
+        _logger.info(
+            "Coupon applied code=%s course=%s original=%s discount=%s final=%s",
+            normalized_code,
+            course.slug,
+            original_cents,
+            discount_cents,
+            amount_cents,
+        )
+    return amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code
+
+
+def _attach_discount_to_payment(
+    payment: Payment,
+    *,
+    original_cents: int,
+    discount_cents: int,
+    discount_row: DiscountCode | None,
+    normalized_code: str | None,
+) -> None:
+    payment.original_amount_cents = original_cents if discount_cents > 0 else None
+    payment.discount_cents = discount_cents
+    payment.coupon_code = normalized_code
+    payment.discount_code_id = discount_row.id if discount_row else None
+
+
+def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str | None = None) -> EnrollmentStartOut:
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only students can enroll in courses")
 
     course = course_service.get_course_or_404(db, course_slug)
-    amount_cents, currency = _course_price(course)
+    amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code = _apply_coupon_pricing(
+        db, user, course, coupon_code
+    )
 
-    if course.is_free or amount_cents == 0:
+    if course.is_free or (amount_cents == 0 and original_cents == 0):
         existing = db.execute(
             select(Enrollment).where(Enrollment.user_id == user.id, Enrollment.course_id == course.id)
         ).scalar_one_or_none()
@@ -166,6 +215,60 @@ def start_enrollment(db: Session, user: User, course_slug: str) -> EnrollmentSta
             message="Enrolled successfully (free course).",
         )
 
+    if amount_cents == 0 and original_cents > 0:
+        student_code = ensure_student_code(db, user)
+        existing = db.execute(
+            select(Enrollment).where(Enrollment.user_id == user.id, Enrollment.course_id == course.id)
+        ).scalar_one_or_none()
+        if existing and existing.status == EnrollmentStatus.ENROLLED:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled in this course")
+        if existing:
+            existing.status = EnrollmentStatus.ENROLLED
+            db.add(existing)
+            enrollment = existing
+        else:
+            enrollment = Enrollment(
+                user_id=user.id,
+                course_id=course.id,
+                status=EnrollmentStatus.ENROLLED,
+                lesson_done=0,
+                progress_pct=0,
+            )
+            db.add(enrollment)
+            db.flush()
+        payment_ref = _new_payment_reference(db)
+        payment = Payment(
+            user_id=user.id,
+            course_id=course.id,
+            enrollment_id=enrollment.id,
+            amount_cents=0,
+            currency=currency,
+            status=PaymentStatus.PAID,
+            payment_reference=payment_ref,
+            payment_method="bank_transfer",
+            external_ref="discount_full",
+            paid_at=_utcnow(),
+        )
+        _attach_discount_to_payment(
+            payment,
+            original_cents=original_cents,
+            discount_cents=discount_cents,
+            discount_row=discount_row,
+            normalized_code=normalized_code,
+        )
+        db.add(payment)
+        db.flush()
+        discount_service.record_redemption(db, payment)
+        _audit(db, payment.id, user.id, "payment_discount_full", f"ref={payment_ref} code={normalized_code}")
+        db.commit()
+        return EnrollmentStartOut(
+            enrollment_status=EnrollmentStatus.ENROLLED,
+            student_code=student_code,
+            payment=_payment_out(db, payment, course, user),
+            instructions=None,
+            message="Your discount covers the full price — you are enrolled.",
+        )
+
     student_code = ensure_student_code(db, user)
 
     existing_enr = db.execute(
@@ -187,6 +290,15 @@ def start_enrollment(db: Session, user: User, course_slug: str) -> EnrollmentSta
     ).scalar_one_or_none()
 
     if pending_payment and pending_payment.payment_reference:
+        pending_payment.amount_cents = amount_cents
+        pending_payment.currency = currency
+        _attach_discount_to_payment(
+            pending_payment,
+            original_cents=original_cents,
+            discount_cents=discount_cents,
+            discount_row=discount_row,
+            normalized_code=normalized_code,
+        )
         if not existing_enr:
             existing_enr = Enrollment(
                 user_id=user.id,
@@ -241,6 +353,13 @@ def start_enrollment(db: Session, user: User, course_slug: str) -> EnrollmentSta
         payment_reference=payment_ref,
         payment_method="bank_transfer",
         external_ref="bank_transfer_v1",
+    )
+    _attach_discount_to_payment(
+        payment,
+        original_cents=original_cents,
+        discount_cents=discount_cents,
+        discount_row=discount_row,
+        normalized_code=normalized_code,
     )
     db.add(payment)
     db.flush()
@@ -311,9 +430,13 @@ def _complete_payment(
 
     course = db.get(Course, payment.course_id) if payment.course_id else None
     if course and not skip_amount_check:
-        expected_amount, expected_currency = _course_price(course)
-        if payment.amount_cents != expected_amount or payment.currency.upper() != expected_currency.upper():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment amount mismatch")
+        if payment.original_amount_cents is not None:
+            if payment.currency.upper() != get_settings().bank_transfer_currency.upper():
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment amount mismatch")
+        else:
+            expected_amount, expected_currency = _course_price(course)
+            if payment.amount_cents != expected_amount or payment.currency.upper() != expected_currency.upper():
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment amount mismatch")
 
     now = _utcnow()
     payment.status = PaymentStatus.PAID
@@ -344,6 +467,7 @@ def _complete_payment(
         "payment_verified",
         f"txn={transaction_reference}",
     )
+    discount_service.record_redemption(db, payment)
     db.commit()
     db.refresh(payment)
 

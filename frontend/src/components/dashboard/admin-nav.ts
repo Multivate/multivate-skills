@@ -13,6 +13,7 @@ import {
   ScrollText,
   Settings,
   Star,
+  Tag,
   Users,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export const adminNav: { href: string; id: string; icon: LucideIcon }[] = [
   { href: "/dashboard/admin/instructors", id: "instructors", icon: GraduationCap },
   { href: "/dashboard/admin/enrollments", id: "enrollments", icon: ClipboardList },
   { href: "/dashboard/admin/payments", id: "payments", icon: CreditCard },
+  { href: "/dashboard/admin/discount-codes", id: "discountCodes", icon: Tag },
   { href: "/dashboard/admin/certificates", id: "certificates", icon: Award },
   { href: "/dashboard/admin/analytics", id: "analytics", icon: BarChart3 },
   { href: "/dashboard/admin/reviews", id: "reviews", icon: Star },

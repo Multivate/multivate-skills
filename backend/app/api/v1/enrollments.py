@@ -20,7 +20,7 @@ def start_enrollment(
     user: Annotated[User, Depends(get_current_user)],
 ) -> EnrollmentStartOut:
     """Begin paid enrollment: pending payment + bank transfer instructions."""
-    return bank_transfer_service.start_enrollment(db, user, body.course_slug)
+    return bank_transfer_service.start_enrollment(db, user, body.course_slug, body.coupon_code)
 
 
 @router.post("", status_code=status.HTTP_204_NO_CONTENT)

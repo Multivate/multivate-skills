@@ -96,6 +96,49 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
 
         _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(512)")
 
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS discount_codes (
+                id UUID PRIMARY KEY,
+                code VARCHAR(32) NOT NULL UNIQUE,
+                label VARCHAR(255),
+                discount_type VARCHAR(16) NOT NULL,
+                discount_value INTEGER NOT NULL,
+                course_id UUID REFERENCES courses(id) ON DELETE SET NULL,
+                max_uses INTEGER,
+                used_count INTEGER NOT NULL DEFAULT 0,
+                max_uses_per_user INTEGER NOT NULL DEFAULT 1,
+                starts_at TIMESTAMPTZ,
+                expires_at TIMESTAMPTZ,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_discount_codes_code ON discount_codes (code)")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS discount_redemptions (
+                id UUID PRIMARY KEY,
+                discount_code_id UUID NOT NULL REFERENCES discount_codes(id) ON DELETE CASCADE,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                payment_id UUID NOT NULL UNIQUE REFERENCES payments(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(32)")
+        _run(
+            conn,
+            "ALTER TABLE payments ADD COLUMN IF NOT EXISTS discount_code_id UUID REFERENCES discount_codes(id) ON DELETE SET NULL",
+        )
+        _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS original_amount_cents INTEGER")
+        _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS discount_cents INTEGER NOT NULL DEFAULT 0")
+
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(

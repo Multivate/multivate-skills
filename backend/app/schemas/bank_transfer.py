@@ -19,6 +19,9 @@ class BankTransferInstructions(BaseModel):
     student_code: str
     course_title: str
     course_slug: str
+    original_amount_cents: int | None = None
+    discount_cents: int = 0
+    coupon_code: str | None = None
 
 
 class StudentPaymentOut(BaseModel):
@@ -36,6 +39,9 @@ class StudentPaymentOut(BaseModel):
     currency: str
     status: PaymentStatus
     payment_method: str
+    coupon_code: str | None = None
+    original_amount_cents: int | None = None
+    discount_cents: int = 0
     paid_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
@@ -51,6 +57,7 @@ class EnrollmentStartOut(BaseModel):
 
 class EnrollmentStartIn(BaseModel):
     course_slug: str = Field(min_length=1, max_length=128)
+    coupon_code: str | None = Field(default=None, max_length=32)
 
 
 class PaymentVerifyIn(BaseModel):

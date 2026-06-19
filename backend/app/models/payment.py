@@ -54,6 +54,15 @@ class Payment(Base):
         index=True,
     )
     verification_response: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    coupon_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    discount_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("discount_codes.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    original_amount_cents: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    discount_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

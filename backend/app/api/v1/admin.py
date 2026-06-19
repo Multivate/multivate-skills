@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,12 +12,13 @@ from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.analytics import AdminDashboardOut, PaymentAdminRow, RecentEnrollmentRow
 from app.schemas.bank_transfer import AdminPaymentApproveIn, AdminPaymentRejectIn, PaymentVerifyOut, StudentPaymentOut
+from app.schemas.discount import DiscountCodeCreateIn, DiscountCodeOut
 from app.schemas.instructor_profile import InstructorTeachingProfileAdminRow
 from app.schemas.review import ReviewOut
 from app.schemas.studio import AdminCourseRejectIn, CourseStudioBasicsOut, StudioCourseListItem
 from app.schemas.student_profile import StudentLearningProfileAdminRow
 from app.schemas.user import UserPublic, user_public_from_orm
-from app.services import analytics_service, bank_transfer_service, course_studio_service, instructor_profile_service, learning_service, review_service
+from app.services import analytics_service, bank_transfer_service, course_studio_service, discount_service, instructor_profile_service, learning_service, review_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -151,3 +152,39 @@ def reject_course(
     admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
 ) -> CourseStudioBasicsOut:
     return course_studio_service.admin_reject_course(db, slug, body.reason, admin)
+
+
+@router.get("/discount-codes", response_model=list[DiscountCodeOut])
+def list_discount_codes(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    limit: int = Query(100, ge=1, le=200),
+) -> list[DiscountCodeOut]:
+    return discount_service.list_discount_codes(db, limit=limit)
+
+
+@router.post("/discount-codes", response_model=DiscountCodeOut, status_code=status.HTTP_201_CREATED)
+def create_discount_code(
+    body: DiscountCodeCreateIn,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> DiscountCodeOut:
+    return discount_service.create_discount_code(db, admin, body)
+
+
+@router.patch("/discount-codes/{discount_id}/deactivate", response_model=DiscountCodeOut)
+def deactivate_discount_code(
+    discount_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> DiscountCodeOut:
+    return discount_service.set_discount_active(db, discount_id, is_active=False)
+
+
+@router.patch("/discount-codes/{discount_id}/activate", response_model=DiscountCodeOut)
+def activate_discount_code(
+    discount_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> DiscountCodeOut:
+    return discount_service.set_discount_active(db, discount_id, is_active=True)

@@ -18,6 +18,9 @@ type Instructions = {
   student_code: string;
   course_title: string;
   course_slug: string;
+  original_amount_cents?: number | null;
+  discount_cents?: number;
+  coupon_code?: string | null;
 };
 
 type StartResponse = {
@@ -50,40 +53,65 @@ export function BankTransferCheckoutPanel() {
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const paymentStatus = data?.payment?.status ?? "";
   const awaitingReview = paymentStatus === "awaiting_review" || submitted;
 
-  const startEnrollment = useCallback(async () => {
-    if (!slug) return;
-    setBusy(true);
+  const startEnrollment = useCallback(
+    async (couponCode?: string) => {
+      if (!slug) return;
+      setBusy(true);
+      setErr(null);
+      try {
+        const payload: { course_slug: string; coupon_code?: string } = { course_slug: slug };
+        const trimmed = couponCode?.trim();
+        if (trimmed) payload.coupon_code = trimmed.toUpperCase();
+
+        const res = await fetch("/api/enrollments/start", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = (await res.json().catch(() => null)) as StartResponse & { detail?: string };
+        if (!res.ok) {
+          setErr(typeof body?.detail === "string" ? body.detail : t("startError"));
+          return;
+        }
+        setData(body);
+        if (trimmed) setCouponInput(trimmed.toUpperCase());
+        if (body.enrollment_status === "enrolled") {
+          removeItem(slug);
+          router.push("/dashboard/payments/success?free=1");
+        }
+        if (body.payment?.status === "awaiting_review") {
+          setSubmitted(true);
+        }
+        if (body.payment?.status === "paid") {
+          removeItem(slug);
+          router.push("/dashboard/payments/success");
+        }
+      } catch {
+        setErr(t("networkError"));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [slug, t, removeItem, router],
+  );
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setCouponBusy(true);
     setErr(null);
     try {
-      const res = await fetch("/api/enrollments/start", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ course_slug: slug }),
-      });
-      const body = (await res.json().catch(() => null)) as StartResponse & { detail?: string };
-      if (!res.ok) {
-        setErr(typeof body?.detail === "string" ? body.detail : t("startError"));
-        return;
-      }
-      setData(body);
-      if (body.enrollment_status === "enrolled") {
-        removeItem(slug);
-        router.push("/dashboard/payments/success?free=1");
-      }
-      if (body.payment?.status === "awaiting_review") {
-        setSubmitted(true);
-      }
-    } catch {
-      setErr(t("networkError"));
+      await startEnrollment(couponInput);
     } finally {
-      setBusy(false);
+      setCouponBusy(false);
     }
-  }, [slug, t, removeItem, router]);
+  }
 
   useEffect(() => {
     if (slug && user?.role === "student") void startEnrollment();
@@ -176,6 +204,28 @@ export function BankTransferCheckoutPanel() {
         <h2 className="text-lg font-extrabold text-brand-ink">{t("title")}</h2>
         <p className="mt-2 text-sm text-slate-600">{data?.message ?? t("subtitle")}</p>
 
+        {!awaitingReview && data?.enrollment_status !== "enrolled" ? (
+          <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-4 sm:flex-row sm:items-end dark:border-slate-700 dark:bg-slate-950/40">
+            <label className="flex-1 text-sm font-semibold text-brand-ink">
+              {t("couponLabel")}
+              <input
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                placeholder={t("couponPlaceholder")}
+                className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 font-mono text-sm uppercase outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={couponBusy || busy || !couponInput.trim()}
+              onClick={() => void applyCoupon()}
+              className="btn-outline-brand !min-h-[2.75rem] shrink-0 !py-2.5 text-sm disabled:opacity-60"
+            >
+              {couponBusy ? t("couponApplying") : t("couponApply")}
+            </button>
+          </div>
+        ) : null}
+
         {inst ? (
           <div className="mt-6 space-y-4">
             <div className="rounded-xl border-2 border-brand-secondary/40 bg-brand-secondary/5 p-5 transition-shadow hover:shadow-md">
@@ -212,6 +262,17 @@ export function BankTransferCheckoutPanel() {
                 <dd className="mt-1 text-lg font-extrabold text-brand-ink">
                   {formatMoney(inst.amount_cents, inst.currency)}
                 </dd>
+                {inst.discount_cents && inst.discount_cents > 0 && inst.original_amount_cents ? (
+                  <p className="mt-1 text-xs text-emerald-700">
+                    {t("couponSaved", {
+                      amount: formatMoney(inst.discount_cents, inst.currency),
+                      code: inst.coupon_code ?? "",
+                    })}
+                    <span className="ml-1 text-slate-500 line-through">
+                      {formatMoney(inst.original_amount_cents, inst.currency)}
+                    </span>
+                  </p>
+                ) : null}
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase text-slate-500">{t("studentId")}</dt>

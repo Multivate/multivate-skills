@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { readApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
+import { AdminDiscountCodes } from "@/components/dashboard/AdminDiscountCodes";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 
@@ -979,6 +980,10 @@ export function AdminSectionContent({ section }: { section: string }) {
         </section>
       </div>
     );
+  }
+
+  if (section === "discount-codes") {
+    return <AdminDiscountCodes />;
   }
 
   return (
