@@ -14,24 +14,30 @@ services:
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       # Pin Python — new Render services default to 3.14.x, which can break native wheels / tooling.
       - key: PYTHON_VERSION
         value: 3.12.8
-      # Safe defaults so the first deploy succeeds (tables via create_all). Switch to production + migrations later.
       - key: ENVIRONMENT
-        value: development
+        value: production
       - key: AUTO_CREATE_TABLES
-        value: "true"
+        value: "false"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: multivate-db
           property: connectionString
-      # Set in the dashboard to your real frontend origin(s), comma-separated (e.g. https://yourapp.onrender.com).
+      # Set in the dashboard (comma-separated origins):
+      # https://multivate.com.ng,https://www.multivate.com.ng,https://multivateco.vercel.app
       - key: CORS_ORIGINS
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: PLATFORM_ADMIN_PASSWORD
         sync: false

@@ -13,6 +13,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.models.course import Course
 from app.models.discount_code import DiscountCode
 from app.models.enrollment import Enrollment
@@ -33,7 +34,6 @@ from app.services import course_service, discount_service, mail_service, notific
 
 _logger = logging.getLogger(__name__)
 
-_VERIFY_RATE: dict[str, list[float]] = {}
 _VERIFY_MAX_PER_MINUTE = 8
 
 
@@ -47,13 +47,12 @@ def _audit(db: Session, payment_id: UUID, actor_id: UUID | None, action: str, de
 
 
 def _rate_limit_verify(user_id: UUID) -> None:
-    key = str(user_id)
-    now = _utcnow().timestamp()
-    window = [t for t in _VERIFY_RATE.get(key, []) if now - t < 60]
-    if len(window) >= _VERIFY_MAX_PER_MINUTE:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many verification attempts")
-    window.append(now)
-    _VERIFY_RATE[key] = window
+    enforce_rate_limit(
+        f"payment-verify:user:{user_id}",
+        limit=_VERIFY_MAX_PER_MINUTE,
+        window_sec=60,
+        detail="Too many verification attempts",
+    )
 
 
 def ensure_student_code(db: Session, user: User) -> str:

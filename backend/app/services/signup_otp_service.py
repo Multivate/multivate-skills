@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core import redis_client
+from app.core.rate_limit import enforce_rate_limit
 from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password
 from app.models.instructor_teaching_profile import InstructorTeachingProfile
 from app.models.role import UserRole
@@ -117,6 +118,12 @@ def _payload_for_instructor(data: InstructorRegisterRequest) -> dict[str, Any]:
 
 def start_student_signup(db: Session, data: StudentRegisterRequest) -> RegisterStartResponse:
     email = str(data.email).lower()
+    enforce_rate_limit(
+        f"signup:email:{email}",
+        limit=5,
+        window_sec=3600,
+        detail="Too many sign-up attempts for this email. Try again later.",
+    )
     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
@@ -152,6 +159,12 @@ def start_student_signup(db: Session, data: StudentRegisterRequest) -> RegisterS
 
 def start_instructor_signup(db: Session, data: InstructorRegisterRequest) -> RegisterStartResponse:
     email = str(data.email).lower()
+    enforce_rate_limit(
+        f"signup:email:{email}",
+        limit=5,
+        window_sec=3600,
+        detail="Too many sign-up attempts for this email. Try again later.",
+    )
     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")

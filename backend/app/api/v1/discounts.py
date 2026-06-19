@@ -8,6 +8,7 @@ from app.core.deps import get_current_user
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.discount import DiscountValidateIn, DiscountValidateOut
+from app.core.rate_limit import enforce_rate_limit
 from app.services import course_service, discount_service
 from app.services.bank_transfer_service import _course_price
 
@@ -22,6 +23,12 @@ def validate_discount_code(
 ) -> DiscountValidateOut:
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only students can use discount codes")
+    enforce_rate_limit(
+        f"discount:user:{user.id}",
+        limit=30,
+        window_sec=60,
+        detail="Too many coupon checks. Please wait a moment.",
+    )
     course = course_service.get_course_or_404(db, body.course_slug)
     original_cents, currency = _course_price(course)
     if original_cents <= 0:

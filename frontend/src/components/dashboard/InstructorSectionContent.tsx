@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
+import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
 
 type StudentRow = {
@@ -37,9 +38,6 @@ type ReviewRow = {
   created_at: string;
 };
 
-function money(cents: number, currency = "NGN") {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
-}
 
 function InstructorContentUpload() {
   const [dash, setDash] = useState<InstructorDashboard | null>(null);
@@ -371,7 +369,12 @@ export function InstructorSectionContent({ section }: { section: string }) {
           </div>
           <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed revenue</p>
-            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{money(totals.revenue_completed_cents)}</p>
+            <p
+              className="mt-2 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink"
+              title={formatMoney(totals.revenue_completed_cents)}
+            >
+              {formatMoneyCompact(totals.revenue_completed_cents)}
+            </p>
           </div>
         </section>
         <section className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
@@ -416,7 +419,12 @@ export function InstructorSectionContent({ section }: { section: string }) {
       <div className="space-y-6 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed course revenue</p>
-          <p className="mt-2 text-3xl font-extrabold tabular-nums text-brand-ink">{money(dash.totals.revenue_completed_cents)}</p>
+          <p
+            className="mt-2 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink sm:text-3xl"
+            title={formatMoney(dash.totals.revenue_completed_cents)}
+          >
+            {formatMoneyCompact(dash.totals.revenue_completed_cents)}
+          </p>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             Sum of completed payments tied to your published courses. For your own purchases and receipts, open Billing
             in the sidebar.

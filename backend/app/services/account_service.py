@@ -76,6 +76,14 @@ def change_password(db: Session, user: User, payload: ChangePasswordRequest) -> 
 
 def start_forgot_password(db: Session, payload: ForgotPasswordStartRequest) -> ForgotPasswordStartResponse:
     email = str(payload.email).lower().strip()
+    from app.core.rate_limit import enforce_rate_limit
+
+    enforce_rate_limit(
+        f"forgot:email:{email}",
+        limit=5,
+        window_sec=3600,
+        detail="Too many reset requests. Try again later.",
+    )
     user = db.scalar(select(User).where(User.email == email))
     reset_token = secrets.token_urlsafe(32)
     dev_otp: str | None = None

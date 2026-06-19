@@ -6,6 +6,7 @@ from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEV_SECRET_MARKER = "dev-only-change-in-production-min-32-characters-long"
+_DEV_ADMIN_PASSWORD = "Multivate2026!"
 
 
 class Settings(BaseSettings):
@@ -33,7 +34,13 @@ class Settings(BaseSettings):
 
     cors_origins: str = (
         "http://localhost:3000,http://127.0.0.1:3000,"
-        "https://multivate.com.ng,https://www.multivate.com.ng"
+        "https://multivate.com.ng,https://www.multivate.com.ng,"
+        "https://multivateco.vercel.app"
+    )
+
+    platform_admin_password: str = Field(
+        default=_DEV_ADMIN_PASSWORD,
+        description="Bootstrap password for admin@multivate.com.ng. Set PLATFORM_ADMIN_PASSWORD in production.",
     )
 
     auto_create_tables: bool = Field(
@@ -117,6 +124,13 @@ class Settings(BaseSettings):
             if not (self.resend_api_key or "").strip():
                 raise ValueError(
                     "RESEND_API_KEY is required in staging/production (transactional email is Resend-only)."
+                )
+            admin_pwd = (self.platform_admin_password or "").strip()
+            if len(admin_pwd) < 12:
+                raise ValueError("PLATFORM_ADMIN_PASSWORD must be at least 12 characters in staging/production.")
+            if admin_pwd == _DEV_ADMIN_PASSWORD:
+                raise ValueError(
+                    "PLATFORM_ADMIN_PASSWORD must not use the default dev password in staging/production."
                 )
         return self
 

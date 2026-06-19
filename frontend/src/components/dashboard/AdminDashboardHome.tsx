@@ -1,5 +1,6 @@
 "use client";
 
+import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { Link } from "@/i18n/navigation";
 import { BarChart3, BookOpen, GraduationCap, TrendingUp, Users } from "lucide-react";
@@ -34,9 +35,6 @@ type AdminDashboard = {
   }[];
 };
 
-function money(cents: number, currency = "NGN") {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
-}
 
 export function AdminDashboardHome() {
   const [data, setData] = useState<AdminDashboard | null>(null);
@@ -126,8 +124,11 @@ export function AdminDashboardHome() {
               <TrendingUp className="h-4 w-4" strokeWidth={2} aria-hidden />
             </span>
           </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums text-brand-ink">
-            {money(totals.revenue_completed_cents)}
+          <p
+            className="mt-3 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink sm:text-3xl"
+            title={formatMoney(totals.revenue_completed_cents)}
+          >
+            {formatMoneyCompact(totals.revenue_completed_cents)}
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:col-span-2 xl:col-span-1">
@@ -193,7 +194,7 @@ export function AdminDashboardHome() {
             ) : (
               data.recent_payments.map((p) => (
                 <li key={p.id} className="rounded-lg border border-slate-100 px-2 py-2">
-                  <p className="font-semibold text-brand-ink">{money(p.amount_cents, p.currency)}</p>
+                  <p className="font-semibold text-brand-ink">{formatMoney(p.amount_cents, p.currency)}</p>
                   <p className="text-xs text-slate-600">
                     {p.status} · {p.user_email}
                   </p>

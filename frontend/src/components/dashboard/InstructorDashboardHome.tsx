@@ -3,6 +3,7 @@
 import { Link } from "@/i18n/navigation";
 import { BookOpen, Users, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 
 type InstructorDashboard = {
@@ -15,9 +16,6 @@ type InstructorDashboard = {
   courses: { slug: string; title: string; image_url: string; lessons_count: number; enrollment_count: number }[];
 };
 
-function money(cents: number, currency = "NGN") {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
-}
 
 export function InstructorDashboardHome() {
   const [data, setData] = useState<InstructorDashboard | null>(null);
@@ -104,8 +102,11 @@ export function InstructorDashboardHome() {
               <Wallet className="h-4 w-4" strokeWidth={2} aria-hidden />
             </span>
           </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums text-brand-ink">
-            {money(totals.revenue_completed_cents)}
+          <p
+            className="mt-3 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink sm:text-3xl"
+            title={formatMoney(totals.revenue_completed_cents)}
+          >
+            {formatMoneyCompact(totals.revenue_completed_cents)}
           </p>
         </div>
       </section>

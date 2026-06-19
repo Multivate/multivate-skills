@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 import { readApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { AdminDiscountCodes } from "@/components/dashboard/AdminDiscountCodes";
@@ -522,8 +523,6 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (analyticsDash === null) return <p className="text-sm text-slate-600">Loading analytics…</p>;
     const { totals } = analyticsDash;
-    const money = (cents: number) =>
-      new Intl.NumberFormat(undefined, { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(cents / 100);
     return (
       <div className="space-y-8">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -541,7 +540,12 @@ export function AdminSectionContent({ section }: { section: string }) {
           </div>
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed revenue</p>
-            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{money(totals.revenue_completed_cents)}</p>
+            <p
+              className="mt-2 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink"
+              title={formatMoney(totals.revenue_completed_cents)}
+            >
+              {formatMoneyCompact(totals.revenue_completed_cents)}
+            </p>
           </div>
           <div className="rounded-2xl border border-admin-indigo/20 bg-violet-50/80 p-5 shadow-sm dark:border-admin-indigo/30 dark:bg-violet-950/20">
             <p className="text-xs font-bold uppercase tracking-wide text-admin-indigo">Pending payments</p>

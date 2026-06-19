@@ -27,6 +27,7 @@ from app.core.security import (
     verify_token_type,
 )
 from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.services import instructor_profile_service
 from app.services import learning_service
 from app.services import mail_service
@@ -58,7 +59,14 @@ def _require_profile_for_session(db: Session, user: User) -> None:
 
 
 def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequired:
-    user = db.execute(select(User).where(User.email == str(data.email).lower())).scalar_one_or_none()
+    email_key = str(data.email).lower().strip()
+    enforce_rate_limit(
+        f"login:email:{email_key}",
+        limit=10,
+        window_sec=900,
+        detail="Too many sign-in attempts. Please wait and try again.",
+    )
+    user = db.execute(select(User).where(User.email == email_key)).scalar_one_or_none()
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

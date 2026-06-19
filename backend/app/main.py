@@ -18,6 +18,8 @@ from app.core.database import Base, SessionLocal, engine
 from app.core.logging import configure_logging
 from app.core.schema_patches import apply_schema_patches
 from app.middleware.request_id import RequestIdMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.models.certificate import Certificate  # noqa: F401
 from app.models.course import Course  # noqa: F401
 from app.models.course_audit_log import CourseAuditLog  # noqa: F401
@@ -83,15 +85,26 @@ def _cors_origins() -> list[str]:
     return [o.strip() for o in _settings.cors_origins.split(",") if o.strip()]
 
 
-app = FastAPI(title="Multivate API", version="1.0.0", lifespan=lifespan)
+_is_locked_down = _settings.environment in ("staging", "production")
 
+app = FastAPI(
+    title="Multivate API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None if _is_locked_down else "/docs",
+    redoc_url=None if _is_locked_down else "/redoc",
+    openapi_url=None if _is_locked_down else "/openapi.json",
+)
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
 )
 
 app.include_router(api_router)
@@ -103,6 +116,15 @@ async def validation_exception_handler(
     exc: RequestValidationError,
 ) -> JSONResponse:
     rid = getattr(request.state, "request_id", None)
+    if _settings.environment in ("staging", "production"):
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "detail": "Request validation failed",
+                "message": "Request validation failed",
+                "request_id": rid,
+            },
+        )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
