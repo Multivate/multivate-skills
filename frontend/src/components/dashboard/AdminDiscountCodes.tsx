@@ -20,12 +20,14 @@ type DiscountRow = {
   created_at: string;
 };
 
-};
-
 function formatDiscount(row: DiscountRow) {
   if (row.discount_type === "percent") return `${row.discount_value}% off`;
   return `₦${(row.discount_value / 100).toLocaleString("en-NG")} off`;
 }
+
+const formLabelClass = "block text-sm font-semibold text-slate-800 dark:text-slate-200";
+const formInputClass =
+  "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-brand-ink outline-none placeholder:text-slate-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500";
 
 export function AdminDiscountCodes() {
   const [rows, setRows] = useState<DiscountRow[] | null>(null);
@@ -126,7 +128,7 @@ export function AdminDiscountCodes() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-xl">
-          <p className="rounded-xl border border-brand-accent/30 bg-brand-accent/5 px-4 py-3 text-sm text-slate-700">
+          <p className="rounded-xl border border-brand-accent/30 bg-brand-accent/5 px-4 py-3 text-sm text-slate-700 dark:border-brand-accent/25 dark:bg-brand-accent/10 dark:text-slate-300">
             Create codes students can use at checkout. Share the code by email, social, or campaigns.
           </p>
         </div>
@@ -156,41 +158,41 @@ export function AdminDiscountCodes() {
           onSubmit={(e) => void createCode(e)}
           className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
         >
-          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-ink">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-ink dark:text-slate-100">
             <Sparkles className="h-5 w-5 text-brand-accent" />
             Create a discount code
           </h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className={formLabelClass}>
               Label (optional)
               <input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="Launch week"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
+                className={formInputClass}
               />
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className={formLabelClass}>
               Code (leave blank to auto-generate)
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="SAVE20"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 font-mono text-sm uppercase outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
+                className={`${formInputClass} font-mono uppercase`}
               />
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className={formLabelClass}>
               Discount type
               <select
                 value={discountType}
                 onChange={(e) => setDiscountType(e.target.value as "percent" | "fixed")}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2"
+                className={formInputClass}
               >
                 <option value="percent">Percent off</option>
                 <option value="fixed">Fixed amount off (kobo)</option>
               </select>
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className={formLabelClass}>
               {discountType === "percent" ? "Percent (1–100)" : "Amount off in kobo"}
               <input
                 type="number"
@@ -198,10 +200,10 @@ export function AdminDiscountCodes() {
                 max={discountType === "percent" ? 100 : undefined}
                 value={discountValue}
                 onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2"
+                className={formInputClass}
               />
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className={formLabelClass}>
               Max total uses (optional)
               <input
                 type="number"
@@ -209,16 +211,16 @@ export function AdminDiscountCodes() {
                 value={maxUses}
                 onChange={(e) => setMaxUses(e.target.value)}
                 placeholder="Unlimited"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2"
+                className={formInputClass}
               />
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className={formLabelClass}>
               Expires on (optional)
               <input
                 type="date"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2"
+                className={formInputClass}
               />
             </label>
           </div>
@@ -235,7 +237,7 @@ export function AdminDiscountCodes() {
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Discount</th>
@@ -247,24 +249,24 @@ export function AdminDiscountCodes() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-slate-500 dark:text-slate-400">
                   No discount codes yet. Create one to get started.
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="border-b border-slate-100 last:border-0">
+                <tr key={row.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Tag className="h-4 w-4 text-brand-accent" />
                       <div>
-                        <p className="font-mono font-bold text-brand-ink">{row.code}</p>
-                        {row.label ? <p className="text-xs text-slate-500">{row.label}</p> : null}
+                        <p className="font-mono font-bold text-brand-ink dark:text-slate-100">{row.code}</p>
+                        {row.label ? <p className="text-xs text-slate-500 dark:text-slate-400">{row.label}</p> : null}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-slate-800">{formatDiscount(row)}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{formatDiscount(row)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                     {row.used_count}
                     {row.max_uses != null ? ` / ${row.max_uses}` : " / ∞"}
                   </td>

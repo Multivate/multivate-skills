@@ -44,10 +44,10 @@ class StudentLearningProfileRegistration(BaseModel):
     education_level: str = Field(..., min_length=1, max_length=64)
     current_skills: str | None = Field(None, max_length=12000)
     skills_to_learn: str = Field(..., min_length=1, max_length=12000)
-    learning_goals: str = Field(..., min_length=1, max_length=12000)
+    learning_goals: str | None = Field(None, max_length=12000)
     preferred_formats: str = Field(..., min_length=1, max_length=255)
     weekly_hours: str = Field(..., min_length=1, max_length=32)
-    career_direction: str = Field(..., min_length=1, max_length=12000)
+    career_direction: str | None = Field(None, max_length=12000)
     extra_notes: str | None = Field(None, max_length=12000)
 
 

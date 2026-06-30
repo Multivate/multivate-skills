@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuth } from "@/contexts/auth-context";
 import { readApiError } from "@/lib/api-error";
 import type { AuthUser } from "@/types/user";
@@ -99,11 +100,7 @@ export default function DashboardSettingsPage() {
     }
   };
 
-  const avatarSrc = display?.avatar_url
-    ? display.avatar_url.startsWith("/")
-      ? display.avatar_url.replace("/api/v1/media/public/", "/api/media/public/")
-      : display.avatar_url
-    : null;
+  const avatarSrc = display?.avatar_url ?? null;
 
   async function saveProfile() {
     setProfileErr(null);
@@ -233,16 +230,12 @@ export default function DashboardSettingsPage() {
                 {profileErr ? <p className="mt-4 text-sm font-medium text-red-800">{profileErr}</p> : null}
                 {profileMsg ? <p className="mt-4 text-sm font-medium text-emerald-800">{profileMsg}</p> : null}
                 <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center">
-                  <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 ring-2 ring-brand-secondary/30">
-                    {avatarSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-brand-secondary">
-                        {(display?.name ?? "?").slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+                  <UserAvatar
+                    name={display?.name ?? "?"}
+                    avatarUrl={avatarSrc}
+                    className="h-24 w-24 text-2xl ring-2 ring-brand-secondary/30"
+                    fallbackClassName="bg-slate-100 text-brand-secondary"
+                  />
                   <div>
                     <p className="text-sm font-semibold text-brand-ink">{t("photoLabel")}</p>
                     <p className="mt-1 text-xs text-slate-500">{t("photoHint")}</p>

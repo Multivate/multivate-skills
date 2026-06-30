@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, model_validator
+from uuid import UUID
 
 
 class MyCourseItem(BaseModel):
@@ -24,3 +25,27 @@ class ProgressUpdate(BaseModel):
         if self.lesson_done is None and self.progress_pct is None:
             raise ValueError("Provide lesson_done and/or progress_pct")
         return self
+
+
+class RecommendedCourseOut(BaseModel):
+    id: UUID
+    slug: str
+    title: str
+    subtitle: str | None = None
+    description: str
+    learning_objectives: str | None = None
+    image_url: str
+    lessons_count: int
+    instructor_id: UUID | None = None
+    category: str = "general"
+    level: str = "beginner"
+    language: str = "en"
+    duration_minutes: int = 0
+    tags: str | None = None
+    price_cents: int = 0
+    currency: str = "NGN"
+    is_free: bool = False
+    status: str = "draft"
+    promo_video_url: str | None = None
+    match_score: float = 0
+    match_reasons: list[str] = Field(default_factory=list)

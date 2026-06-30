@@ -76,6 +76,20 @@ class RegisterVerifyRequest(BaseModel):
     code: str = Field(..., min_length=1, max_length=32)
 
 
+class OAuthCompleteRequest(BaseModel):
+    code: str = Field(..., min_length=1)
+    state: str = Field(..., min_length=1)
+    name: str | None = Field(None, max_length=255)
+
+
+class OAuthStartResponse(BaseModel):
+    authorize_url: str
+
+
+class OAuthCompleteResponse(AuthResponse):
+    return_to: str = "/dashboard"
+
+
 class ForgotPasswordStartRequest(BaseModel):
     email: EmailStr
 

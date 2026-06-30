@@ -222,10 +222,10 @@ def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthRe
         education_level=lp["education_level"],
         current_skills=lp.get("current_skills"),
         skills_to_learn=lp["skills_to_learn"],
-        learning_goals=lp["learning_goals"],
+        learning_goals=lp.get("learning_goals"),
         preferred_formats=lp["preferred_formats"],
         weekly_hours=lp["weekly_hours"],
-        career_direction=lp["career_direction"],
+        career_direction=lp.get("career_direction"),
         extra_notes=lp.get("extra_notes"),
     )
     db.add(profile)
@@ -250,10 +250,10 @@ def _create_instructor_from_payload(db: Session, payload: dict[str, Any]) -> Aut
     row = InstructorTeachingProfile(
         user_id=user.id,
         expertise_areas=tp["expertise_areas"],
-        teaching_bio=tp["teaching_bio"],
-        subjects_taught=tp["subjects_taught"],
-        years_experience=tp.get("years_experience"),
-        teaching_formats=tp.get("teaching_formats"),
+        teaching_bio=tp.get("teaching_bio") or "",
+        subjects_taught=tp.get("subjects_taught") or "",
+        years_experience=tp["years_experience"],
+        teaching_formats=tp["teaching_formats"],
         credentials_notes=tp.get("credentials_notes"),
         professional_links=tp.get("professional_links"),
     )

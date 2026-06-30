@@ -1,15 +1,17 @@
 "use client";
 
-import { BookOpen, Briefcase, Clock, GraduationCap, Link2, Mail, MessageSquareText, Sparkles, Target, User, Users } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { Clock, GraduationCap, Mail, MessageSquareText, Target, User, Users } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AUTH_IMAGES } from "@/components/auth/auth-media";
 import { AuthBrandBlock, AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { AuthInput } from "@/components/auth/AuthInput";
+import { AuthSocialButtons } from "@/components/auth/AuthSocialButtons";
 import { AuthSelect } from "@/components/auth/AuthSelect";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { SuggestionChipsField } from "@/components/auth/SuggestionChipsField";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "@/i18n/navigation";
 import type { UserRole } from "@/types/user";
@@ -18,6 +20,8 @@ const TOTAL_STEPS = 4;
 
 export function RegisterForm() {
   const t = useTranslations("auth.register");
+  const tLogin = useTranslations("auth.login");
+  const locale = useLocale();
   const tLearn = useTranslations("dashboard.learningProfile");
   const tTeach = useTranslations("dashboard.teachingProfile");
   const { registerStart, registerVerify, user, loading } = useAuth();
@@ -39,21 +43,13 @@ export function RegisterForm() {
   const [otpNotice, setOtpNotice] = useState<string | null>(null);
 
   const [educationLevel, setEducationLevel] = useState("");
-  const [currentSkills, setCurrentSkills] = useState("");
   const [skillsToLearn, setSkillsToLearn] = useState("");
-  const [learningGoals, setLearningGoals] = useState("");
   const [preferredFormats, setPreferredFormats] = useState("");
   const [weeklyHours, setWeeklyHours] = useState("");
-  const [careerDirection, setCareerDirection] = useState("");
-  const [extraNotes, setExtraNotes] = useState("");
 
   const [expertiseAreas, setExpertiseAreas] = useState("");
-  const [teachingBio, setTeachingBio] = useState("");
-  const [subjectsTaught, setSubjectsTaught] = useState("");
   const [yearsExperience, setYearsExperience] = useState("");
   const [teachingFormats, setTeachingFormats] = useState("");
-  const [credentialsNotes, setCredentialsNotes] = useState("");
-  const [professionalLinks, setProfessionalLinks] = useState("");
 
   const inputClass =
     "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/25";
@@ -71,6 +67,70 @@ export function RegisterForm() {
     }
   }, [searchParams]);
 
+  const skillsToLearnSuggestions = useMemo(
+    () =>
+      [
+        tLearn("skillSuggestAi"),
+        tLearn("skillSuggestCloud"),
+        tLearn("skillSuggestData"),
+        tLearn("skillSuggestGerman"),
+        tLearn("skillSuggestWeb"),
+        tLearn("skillSuggestDesign"),
+        tLearn("skillSuggestCyber"),
+        tLearn("skillSuggestCareer"),
+        tLearn("skillSuggestCert"),
+        tLearn("skillSuggestBusinessGerman"),
+      ],
+    [tLearn],
+  );
+
+  const preferredFormatSuggestions = useMemo(
+    () =>
+      [
+        tLearn("formatSuggestOnline"),
+        tLearn("formatSuggestLiveOnline"),
+        tLearn("formatSuggestInPerson"),
+        tLearn("formatSuggestHybrid"),
+        tLearn("formatSuggestVideo"),
+        tLearn("formatSuggestProjects"),
+        tLearn("formatSuggestLiveQa"),
+        tLearn("formatSuggestCohort"),
+      ],
+    [tLearn],
+  );
+
+  const teachingFormatSuggestions = useMemo(
+    () =>
+      [
+        tTeach("teachFormatLiveOnline"),
+        tTeach("teachFormatSelfPaced"),
+        tTeach("teachFormatInPerson"),
+        tTeach("teachFormatHybrid"),
+        tTeach("teachFormatCohort"),
+        tTeach("teachFormatMentoring"),
+        tTeach("teachFormatProjects"),
+        tTeach("teachFormatOfficeHours"),
+      ],
+    [tTeach],
+  );
+
+  const expertiseSuggestions = useMemo(
+    () =>
+      [
+        tTeach("expertiseSuggestAi"),
+        tTeach("expertiseSuggestCloud"),
+        tTeach("expertiseSuggestData"),
+        tTeach("expertiseSuggestGerman"),
+        tTeach("expertiseSuggestWeb"),
+        tTeach("expertiseSuggestDesign"),
+        tTeach("expertiseSuggestCyber"),
+        tTeach("expertiseSuggestCareer"),
+        tTeach("expertiseSuggestCert"),
+        tTeach("expertiseSuggestBusinessGerman"),
+      ],
+    [tTeach],
+  );
+
   function validateQuestionnaire(): boolean {
     if (!role) {
       setError(t("errRole"));
@@ -85,10 +145,6 @@ export function RegisterForm() {
         setError(tLearn("requiredSkillsToLearn"));
         return false;
       }
-      if (!learningGoals.trim()) {
-        setError(t("errLearningGoals"));
-        return false;
-      }
       if (!preferredFormats.trim()) {
         setError(t("errPreferredFormats"));
         return false;
@@ -97,13 +153,17 @@ export function RegisterForm() {
         setError(tLearn("weeklyOptPlaceholder"));
         return false;
       }
-      if (!careerDirection.trim()) {
-        setError(t("errCareerDirection"));
+    } else {
+      if (!expertiseAreas.trim()) {
+        setError(tTeach("requiredExpertise"));
         return false;
       }
-    } else {
-      if (!expertiseAreas.trim() || !teachingBio.trim() || !subjectsTaught.trim()) {
-        setError(tTeach("requiredCore"));
+      if (!yearsExperience.trim()) {
+        setError(tTeach("requiredYears"));
+        return false;
+      }
+      if (!teachingFormats.trim()) {
+        setError(tTeach("requiredTeachingFormats"));
         return false;
       }
     }
@@ -153,13 +213,13 @@ export function RegisterForm() {
               password,
               learning_profile: {
                 education_level: educationLevel.trim(),
-                current_skills: currentSkills.trim() || null,
+                current_skills: null,
                 skills_to_learn: skillsToLearn.trim(),
-                learning_goals: learningGoals.trim(),
+                learning_goals: null,
                 preferred_formats: preferredFormats.trim(),
                 weekly_hours: weeklyHours.trim(),
-                career_direction: careerDirection.trim(),
-                extra_notes: extraNotes.trim() || null,
+                career_direction: null,
+                extra_notes: null,
               },
             }
           : {
@@ -169,12 +229,12 @@ export function RegisterForm() {
               password,
               teaching_profile: {
                 expertise_areas: expertiseAreas.trim(),
-                teaching_bio: teachingBio.trim(),
-                subjects_taught: subjectsTaught.trim(),
-                years_experience: yearsExperience.trim() || null,
-                teaching_formats: teachingFormats.trim() || null,
-                credentials_notes: credentialsNotes.trim() || null,
-                professional_links: professionalLinks.trim() || null,
+                teaching_bio: null,
+                subjects_taught: null,
+                years_experience: yearsExperience.trim(),
+                teaching_formats: teachingFormats.trim(),
+                credentials_notes: null,
+                professional_links: null,
               },
             };
       const started = await registerStart(startPayload);
@@ -281,6 +341,17 @@ export function RegisterForm() {
 
             {step === 1 ? (
               <div className="space-y-6">
+                <div>
+                  <div className="relative my-2">
+                    <div className="absolute inset-0 flex items-center" aria-hidden>
+                      <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                    </div>
+                    <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <span className="bg-white px-3 dark:bg-slate-900">{tLogin("divider")}</span>
+                    </div>
+                  </div>
+                  <AuthSocialButtons returnTo="/dashboard" locale={locale} disabled={pending} />
+                </div>
                 <AuthSelect id="role" label={t("roleLabel")} icon={Users} value={role} onChange={(v) => setRole(v as typeof role)}>
                   <option value="" disabled>
                     {t("rolePlaceholder")}
@@ -323,63 +394,29 @@ export function RegisterForm() {
                       </select>
                     </div>
                   </div>
+                  <SuggestionChipsField
+                    id="reg_skills_to_learn"
+                    label={tLearn("skillsToLearnLabel")}
+                    icon={Target}
+                    required
+                    hint={tLearn("skillsToLearnHint")}
+                    suggestions={skillsToLearnSuggestions}
+                    value={skillsToLearn}
+                    onChange={setSkillsToLearn}
+                    className={qSpan2}
+                  />
+                  <SuggestionChipsField
+                    id="reg_preferred_formats"
+                    label={tLearn("preferredFormatsLabel")}
+                    icon={MessageSquareText}
+                    required
+                    hint={tLearn("preferredFormatsHint")}
+                    suggestions={preferredFormatSuggestions}
+                    value={preferredFormats}
+                    onChange={setPreferredFormats}
+                    className={qSpan2}
+                  />
                   <div className={qSpan2}>
-                    <label htmlFor="reg_current_skills" className={`${labelClass} flex items-center gap-2`}>
-                      <Sparkles className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tLearn("currentSkillsLabel")}
-                    </label>
-                    <textarea
-                      id="reg_current_skills"
-                      rows={3}
-                      value={currentSkills}
-                      onChange={(e) => setCurrentSkills(e.target.value)}
-                      placeholder={tLearn("currentSkillsPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg_skills_to_learn" className={`${labelClass} flex items-center gap-2`}>
-                      <Target className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tLearn("skillsToLearnLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_skills_to_learn"
-                      rows={3}
-                      value={skillsToLearn}
-                      onChange={(e) => setSkillsToLearn(e.target.value)}
-                      placeholder={tLearn("skillsToLearnPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg_learning_goals" className={`${labelClass} flex items-center gap-2`}>
-                      <BookOpen className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tLearn("learningGoalsLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_learning_goals"
-                      rows={3}
-                      value={learningGoals}
-                      onChange={(e) => setLearningGoals(e.target.value)}
-                      placeholder={tLearn("learningGoalsPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className={qSpan2}>
-                    <label htmlFor="reg_preferred_formats" className={`${labelClass} flex items-center gap-2`}>
-                      <MessageSquareText className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tLearn("preferredFormatsLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_preferred_formats"
-                      rows={2}
-                      value={preferredFormats}
-                      onChange={(e) => setPreferredFormats(e.target.value)}
-                      placeholder={tLearn("preferredFormatsPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
                     <label htmlFor="reg_weekly_hours" className={`${labelClass} flex items-center gap-2`}>
                       <Clock className="h-4 w-4 text-brand-primary" aria-hidden />
                       {tLearn("weeklyHoursLabel")} <span className="text-red-600">*</span>
@@ -397,33 +434,6 @@ export function RegisterForm() {
                       <option value="15plus">{tLearn("weeklyOpt15plus")}</option>
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="reg_career_direction" className={`${labelClass} flex items-center gap-2`}>
-                      <Briefcase className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tLearn("careerDirectionLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_career_direction"
-                      rows={2}
-                      value={careerDirection}
-                      onChange={(e) => setCareerDirection(e.target.value)}
-                      placeholder={tLearn("careerDirectionPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className={qSpan2}>
-                    <label htmlFor="reg_extra_notes" className={labelClass}>
-                      {tLearn("extraNotesLabel")}
-                    </label>
-                    <textarea
-                      id="reg_extra_notes"
-                      rows={2}
-                      value={extraNotes}
-                      onChange={(e) => setExtraNotes(e.target.value)}
-                      placeholder={tLearn("extraNotesPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
                 </div>
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                   <button type="button" onClick={() => setStep(1)} className={navBtnClass}>
@@ -440,48 +450,21 @@ export function RegisterForm() {
               <div className="space-y-6">
                 <div className={questionnaireShell}>
                   <p className={`text-sm font-bold text-brand-ink ${qSpan2}`}>{t("instructorBlockTitle")}</p>
+                  <SuggestionChipsField
+                    id="reg_expertise"
+                    label={tTeach("expertiseLabel")}
+                    icon={Target}
+                    required
+                    hint={tTeach("expertiseHint")}
+                    suggestions={expertiseSuggestions}
+                    value={expertiseAreas}
+                    onChange={setExpertiseAreas}
+                    className={qSpan2}
+                  />
                   <div className={qSpan2}>
-                    <label htmlFor="reg_expertise" className={labelClass}>
-                      {tTeach("expertiseLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_expertise"
-                      rows={3}
-                      value={expertiseAreas}
-                      onChange={(e) => setExpertiseAreas(e.target.value)}
-                      placeholder={tTeach("expertisePlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg_teaching_bio" className={labelClass}>
-                      {tTeach("bioLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_teaching_bio"
-                      rows={3}
-                      value={teachingBio}
-                      onChange={(e) => setTeachingBio(e.target.value)}
-                      placeholder={tTeach("bioPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg_subjects" className={labelClass}>
-                      {tTeach("subjectsLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      id="reg_subjects"
-                      rows={2}
-                      value={subjectsTaught}
-                      onChange={(e) => setSubjectsTaught(e.target.value)}
-                      placeholder={tTeach("subjectsPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className={`${qSpan2} md:max-w-md`}>
-                    <label htmlFor="reg_years" className={labelClass}>
-                      {tTeach("yearsLabel")}
+                    <label htmlFor="reg_years" className={`${labelClass} flex items-center gap-2`}>
+                      <GraduationCap className="h-4 w-4 text-brand-primary" aria-hidden />
+                      {tTeach("yearsLabel")} <span className="text-red-600">*</span>
                     </label>
                     <select id="reg_years" value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} className={inputClass}>
                       <option value="">{tTeach("yearsOptPlaceholder")}</option>
@@ -491,46 +474,17 @@ export function RegisterForm() {
                       <option value="10plus">{tTeach("yearsOpt10plus")}</option>
                     </select>
                   </div>
-                  <div className={qSpan2}>
-                    <label htmlFor="reg_teach_formats" className={labelClass}>
-                      {tTeach("formatsLabel")}
-                    </label>
-                    <textarea
-                      id="reg_teach_formats"
-                      rows={2}
-                      value={teachingFormats}
-                      onChange={(e) => setTeachingFormats(e.target.value)}
-                      placeholder={tTeach("formatsPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg_credentials" className={labelClass}>
-                      {tTeach("credentialsLabel")}
-                    </label>
-                    <textarea
-                      id="reg_credentials"
-                      rows={2}
-                      value={credentialsNotes}
-                      onChange={(e) => setCredentialsNotes(e.target.value)}
-                      placeholder={tTeach("credentialsPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg_links" className={`${labelClass} flex items-center gap-2`}>
-                      <Link2 className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tTeach("linksLabel")}
-                    </label>
-                    <textarea
-                      id="reg_links"
-                      rows={2}
-                      value={professionalLinks}
-                      onChange={(e) => setProfessionalLinks(e.target.value)}
-                      placeholder={tTeach("linksPlaceholder")}
-                      className={inputClass}
-                    />
-                  </div>
+                  <SuggestionChipsField
+                    id="reg_teach_formats"
+                    label={tTeach("formatsLabel")}
+                    icon={MessageSquareText}
+                    required
+                    hint={tTeach("formatsHint")}
+                    suggestions={teachingFormatSuggestions}
+                    value={teachingFormats}
+                    onChange={setTeachingFormats}
+                    className={qSpan2}
+                  />
                 </div>
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                   <button type="button" onClick={() => setStep(1)} className={navBtnClass}>

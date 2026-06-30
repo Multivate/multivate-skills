@@ -89,6 +89,26 @@ class Settings(BaseSettings):
         description="Signed stream token lifetime for protected lesson videos.",
     )
 
+    # OAuth (secrets only — redirect URLs derived from CORS / frontend_url)
+    google_client_id: str = Field(default="", description="Google OAuth client ID")
+    google_client_secret: str = Field(default="", description="Google OAuth client secret")
+    apple_client_id: str = Field(default="", description="Apple Services ID (Sign in with Apple)")
+    apple_team_id: str = Field(default="", description="Apple Developer Team ID")
+    apple_key_id: str = Field(default="", description="Apple Sign in with Apple key ID")
+    apple_private_key: str = Field(default="", description="Apple .p8 private key contents (use \\n for newlines in .env)")
+
+    @property
+    def frontend_url(self) -> str:
+        for origin in self.cors_origins.split(","):
+            o = origin.strip()
+            if o and ("localhost" in o or "127.0.0.1" in o):
+                return o
+        for origin in self.cors_origins.split(","):
+            o = origin.strip()
+            if o:
+                return o
+        return "http://localhost:3000"
+
     @model_validator(mode="after")
     def require_render_database_url(self) -> "Settings":
         """Render sets RENDER=true. Without DATABASE_URL, the model default targets localhost and boot fails."""

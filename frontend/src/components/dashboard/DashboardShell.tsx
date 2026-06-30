@@ -21,6 +21,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuth } from "@/contexts/auth-context";
 import { adminNav } from "@/components/dashboard/admin-nav";
 import { instructorNav } from "@/components/dashboard/instructor-nav";
@@ -112,7 +113,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }
 
   const firstName = user.name.split(" ")[0] ?? user.name;
-  const initial = firstName.slice(0, 1).toUpperCase();
 
   function navItemLabel(id: string): string {
     if (workspace === "admin") return tNavAdmin(id);
@@ -218,26 +218,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        {workspace === "admin" ? (
-          <div className="mx-3 mt-2 shrink-0 rounded-2xl border border-white/10 bg-admin-card-dark p-4 shadow-sm">
-            <div className="flex items-start gap-2">
-              <span className="text-lg" aria-hidden>
-                👑
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-white">{tDash("shell.adminProTitle")}</p>
-                <p className="mt-1 text-xs leading-relaxed text-white/65">{tDash("shell.adminProBody")}</p>
-                <button
-                  type="button"
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-admin-orange px-3 py-2.5 text-center text-xs font-bold text-white transition hover:bg-admin-orange-hover"
-                >
-                  {tDash("shell.upgradeNow")}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
         <div className="mt-auto border-t border-white/10 p-3">
           {isProWorkspace ? (
             <div className="space-y-2">
@@ -245,13 +225,14 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 href="/dashboard/settings"
                 className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-white/[0.07]"
               >
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ring-1 ring-white/15 ${
-                    workspace === "admin" ? "bg-admin-indigo/40" : "bg-instructor-purple/35"
-                  }`}
-                >
-                  {initial}
-                </div>
+                <UserAvatar
+                  name={user.name}
+                  avatarUrl={user.avatar_url}
+                  className="h-10 w-10 text-sm ring-1 ring-white/15"
+                  fallbackClassName={
+                    workspace === "admin" ? "bg-admin-indigo/40 text-white" : "bg-instructor-purple/35 text-white"
+                  }
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-white">{user.name}</p>
                   <p className="text-xs font-medium text-white/55">
@@ -349,15 +330,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                     href="/dashboard/settings"
                     className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 dark:border-slate-700 dark:bg-slate-800 sm:flex"
                   >
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold ${
+                    <UserAvatar
+                      name={user.name}
+                      avatarUrl={user.avatar_url}
+                      className="h-9 w-9 text-sm"
+                      fallbackClassName={
                         workspace === "admin"
                           ? "bg-admin-indigo/15 text-admin-indigo"
                           : "bg-instructor-purple/15 text-instructor-purple-deep"
-                      }`}
-                    >
-                      {initial}
-                    </div>
+                      }
+                    />
                     <div className="min-w-0 text-left">
                       <p className="truncate text-sm font-bold text-brand-ink dark:text-slate-100">{user.name}</p>
                       <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -384,8 +366,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 </div>
                 <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                   <NotificationBell label={tDash("shell.notifications")} />
-                  <div className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-sm font-bold text-brand-panel dark:border-slate-700 dark:bg-slate-800 dark:text-violet-200 sm:flex">
-                    {initial}
+                  <div className="hidden sm:block">
+                    <UserAvatar
+                      name={user.name}
+                      avatarUrl={user.avatar_url}
+                      className="h-10 w-10 border border-slate-200 text-sm dark:border-slate-700"
+                    />
                   </div>
                 </div>
               </>

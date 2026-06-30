@@ -18,7 +18,9 @@ class User(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    auth_provider: Mapped[str] = mapped_column(String(16), nullable=False, default="password")
+    oauth_subject: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, native_enum=False, length=32),
         nullable=False,

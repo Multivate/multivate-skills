@@ -8,10 +8,10 @@ from pydantic import BaseModel, Field
 
 class InstructorTeachingProfileRegistration(BaseModel):
     expertise_areas: str = Field(..., min_length=1, max_length=12000)
-    teaching_bio: str = Field(..., min_length=1, max_length=12000)
-    subjects_taught: str = Field(..., min_length=1, max_length=12000)
-    years_experience: str | None = Field(None, max_length=32)
-    teaching_formats: str | None = Field(None, max_length=255)
+    teaching_bio: str | None = Field(None, max_length=12000)
+    subjects_taught: str | None = Field(None, max_length=12000)
+    years_experience: str = Field(..., min_length=1, max_length=32)
+    teaching_formats: str = Field(..., min_length=1, max_length=255)
     credentials_notes: str | None = Field(None, max_length=12000)
     professional_links: str | None = Field(None, max_length=12000)
 

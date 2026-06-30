@@ -4,19 +4,19 @@ export type StudentLearningProfileRegistrationPayload = {
   education_level: string;
   current_skills: string | null;
   skills_to_learn: string;
-  learning_goals: string;
+  learning_goals: string | null;
   preferred_formats: string;
   weekly_hours: string;
-  career_direction: string;
+  career_direction: string | null;
   extra_notes: string | null;
 };
 
 export type InstructorTeachingProfileRegistrationPayload = {
   expertise_areas: string;
-  teaching_bio: string;
-  subjects_taught: string;
-  years_experience: string | null;
-  teaching_formats: string | null;
+  teaching_bio: string | null;
+  subjects_taught: string | null;
+  years_experience: string;
+  teaching_formats: string;
   credentials_notes: string | null;
   professional_links: string | null;
 };

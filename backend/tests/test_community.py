@@ -13,9 +13,9 @@ PROFILE = {
 }
 
 TEACH = {
-    "expertise_areas": "a",
-    "teaching_bio": "b",
-    "subjects_taught": "c",
+    "expertise_areas": "Cloud Computing, Data Science",
+    "years_experience": "3to5",
+    "teaching_formats": "Live online classes, Self-paced video courses",
 }
 
 

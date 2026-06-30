@@ -18,13 +18,16 @@ from app.schemas.auth import (
     MfaDisableRequest,
     MfaEnableConfirmRequest,
     MfaVerifyRequest,
+    OAuthCompleteRequest,
+    OAuthCompleteResponse,
+    OAuthStartResponse,
     RegisterStartResponse,
     RegisterVerifyRequest,
     StudentRegisterRequest,
     TokenPair,
 )
 from app.schemas.user import ChangePasswordRequest, UpdateProfileRequest, UserPublic, user_public_from_orm
-from app.services import auth_service, signup_otp_service, account_service
+from app.services import auth_service, oauth_service, signup_otp_service, account_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -72,6 +75,34 @@ def login_account(
 ) -> AuthResponse | LoginMfaRequired:
     """Returns session tokens, or `{ mfa_required, mfa_token, email_masked }` when 2FA is enabled."""
     return auth_service.login_user(db, data)
+
+
+@router.get("/oauth/google/start", response_model=OAuthStartResponse)
+def oauth_google_start(return_to: str = "/dashboard") -> OAuthStartResponse:
+    safe_return = return_to if return_to.startswith("/") and not return_to.startswith("//") else "/dashboard"
+    return OAuthStartResponse(authorize_url=oauth_service.google_authorize_url(safe_return))
+
+
+@router.get("/oauth/apple/start", response_model=OAuthStartResponse)
+def oauth_apple_start(return_to: str = "/dashboard") -> OAuthStartResponse:
+    safe_return = return_to if return_to.startswith("/") and not return_to.startswith("//") else "/dashboard"
+    return OAuthStartResponse(authorize_url=oauth_service.apple_authorize_url(safe_return))
+
+
+@router.post("/oauth/google/complete", response_model=OAuthCompleteResponse)
+async def oauth_google_complete(
+    body: OAuthCompleteRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> OAuthCompleteResponse:
+    return await oauth_service.complete_google(db, code=body.code, state=body.state)
+
+
+@router.post("/oauth/apple/complete", response_model=OAuthCompleteResponse)
+async def oauth_apple_complete(
+    body: OAuthCompleteRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> OAuthCompleteResponse:
+    return await oauth_service.complete_apple(db, code=body.code, state=body.state, name_hint=body.name)
 
 
 @router.post("/login/mfa", response_model=AuthResponse)

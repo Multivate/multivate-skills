@@ -95,6 +95,10 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
 
         _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(512)")
+        _run(conn, "ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(16) NOT NULL DEFAULT 'password'")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_subject VARCHAR(255)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_users_oauth_subject ON users (oauth_subject)")
 
         _run(
             conn,

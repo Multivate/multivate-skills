@@ -67,7 +67,12 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequir
         detail="Too many sign-in attempts. Please wait and try again.",
     )
     user = db.execute(select(User).where(User.email == email_key)).scalar_one_or_none()
-    if not user or not verify_password(data.password, user.password_hash):
+    if not user or not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
+    if not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
