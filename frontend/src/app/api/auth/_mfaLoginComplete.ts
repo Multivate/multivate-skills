@@ -4,7 +4,6 @@ import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 
 const secure = process.env.NODE_ENV === "production";
 
-/** BFF: POST body `{ mfa_token, code }` → FastAPI `POST /api/v1/auth/login/mfa`, set session cookies. */
 export async function proxyMfaLoginComplete(req: Request): Promise<Response> {
   let body: unknown;
   try {

@@ -1,8 +1,8 @@
-# Start local Postgres (docker-compose `db` service) and wait until it accepts connections.
+# Start local Postgres + Redis (docker-compose) and wait until Postgres accepts connections.
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
-docker compose up -d db
+docker compose up -d db redis
 Write-Host "Waiting for Postgres..."
 for ($i = 0; $i -lt 60; $i++) {
     docker compose exec -T db pg_isready -U multivate -d multivate 2>$null | Out-Null

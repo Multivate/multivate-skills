@@ -1,5 +1,3 @@
-/** Resolve course `image_url` values (including YouTube links) for next/image. */
-
 const ALLOWED_HOSTS = new Set(["images.unsplash.com", "img.youtube.com"]);
 
 function youtubeVideoId(url: string): string | null {
@@ -21,7 +19,6 @@ function youtubeVideoId(url: string): string | null {
   return null;
 }
 
-/** Returns a URL safe for next/image, or null to show a placeholder. */
 export function resolveCourseImageUrl(raw: string | null | undefined): string | null {
   const url = (raw ?? "").trim();
   if (!url) return null;

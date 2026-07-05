@@ -5,7 +5,6 @@ import { publicUpstreamInit, withPublicCache } from "@/lib/bff-cache";
 
 type Params = { params: Promise<{ slug: string }> };
 
-/** Public proxy → FastAPI `GET /api/v1/courses/{slug}/lessons`. */
 export async function GET(_req: Request, { params }: Params) {
   try {
     const { slug } = await params;
@@ -24,7 +23,6 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-/** Authenticated proxy → FastAPI `POST /api/v1/courses/{slug}/lessons` (course managers only). */
 export async function POST(req: Request, { params }: Params) {
   try {
     const { slug } = await params;

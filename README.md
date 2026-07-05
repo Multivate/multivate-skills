@@ -49,7 +49,7 @@ High-level flow:
 
 The API expects **PostgreSQL** by default (`DATABASE_URL` in `backend/.env`; see `backend/.env.example`). The repo ships a single **`db`** service in `docker-compose.yml` (user `multivate`, password `multivate`, database `multivate`, port **5432**).
 
-1. From the **`multivate-edtech`** directory (repository root for this app), start Postgres and create **`backend/.env`** if it is missing:
+1. From the **repository root**, start Postgres and create **`backend/.env`** if it is missing:
 
    **Windows (recommended):**
 
@@ -170,9 +170,9 @@ The frontend ships with **next-intl** and locale-prefixed routes for **English**
 ## Production notes
 
 - Set **`ENVIRONMENT=production`**, a strong **`SECRET_KEY`**, and disable unsafe dev-only behavior as described in `backend/README.md`.
-- Deploy the API on **[Render](https://render.com)** or **[Railway](https://railway.com)** using the **`backend`** root directory; see **`backend/README.md`** (Render: **`render.yaml`**, **`runtime.txt`**, **`PYTHON_VERSION`**; Railway: **`railway.json`**).
-- Set **`INTERNAL_API_URL`** on the Next server to your **private** API URL (same network / VPC preferred).
-- Run database migrations with **Alembic** before serving traffic; do not rely on `create_all()` in production.
+- **Primary production:** Ubuntu server + Docker Compose + Nginx + SSL — see **`DEPLOYMENT.md`**.
+- Local dev: `docker compose up -d db redis` then run API and frontend separately (see Quick start).
+- Run database migrations with **Alembic** before serving traffic in production; the API container runs `alembic upgrade head` on start.
 
 ---
 
@@ -194,13 +194,15 @@ From `frontend`, `pnpm dev` uses **Turbopack**. For webpack: `pnpm dev:webpack`.
 
 ## Docker
 
-The root `docker-compose.yml` currently defines only the **`db`** (PostgreSQL) service for local development. Start it with:
+The root `docker-compose.yml` defines **`db`** (PostgreSQL) and **`redis`** for local development. Start both with:
 
 ```bash
-docker compose up -d db
+docker compose up -d db redis
 ```
 
-If you add more services (for example a frontend image), adjust `docker compose` commands and service names accordingly.
+Or use `scripts/dev-db-up.ps1` (Windows) / `scripts/dev-db-up.sh` (macOS/Linux).
+
+For production deployment, see **`DEPLOYMENT.md`**.
 
 ---
 
@@ -210,7 +212,7 @@ Remote: **https://github.com/AdewaleData/MULTIVATE.git**
 
 ```bash
 git clone https://github.com/AdewaleData/Web-Application-Multivate.git
-cd multivate-edtech
+cd Multivate
 ```
 
 For authentication with GitHub, use a personal access token or SSH:

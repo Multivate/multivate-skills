@@ -15,7 +15,6 @@ export type LoginMfaChallenge = {
   mfaRequired: true;
   mfaToken: string;
   emailMasked: string;
-  /** Present in local dev when API has no Resend key — same 6-digit code as email would contain */
   devOtp?: string;
 };
 

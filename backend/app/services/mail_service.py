@@ -1,5 +1,3 @@
-"""Outbound transactional email via Resend HTTPS API only; dev logs OTP when no API key."""
-
 from __future__ import annotations
 
 import base64

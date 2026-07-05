@@ -2,7 +2,6 @@
 import { getInternalApiUrl } from "@/lib/internal-api";
 import { publicUpstreamInit, withPublicCache } from "@/lib/bff-cache";
 
-/** Public proxy → FastAPI `GET /api/v1/courses` (catalog). */
 export async function GET() {
   try {
     const base = getInternalApiUrl();

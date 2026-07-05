@@ -19,7 +19,6 @@ class Settings(BaseSettings):
 
     log_level: str = Field(default="INFO", description="Root log level: DEBUG, INFO, WARNING, ERROR.")
 
-    # Default matches root `docker-compose.yml` (`db` service). Override `DATABASE_URL` in production (Render, Railway, etc.).
     database_url: str = "postgresql://multivate:multivate@localhost:5432/multivate"
 
     redis_url: str = Field(
@@ -34,8 +33,8 @@ class Settings(BaseSettings):
 
     cors_origins: str = (
         "http://localhost:3000,http://127.0.0.1:3000,"
-        "https://multivate.com.ng,https://www.multivate.com.ng,"
-        "https://multivateco.vercel.app"
+        "https://www.multivateskill.com,https://multivateskill.com,"
+        "https://multivate.com.ng,https://www.multivate.com.ng"
     )
 
     platform_admin_password: str = Field(
@@ -49,7 +48,6 @@ class Settings(BaseSettings):
         "Must be false in production — use Alembic migrations instead.",
     )
 
-    # Outbound mail: Resend only (https://resend.com). One API key on the server — end users never paste mail passwords.
     resend_api_key: str = Field(
         default="",
         description="Resend API key. Required in staging/production to send OTP mail.",
@@ -73,13 +71,11 @@ class Settings(BaseSettings):
         description="Optional https:// or mailto: link for “Contact us” in OTP emails.",
     )
 
-    # Bank transfer (shown to students during enrollment checkout)
     bank_name: str = Field(default="Wema Bank")
     bank_account_name: str = Field(default="Multivate Technological Services and Consultancy Limited")
     bank_account_number: str = Field(default="0125918288")
     bank_transfer_currency: str = Field(default="NGN", min_length=3, max_length=3)
 
-    # Local media storage (non-secret paths — swap to S3/R2 later)
     media_root: str = Field(
         default="media",
         description="Directory under backend/ for uploaded course thumbnails and videos.",
@@ -89,7 +85,6 @@ class Settings(BaseSettings):
         description="Signed stream token lifetime for protected lesson videos.",
     )
 
-    # OAuth (secrets only — redirect URLs derived from CORS / frontend_url)
     google_client_id: str = Field(default="", description="Google OAuth client ID")
     google_client_secret: str = Field(default="", description="Google OAuth client secret")
     apple_client_id: str = Field(default="", description="Apple Services ID (Sign in with Apple)")

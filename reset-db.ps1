@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
 if (-not (Test-Path ".\docker-compose.yml")) {
-    Write-Error "Run this script from the multivate-edtech repo root (docker-compose.yml must be here)."
+    Write-Error "Run this script from the repo root (docker-compose.yml must be here)."
     exit 1
 }
 

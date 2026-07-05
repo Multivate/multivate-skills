@@ -1,5 +1,3 @@
-"""Sliding-window rate limits via Redis (in-memory fallback when Redis is unavailable)."""
-
 from __future__ import annotations
 
 import logging

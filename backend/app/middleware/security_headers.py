@@ -1,5 +1,3 @@
-"""Add standard security response headers on every API response."""
-
 from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware

@@ -3,7 +3,6 @@
 const ACCESS = "access_token";
 const REFRESH = "refresh_token";
 
-/** Match backend defaults: 30 min access, 14d refresh. */
 const ACCESS_MAX_AGE = 60 * 30;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 14;
 

@@ -7,7 +7,6 @@ const secure = process.env.NODE_ENV === "production";
 
 type Params = { params: Promise<{ slug: string }> };
 
-/** Authenticated proxy → FastAPI `DELETE /api/v1/enrollments/{course_slug}`. */
 export async function DELETE(_req: Request, { params }: Params) {
   try {
     const { slug } = await params;

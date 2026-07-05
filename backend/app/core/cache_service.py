@@ -1,5 +1,3 @@
-"""Short-lived Redis cache for read-heavy public endpoints."""
-
 from __future__ import annotations
 
 import json

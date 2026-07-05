@@ -7,9 +7,6 @@ const secure = process.env.NODE_ENV === "production";
 
 type UpstreamInit = RequestInit & { jsonBody?: unknown };
 
-/**
- * Forwards a request to the FastAPI origin using access/refresh cookies (same pattern as `/api/learning/my-courses`).
- */
 export async function forwardAuthenticatedUpstream(
   upstreamPath: string,
   init: UpstreamInit = {},
@@ -107,7 +104,6 @@ export async function forwardAuthenticatedUpstream(
   return res;
 }
 
-/** Forward multipart uploads (thumbnail, video, documents) with auth cookies. */
 export async function forwardAuthenticatedMultipart(
   upstreamPath: string,
   req: Request,
@@ -181,7 +177,6 @@ export async function forwardAuthenticatedMultipart(
 
 type MethodHandler = (req: Request, ctx: { params: Promise<{ path: string[] }> }) => Promise<NextResponse>;
 
-/** Generic authenticated proxy for `/api/v1/{prefix}/{...path}`. */
 export function createAuthenticatedProxy(prefix: string): MethodHandler {
   return async (req, ctx) => {
     const segments = (await ctx.params).path ?? [];

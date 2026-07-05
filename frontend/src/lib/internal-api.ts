@@ -1,14 +1,6 @@
-/** Server-only: FastAPI base URL for Next.js route handlers (BFF → backend). */
-
 import { NextResponse } from "next/server";
 
 const DEFAULT_DEV_API = "http://127.0.0.1:8000";
-
-/**
- * Paste your Render web service URL here (Dashboard → Web Service → URL).
- * Used in production when INTERNAL_API_URL is not set on Vercel.
- */
-const HARDCODED_PRODUCTION_API = "https://web-application-multivate-ulv3.onrender.com";
 
 const UPSTREAM_TIMEOUT_MS = 28_000;
 
@@ -29,22 +21,18 @@ function isLocalApiUrl(url: string): boolean {
 
 export function getInternalApiUrl(): string {
   const fromEnv = process.env.INTERNAL_API_URL?.trim();
-  const hardcoded = HARDCODED_PRODUCTION_API.trim();
 
   if (process.env.NODE_ENV === "development") {
     if (fromEnv) return normalizeApiBase(fromEnv);
     return DEFAULT_DEV_API;
   }
 
-  // Production: ignore mistaken localhost env on Vercel; prefer hardcoded Render URL.
   if (fromEnv && !isLocalApiUrl(fromEnv)) {
     return normalizeApiBase(fromEnv);
   }
-  if (hardcoded) {
-    return normalizeApiBase(hardcoded);
-  }
+
   throw new Error(
-    "INTERNAL_API_URL is not set. Add your Render API URL in Vercel environment variables.",
+    "INTERNAL_API_URL is not set. Configure it in the server environment.",
   );
 }
 
@@ -52,7 +40,6 @@ function normalizeApiBase(url: string): string {
   return url.replace(/\/$/, "");
 }
 
-/** Server-side fetch to FastAPI with timeout (Render free tier cold starts). */
 export async function fetchInternal(path: string, init?: RequestInit): Promise<Response> {
   const base = getInternalApiUrl();
   const url = path.startsWith("/") ? `${base}${path}` : `${base}/${path}`;

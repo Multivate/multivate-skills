@@ -5,7 +5,6 @@ import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 
 const secure = process.env.NODE_ENV === "production";
 
-/** Rotate JWTs using the httpOnly refresh cookie (optional client call; /me also rotates on 401). */
 export async function POST() {
   try {
     const cookieStore = await cookies();

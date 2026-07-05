@@ -1,4 +1,3 @@
-/** Extract a user-friendly message from BFF / FastAPI error payloads. */
 export function readApiError(data: unknown, fallback: string): string {
   if (!data || typeof data !== "object") return fallback;
   const detail = (data as { detail?: unknown }).detail;

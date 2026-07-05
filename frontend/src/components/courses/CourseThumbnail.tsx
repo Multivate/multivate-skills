@@ -31,7 +31,6 @@ function ThumbnailPlaceholder({ compact }: { compact?: boolean }) {
   );
 }
 
-/** Use native img for proxied uploads and most HTTPS URLs — more reliable than next/image for API routes. */
 function preferNativeImageTag(resolved: string): boolean {
   if (resolved.startsWith("/api/media/public/")) return true;
   if (resolved.startsWith("http://") || resolved.startsWith("https://")) {

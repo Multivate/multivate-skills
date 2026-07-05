@@ -134,62 +134,17 @@ Use email + password, then the **one-time code** sent to that mailbox, or use **
 
 **Do not** use these defaults in production for real users.
 
-**Admin on Render (live site):** the dev admin is not created automatically. Either:
+### Production deployment
 
-1. **Render Shell** (web service → Shell, root directory `backend`):  
-   `python scripts/ensure_dev_account.py`  
-   Then sign in with `admin@example.com` / `Multivate2026!` (plus email OTP if 2FA is on).
+Production runs on **Ubuntu + Docker Compose + Nginx + SSL**. See repo root **`DEPLOYMENT.md`** for the full guide (`www.multivateskill.com`).
 
-2. **Promote your own account** (after you registered on the live site):  
-   `python scripts/promote_user_to_admin.py your@email.com`  
-   (run locally with **External Database URL** in `DATABASE_URL`, or from Render Shell). Sign out and sign in again.
+For production checklist: set `ENVIRONMENT=production`, `AUTO_CREATE_TABLES=false`, strong `SECRET_KEY`, managed Postgres, Redis, Resend, and restrict `CORS_ORIGINS` to your live domain.
 
-### Production checklist
+**Admin on live site:** run from the API container or locally with production `DATABASE_URL`:
 
-- Set `ENVIRONMENT=production`, `AUTO_CREATE_TABLES=false`, and a unique `SECRET_KEY` (≥32 characters).
-- Point `DATABASE_URL` at your managed Postgres; run Alembic migrations before traffic.
-- Restrict `CORS_ORIGINS` to your real web origins (comma-separated).
+`python scripts/promote_user_to_admin.py your@email.com`
 
-### Render.com
-
-**Typical failure modes (and fixes):**
-
-| Symptom | Likely cause | Fix |
-|--------|----------------|-----|
-| **`gunicorn: command not found`** or **`your_application.wsgi`** | Wrong **Start Command** (Django placeholder) | **Settings → Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. **Root Directory:** `backend`. Or use **`bash scripts/start-render.sh`**. |
-| Build OK, then **“No open ports detected”** / deploy unhealthy | Process crashed on startup (not listening on `PORT`) | Check logs. Use **`uvicorn app.main:app --host 0.0.0.0 --port $PORT`** — **no `--reload`**. Root directory must be **`backend`** so `app` imports work. |
-| Crash immediately on boot | **`ENVIRONMENT=production`** with default / short **`SECRET_KEY`**, or **`AUTO_CREATE_TABLES=true`** | For a **first** deploy, use **`ENVIRONMENT=development`** and **`AUTO_CREATE_TABLES=true`**, or satisfy production rules (≥32 char secret, **`AUTO_CREATE_TABLES=false`**, migrations applied). |
-| **`/health/ready`** returns 503 | Database unreachable or wrong URL | Link Render Postgres to the web service so **`DATABASE_URL`** is set, or paste the **External** URL from the DB dashboard. Same region helps. |
-| **`localhost:5432` / connection refused** on deploy | **`DATABASE_URL` missing** — the app falls back to the local Docker default | Web Service → **Environment** → add **`DATABASE_URL`** from your Render Postgres (**Info** → External or Internal URL), or **Link Database** so Render injects it. The app now fails fast on Render if this is missing. |
-| Wrong Python / wheel build errors | Render defaults to **Python 3.14.x** on new services | Set **`PYTHON_VERSION=3.12.8`** in the service, and/or rely on **`backend/runtime.txt`** + **`backend/.python-version`** in this repo. |
-
-**Manual Web Service setup**
-
-1. **Root Directory:** `backend` (monorepo).
-2. **Build:** `pip install -r requirements.txt`
-3. **Start:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-4. **Environment:** `PYTHON_VERSION=3.12.8`, linked **`DATABASE_URL`**, **`SECRET_KEY`**, **`CORS_ORIGINS`**, and (for first boot) **`ENVIRONMENT=development`** + **`AUTO_CREATE_TABLES=true`** unless you have migrations.
-
-**Blueprint (optional):** repo root **`render.yaml`** defines a **free** Postgres (`multivate-db`) and a **free** web service with safe first-deploy env (development + `create_all`). You still need to set **`CORS_ORIGINS`** when prompted (`sync: false` in the blueprint).
-
-### Railway
-
-Config-as-code lives in **`railway.json`** (start command and **`/health`** check). **`runtime.txt`** pins **Python 3.12.8** for [Railpack](https://docs.railway.com/reference/railpack) so builds stay on 3.12 instead of a very new default.
-
-1. **New project** → Deploy from this GitHub repo.
-2. **Service root:** set the service **Root Directory** (or watch path) to **`backend`** so `requirements.txt`, `app/`, and `railway.json` are at the service root.
-3. **Database:** add a **PostgreSQL** plugin (or template), open the database service, and **connect / reference** it from the API service so **`DATABASE_URL`** is injected automatically (often `DATABASE_PRIVATE_URL` is also available for private networking; use whichever matches your plan).
-4. **Variables** on the API service (minimum for production):
-
-   | Variable | Example |
-   |----------|---------|
-   | `ENVIRONMENT` | `production` |
-   | `SECRET_KEY` | random string, **≥32 characters** |
-   | `AUTO_CREATE_TABLES` | `false` (use migrations before traffic) |
-   | `CORS_ORIGINS` | your real site origins, comma-separated (e.g. `https://yourapp.vercel.app`) |
-
-5. **Do not** use **`--reload`** in production. **`PORT`** is set by Railway; the start command in **`railway.json`** already binds **`0.0.0.0`**.
-6. After deploy, confirm **`/health`** and **`/health/ready`** (readiness needs a working **`DATABASE_URL`**).
+Or: `python scripts/ensure_dev_account.py` (development only — do not use default passwords in production).
 
 ## Auth endpoints
 

@@ -1,6 +1,5 @@
 import { getInternalApiUrl } from "@/lib/internal-api";
 
-/** Matches FastAPI `CourseOut`. */
 export type BackendCourse = {
   id: string;
   slug: string;

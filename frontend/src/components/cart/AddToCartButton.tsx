@@ -19,9 +19,7 @@ export function AddToCartButton({
   item: CartLine;
   variant?: Variant;
   className?: string;
-  /** When true, hide for signed-in instructors and admins (cart is for learners). */
   studentOnly?: boolean;
-  /** Optional explicit label (avoids empty text if translations hydrate late). */
   addLabel?: string;
   removeLabel?: string;
 }) {

@@ -67,7 +67,6 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS ix_payments_transaction_reference ON payments (transaction_reference)",
         )
 
-        # Course Studio — extend courses
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS subtitle VARCHAR(512)")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS learning_objectives TEXT")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'general'")
@@ -82,7 +81,6 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
 
-        # Course Studio — extend lessons
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS section_id UUID")
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS lesson_type VARCHAR(32) NOT NULL DEFAULT 'video'")
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS video_source VARCHAR(32)")

@@ -1,5 +1,3 @@
-"""Propagate X-Request-ID for tracing across logs and downstream services."""
-
 from __future__ import annotations
 
 import uuid

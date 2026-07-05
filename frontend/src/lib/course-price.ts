@@ -1,4 +1,3 @@
-/** Format a course price from API cents + currency. */
 export function formatCoursePrice(
   priceCents: number,
   currency: string,

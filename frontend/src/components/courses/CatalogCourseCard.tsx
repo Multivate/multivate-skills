@@ -11,7 +11,6 @@ import { formatCourseDuration, formatCoursePrice } from "@/lib/course-price";
 
 type Props = {
   course: BackendCourse;
-  /** grid = catalog / homepage grid; scroll = horizontal row card */
   layout?: "grid" | "scroll";
   categoryLabel?: string;
 };

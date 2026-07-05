@@ -1,10 +1,7 @@
-"""HTML + plain-text bodies for Multivate OTP emails (transactional, table-safe for clients)."""
-
 from __future__ import annotations
 
 import html
 from pathlib import Path
-
 # Default copy for login/MFA challenges (mfa_service DB lifetime matches this unless overridden per call).
 OTP_EXPIRY_MINUTES = 15
 
@@ -16,7 +13,6 @@ _BRAND_BOX_BORDER = "#E2E8F0"
 
 
 def _repo_root() -> Path:
-    # backend/app/services/otp_email.py → parents[3] = multivate-edtech
     return Path(__file__).resolve().parents[3]
 
 

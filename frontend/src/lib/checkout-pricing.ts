@@ -1,6 +1,5 @@
 import { getCatalogCourseBySlug } from "@/data/courses-catalog";
 
-/** Charged amount (USD cents) for in-app checkout until per-course pricing is wired to the API. */
 export const DEFAULT_CHECKOUT_AMOUNT_CENTS = 9900;
 
 export function checkoutAmountCentsForSlug(_slug: string): number {

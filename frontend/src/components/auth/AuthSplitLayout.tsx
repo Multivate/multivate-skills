@@ -9,7 +9,6 @@ import { LogoMark } from "@/components/layout/LogoMark";
 export function AuthSplitLayout({
   brand,
   form,
-  /** Wider column for long flows (e.g. register wizard). Default matches compact login. */
   formMaxWidthClass = "max-w-md",
 }: {
   brand: ReactNode;
@@ -50,7 +49,6 @@ export function AuthBrandBlock({
   description,
   imageSrc,
   imageAlt,
-  /** Taller frame + focal point tuned for group photos on register */
   heroFraming = "default",
 }: {
   badge: string;

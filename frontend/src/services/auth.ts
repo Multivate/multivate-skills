@@ -40,7 +40,6 @@ export type RegisterPayload =
 type ApiErrorBody = {
   detail?: string | unknown[];
   message?: string;
-  /** FastAPI dev handler includes this on unhandled errors (see backend app/main.py). */
   debug?: unknown;
   request_id?: string;
 };

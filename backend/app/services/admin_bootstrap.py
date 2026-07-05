@@ -1,5 +1,3 @@
-"""Ensure the platform admin account exists (local + production deploys)."""
-
 from __future__ import annotations
 
 import logging

@@ -4,7 +4,6 @@ import whiteLogo from "../../../public/MULTIVATE LOGO WHITE.png";
 
 type LogoMarkProps = {
   className?: string;
-  /** Main lockup on light surfaces; white lockup on dark surfaces (e.g. footer CTA). */
   variant?: "default" | "inverse";
   priority?: boolean;
 };

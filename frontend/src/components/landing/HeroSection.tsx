@@ -3,7 +3,6 @@ import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
-/** Hero right column — `public/landing logo.png` */
 const HERO_MOCKUP = encodeURI("/landing logo.png");
 
 const avatars = [

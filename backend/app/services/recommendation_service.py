@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_LIMIT = 8
 
-# Rough total course length (minutes) that fits a learner's weekly budget over ~4 weeks.
 _WEEKLY_DURATION_CAP: dict[str, int | None] = {
     "under5": 1_200,
     "5to10": 2_400,
@@ -29,7 +28,6 @@ _WEEKLY_DURATION_CAP: dict[str, int | None] = {
     "15plus": None,
 }
 
-# Education → course levels that score highest.
 _EDUCATION_LEVEL_PREF: dict[str, set[str]] = {
     "secondary": {CourseLevel.BEGINNER.value},
     "vocational": {CourseLevel.BEGINNER.value, CourseLevel.INTERMEDIATE.value},
@@ -39,7 +37,6 @@ _EDUCATION_LEVEL_PREF: dict[str, set[str]] = {
     "other": {CourseLevel.BEGINNER.value, CourseLevel.INTERMEDIATE.value},
 }
 
-# Keywords from preferred learning formats → course text signals.
 _FORMAT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "online": ("online", "self-paced", "async", "video", "remote"),
     "live": ("live", "cohort", "q&a", "office hours"),
@@ -74,7 +71,6 @@ def _topic_matches_course(topic: str, course: Course) -> bool:
         return True
     if t in blob:
         return True
-    # Allow partial word overlap for multi-word topics (e.g. "data science").
     words = [w for w in re.split(r"[^a-z0-9]+", t) if len(w) > 2]
     if words and sum(1 for w in words if w in blob) >= max(1, len(words) // 2):
         return True

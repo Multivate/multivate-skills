@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-/** Brand accents — flat fills only (no gradients). */
 const accent = {
   challenge: {
     label: "text-[#E85D4A]",

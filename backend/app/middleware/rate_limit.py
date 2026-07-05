@@ -1,5 +1,3 @@
-"""IP-based rate limits on sensitive API routes."""
-
 from __future__ import annotations
 
 import logging

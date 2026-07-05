@@ -3,7 +3,6 @@ import { getInternalApiUrl, handleProxyError } from "@/lib/internal-api";
 
 const STREAM_TIMEOUT_MS = 300_000;
 
-/** Proxy uploaded lesson video with Range support so HTML5 video can seek and play audio. */
 export async function GET(req: Request) {
   try {
     const token = new URL(req.url).searchParams.get("token");

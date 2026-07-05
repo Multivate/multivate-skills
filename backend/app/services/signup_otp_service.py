@@ -1,5 +1,3 @@
-"""Redis-backed signup OTP (5 minutes): email + password + profile payload, verify then create user."""
-
 from __future__ import annotations
 
 import json

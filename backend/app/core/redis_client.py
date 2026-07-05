@@ -1,5 +1,3 @@
-"""Sync Redis client for signup OTP storage."""
-
 from __future__ import annotations
 
 import logging

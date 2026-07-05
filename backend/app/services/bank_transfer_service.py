@@ -1,5 +1,3 @@
-"""Bank transfer enrollment + payment verification workflow."""
-
 from __future__ import annotations
 
 import json

@@ -5,7 +5,6 @@ import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 
 const secure = process.env.NODE_ENV === "production";
 
-/** Authenticated proxy → FastAPI `POST /api/v1/enrollments` (body: `{ course_slug }`). */
 export async function POST(req: Request) {
   try {
     let body: unknown;

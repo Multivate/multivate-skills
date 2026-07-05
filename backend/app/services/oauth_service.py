@@ -1,5 +1,3 @@
-"""Google & Apple sign-in — authorization URLs, token exchange, account linking."""
-
 from __future__ import annotations
 
 import json

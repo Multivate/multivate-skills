@@ -2,7 +2,6 @@ function trimTrailingZero(value: string): string {
   return value.replace(/\.0$/, "");
 }
 
-/** Compact stat-card amounts: 300000 → ₦300K, 1500000 → ₦1.5M */
 export function formatMoneyCompact(cents: number, currency = "NGN"): string {
   const amount = cents / 100;
   const abs = Math.abs(amount);
@@ -28,7 +27,6 @@ export function formatMoneyCompact(cents: number, currency = "NGN"): string {
   }).format(amount);
 }
 
-/** Full amount for lists and checkout (e.g. NGN 100,000.00). */
 export function formatMoney(cents: number, currency = "NGN"): string {
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
 }

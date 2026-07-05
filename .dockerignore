@@ -1,5 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Frontend dev artifacts
 frontend/node_modules
 frontend/.next
 frontend/out
-**/.git
+frontend/.env.local
+
+# Backend dev artifacts
+backend/.venv
+backend/__pycache__
+backend/**/__pycache__
+backend/.env
+backend/.pytest_cache
+backend/media/**
+
+# OS / IDE
 **/.DS_Store
+**/.cursor
+**/.vscode
+
+# Docs / local notes (not needed in images)
+*.md
+!frontend/README.md

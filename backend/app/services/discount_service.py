@@ -1,5 +1,3 @@
-"""Discount codes for course checkout."""
-
 from __future__ import annotations
 
 import logging

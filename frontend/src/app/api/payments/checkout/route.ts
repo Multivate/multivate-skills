@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { forwardAuthenticatedUpstream } from "@/app/api/_bffAuth";
 
-/** Authenticated proxy → FastAPI `POST /api/v1/payments/checkout` (body: PaymentCreate). */
 export async function POST(req: Request) {
   try {
     let jsonBody: unknown;

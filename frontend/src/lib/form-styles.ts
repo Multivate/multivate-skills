@@ -1,4 +1,3 @@
-/** Shared form field classes — readable in light and dark mode. */
 export const formLabelClass =
   "block text-sm font-semibold text-slate-800 dark:text-slate-100";
 
