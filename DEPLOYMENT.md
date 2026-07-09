@@ -239,3 +239,9 @@ sudo ./scripts/issue-ssl.sh
 docker compose -f docker-compose.prod.yml --env-file .env.production ps
 docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
 # visit https://<your-domain>
+
+cd /opt/multivate
+git fetch origin
+git pull origin main
+# rebuild and restart
+docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --build
