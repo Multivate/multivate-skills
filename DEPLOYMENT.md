@@ -191,3 +191,51 @@ See root `README.md` for details.
 ## Architecture reference
 
 See root `README.md` for local setup and monorepo overview.
+
+
+sudo mkdir -p /opt
+sudo chown $USER:$USER /opt
+cd /opt
+git clone https://github.com/Multivate/multivate-skills.git multivate
+cd multivate
+
+docker --version
+docker compose version
+
+ls -la .env.production || cp .env.production.example .env.production
+grep '^DOMAIN=' .env.production || sed -n '1,80p' .env.production
+
+# check nginx server_name
+sed -n '1,160p' docker/nginx/conf.d/app.http.conf
+sed -n '1,200p' docker/nginx/templates/app.ssl.conf
+
+# check certbot volumes in compose
+sed -n '1,240p' docker-compose.prod.yml | sed -n '1,200p'
+
+# check scripts reference to certbot volumes
+sed -n '1,200p' scripts/issue-ssl.sh
+sed -n '1,200p' scripts/deploy-ubuntu.sh
+
+chmod +x scripts/deploy-ubuntu.sh scripts/issue-ssl.sh
+
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+
+./scripts/deploy-ubuntu.sh
+# if permission problems:
+sudo ./scripts/deploy-ubuntu.sh
+
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f api
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f frontend
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f nginx
+
+./scripts/issue-ssl.sh
+# or:
+sudo ./scripts/issue-ssl.sh
+
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
+# visit https://<your-domain>
