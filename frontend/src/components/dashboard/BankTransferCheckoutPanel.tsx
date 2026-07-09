@@ -56,6 +56,7 @@ export function BankTransferCheckoutPanel() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { removeItem } = useCart();
+  const remitaFormRef = useRef<HTMLFormElement>(null);
   const slug = (searchParams.get("checkout") ?? "").trim();
   const [data, setData] = useState<StartResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -167,10 +168,10 @@ export function BankTransferCheckoutPanel() {
       setData((prev) =>
         prev
           ? {
-              ...prev,
-              payment: { ...prev.payment, status: "awaiting_review", payment_reference: ref },
-              message: typeof body?.message === "string" ? body.message : t("waitingBody"),
-            }
+            ...prev,
+            payment: { ...prev.payment, status: "awaiting_review", payment_reference: ref },
+            message: typeof body?.message === "string" ? body.message : t("waitingBody"),
+          }
           : prev,
       );
       setToast(typeof body?.message === "string" ? body.message : t("waitingTitle"));
@@ -204,7 +205,6 @@ export function BankTransferCheckoutPanel() {
   const inst = data?.instructions;
   const remita = data?.remita;
   const ref = inst?.payment_reference ?? remita?.payment_reference ?? data?.payment?.payment_reference ?? "";
-  const remitaFormRef = useRef<HTMLFormElement>(null);
 
   return (
     <section className="space-y-6">
