@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE="docker compose -f docker-compose.prod.yml --env-file .env.production"
+COMPOSE="docker-compose -f docker-compose.prod.yml --env-file .env.production"
 
 if [ ! -f .env.production ]; then
   echo "Missing .env.production — copy .env.production.example and fill in secrets."
@@ -30,8 +30,8 @@ if [ ! -f "docker/nginx/conf.d/app.ssl.conf" ] || [ ! -d "/etc/letsencrypt/live/
   echo "    Site should be reachable at http://${DOMAIN}"
   echo ""
   echo "Next: issue SSL certificate, then enable HTTPS:"
-  echo "  docker run --rm -v multivate-prod_certbot_conf:/etc/letsencrypt \\"
-  echo "    -v multivate-prod_certbot_www:/var/www/certbot certbot/certbot certonly \\"
+  echo "  docker run --rm -v certbot_conf:/etc/letsencrypt \\"
+  echo "    -v certbot_www:/var/www/certbot certbot/certbot certonly \\"
   echo "    --webroot -w /var/www/certbot -d ${DOMAIN} -d multivateskill.com \\"
   echo "    --email ${EMAIL} --agree-tos --no-eff-email"
   echo ""
