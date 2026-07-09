@@ -36,6 +36,9 @@ from app.models.mfa_otp_challenge import MfaOtpChallenge  # noqa: F401
 from app.models.payment import Payment  # noqa: F401
 from app.models.payment_audit_log import PaymentAuditLog  # noqa: F401
 from app.models.instructor_teaching_profile import InstructorTeachingProfile  # noqa: F401
+from app.models.mentor_conversation import MentorConversation  # noqa: F401
+from app.models.mentor_message import MentorMessage  # noqa: F401
+from app.models.mentor_profile import MentorProfile  # noqa: F401
 from app.models.student_learning_profile import StudentLearningProfile  # noqa: F401
 from app.models.user import User  # noqa: F401
 

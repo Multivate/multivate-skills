@@ -59,3 +59,20 @@ def require_roles(*roles: UserRole) -> Callable[..., User]:
         return user
 
     return role_checker
+
+
+def get_optional_current_user(
+    db: Annotated[Session, Depends(get_db)],
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+) -> User | None:
+    if creds is None or not creds.credentials:
+        return None
+    try:
+        payload = decode_token(creds.credentials)
+        user_id = verify_token_type(payload, "access")
+    except JWTError:
+        return None
+    user = get_user_by_id(db, user_id)
+    if not user or not user.is_active:
+        return None
+    return user

@@ -32,7 +32,7 @@ def validate_discount_code(
     course = course_service.get_course_or_404(db, body.course_slug)
     original_cents, currency = _course_price(course)
     if original_cents <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This course is free — no code needed.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This course is free. No code needed.")
     return discount_service.validate_for_course(
         db,
         body.code,

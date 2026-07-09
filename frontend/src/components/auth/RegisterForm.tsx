@@ -33,7 +33,7 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [role, setRole] = useState<"" | Exclude<UserRole, "admin">>("");
+  const [role, setRole] = useState<"" | "student" | "instructor" | "mentor">("");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -136,6 +136,9 @@ export function RegisterForm() {
       setError(t("errRole"));
       return false;
     }
+    if (role === "mentor") {
+      return true;
+    }
     if (role === "student") {
       if (!educationLevel.trim()) {
         setError(t("errEducation"));
@@ -176,6 +179,10 @@ export function RegisterForm() {
       setError(t("errRole"));
       return;
     }
+    if (role === "mentor") {
+      setStep(3);
+      return;
+    }
     setStep(2);
   }
 
@@ -204,10 +211,10 @@ export function RegisterForm() {
 
     setPending(true);
     try {
-      const startPayload =
+      const startPayload: import("@/services/auth").RegisterPayload =
         role === "student"
           ? {
-              role: "student" as const,
+              role: "student",
               name: name.trim(),
               email: email.trim(),
               password,
@@ -222,21 +229,28 @@ export function RegisterForm() {
                 extra_notes: null,
               },
             }
-          : {
-              role: "instructor" as const,
-              name: name.trim(),
-              email: email.trim(),
-              password,
-              teaching_profile: {
-                expertise_areas: expertiseAreas.trim(),
-                teaching_bio: null,
-                subjects_taught: null,
-                years_experience: yearsExperience.trim(),
-                teaching_formats: teachingFormats.trim(),
-                credentials_notes: null,
-                professional_links: null,
-              },
-            };
+          : role === "instructor"
+            ? {
+                role: "instructor",
+                name: name.trim(),
+                email: email.trim(),
+                password,
+                teaching_profile: {
+                  expertise_areas: expertiseAreas.trim(),
+                  teaching_bio: null,
+                  subjects_taught: null,
+                  years_experience: yearsExperience.trim(),
+                  teaching_formats: teachingFormats.trim(),
+                  credentials_notes: null,
+                  professional_links: null,
+                },
+              }
+            : {
+                role: "mentor",
+                name: name.trim(),
+                email: email.trim(),
+                password,
+              };
       const started = await registerStart(startPayload);
       const masked = started.email_masked?.trim() ? started.email_masked : email.trim();
       setSignupSession({
@@ -358,6 +372,7 @@ export function RegisterForm() {
                   </option>
                   <option value="student">{t("roleStudent")}</option>
                   <option value="instructor">{t("roleInstructor")}</option>
+                  <option value="mentor">Mentor</option>
                 </AuthSelect>
                 <div className="flex justify-end pt-2">
                   <button type="button" onClick={goNextFromStep1} className="btn-cta-accent min-h-[2.75rem] px-8">

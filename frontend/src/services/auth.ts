@@ -35,6 +35,12 @@ export type RegisterPayload =
       email: string;
       password: string;
       teaching_profile: InstructorTeachingProfileRegistrationPayload;
+    }
+  | {
+      role: "mentor";
+      name: string;
+      email: string;
+      password: string;
     };
 
 type ApiErrorBody = {
@@ -86,7 +92,12 @@ export type RegisterStartResult = {
 };
 
 export async function registerStart(payload: RegisterPayload): Promise<RegisterStartResult> {
-  const path = payload.role === "instructor" ? "/api/auth/register/instructor/start" : "/api/auth/register/student/start";
+  const path =
+    payload.role === "instructor"
+      ? "/api/auth/register/instructor/start"
+      : payload.role === "mentor"
+        ? "/api/auth/register/mentor/start"
+        : "/api/auth/register/student/start";
   const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -107,11 +118,16 @@ export async function registerStart(payload: RegisterPayload): Promise<RegisterS
 }
 
 export async function registerVerify(
-  role: "student" | "instructor",
+  role: "student" | "instructor" | "mentor",
   signupToken: string,
   code: string,
 ): Promise<AuthUser> {
-  const path = role === "instructor" ? "/api/auth/register/instructor/verify" : "/api/auth/register/student/verify";
+  const path =
+    role === "instructor"
+      ? "/api/auth/register/instructor/verify"
+      : role === "mentor"
+        ? "/api/auth/register/mentor/verify"
+        : "/api/auth/register/student/verify";
   const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

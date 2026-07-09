@@ -40,7 +40,7 @@
     "searchLabel": "Kurse und Themen durchsuchen",
     "searchPlaceholder": "Suchen…",
     "cartAria": "Gespeicherte Kurse im Warenkorb ({count})",
-    "cartEmpty": "Noch nichts gespeichert — legen Sie Kurse aus dem Katalog in den Warenkorb.",
+    "cartEmpty": "Noch nichts gespeichert. Legen Sie Kurse aus dem Katalog in den Warenkorb.",
     "cartDashboard": "Warenkorb unter „Meine Kurse“ öffnen"
   },
   "hero": {
@@ -81,7 +81,7 @@
       "ctaStudio": "Kurs-Studio öffnen",
       "ctaBrowse": "Katalog durchsuchen",
       "panelTitle": "Was Sie unterrichten können",
-      "panelBody": "Wählen Sie Bereiche, die zu Ihrer Erfahrung passen — wir begleiten Sie durch Onboarding und Kursaufbau.",
+      "panelBody": "Wählen Sie Bereiche, die zu Ihrer Erfahrung passen. Wir begleiten Sie durch Onboarding und Kursaufbau.",
       "panelLi1": "Tech: Data, Cloud, KI, Web und Karriere-Readiness.",
       "panelLi2": "Deutschstufen für Studium und Beruf.",
       "panelLi3": "Workshops und Intensivformate für Teams und Organisationen."
@@ -91,7 +91,7 @@
       "title": "Alle Kurse, die wir abdecken",
       "body": "Veröffentlichte Kurse erscheinen hier. Merke dir Kurse und schreib dich im Dashboard als Lernende:r ein.",
       "viewAll": "Alle auf der Kursseite anzeigen",
-      "empty": "Derzeit sind keine Kurse verfügbar — schauen Sie bald wieder vorbei.",
+      "empty": "Derzeit sind keine Kurse verfügbar. Schauen Sie bald wieder vorbei.",
       "liveBadge": "Live",
       "catalogBadge": "Katalog",
       "viewDetails": "Details ansehen"
@@ -158,7 +158,7 @@
   "footer": {
     "missionLine": "Ihre Zukunft. Unsere Mission.",
     "ctaTitle": "Bereit für Ihren Weg nach Deutschland?",
-    "ctaBody": "Starte mit Programmen für Tech-Kompetenz und Deutsch — für Studium, Arbeit und Leben in Deutschland.",
+    "ctaBody": "Starte mit Programmen für Tech-Kompetenz und Deutsch. Für Studium, Arbeit und Leben in Deutschland.",
     "tagline": "Wir stärken Lernende mit Tech und Deutsch – zum Studieren, Arbeiten und Leben in Deutschland.",
     "quickLinks": "Schnellzugriff",
     "company": "Unternehmen",
@@ -318,7 +318,7 @@
   },
   "dashboard": {
     "loadingWorkspace": "Arbeitsbereich wird geladen…",
-    "adminEnrollmentsBlurb": "Jede Zeile verbindet eine Lernperson (Studentenkonto) mit einem Kurs und der zugewiesenen Dozentin bzw. dem Dozenten. Studierende melden sich über die öffentliche Kursseite an; Dozent:innen sehen ihre Lernenden unter Dozent → Studierende.",
+    "adminEnrollmentsBlurb": "Jede Zeile verbindet eine Lernperson (Studentenkonto) mit einem Kurs und der zugewiesenen Dozentin bzw. Dem Dozenten. Studierende melden sich über die öffentliche Kursseite an; Dozent:innen sehen ihre Lernenden unter Dozent → Studierende.",
     "dataMgmt": {
       "loading": "Datenübersicht wird geladen…",
       "hubTitle": "Datenmanagement über Rollen hinweg",
@@ -326,9 +326,9 @@
       "cardStudentTitle": "Student:in",
       "cardStudentBody": "Katalog durchsuchen, als Student:in einschreiben, Fortschritt im Dashboard verfolgen.",
       "cardInstructorTitle": "Dozent:in",
-      "cardInstructorBody": "Unter „Studierende“ erscheinen Einschreibungen nur für Ihre Kurse — dieselben Fakten, gefiltert.",
+      "cardInstructorBody": "Unter „Studierende“ erscheinen Einschreibungen nur für Ihre Kurse. Dieselben Fakten, gefiltert.",
       "cardAdminTitle": "Admin",
-      "cardAdminBody": "„Daten & Einschreibungen“ listet alle Verknüpfungen inkl. zugewiesener Dozent:in.",
+      "cardAdminBody": "„Daten & Einschreibungen“ listet alle Verknüpfungen inkl. Zugewiesener Dozent:in.",
       "openStudentDash": "Studenten-Dashboard öffnen",
       "openInstructorStudents": "Dozent → Studierende öffnen",
       "openAdminEnrollments": "Daten & Einschreibungen öffnen",
@@ -353,7 +353,7 @@
     },
     "relationships": {
       "studentInstructorsTitle": "Ihre Dozent:innen (pro Kurs)",
-      "studentInstructorsSubtitle": "Jeder Kurs zeigt die zugewiesene Lehrperson — dieselbe Referenz wie in Admin- und Dozentenansichten.",
+      "studentInstructorsSubtitle": "Jeder Kurs zeigt die zugewiesene Lehrperson. Dieselbe Referenz wie in Admin- und Dozentenansichten.",
       "colCourse": "Kurs",
       "colInstructor": "Dozent:in",
       "colEmail": "Kontakt",
@@ -381,9 +381,13 @@
       "closeMenu": "Menü schließen",
       "adminDashboardTitle": "Dashboard",
       "instructorDashboardTitle": "Dozenten-Dashboard",
+      "mentorDashboardTitle": "Mentor-Bereich",
+      "mentorBadge": "Mentor",
       "searchSr": "Suche",
       "searchAdminPh": "Alles durchsuchen…",
       "searchInstructorPh": "Studierende, Kurse…",
+      "searchMentorPh": "Nachrichten durchsuchen…",
+      "searchStudentPh": "Ihre Kurse durchsuchen…",
       "notificationsAdmin": "Benachrichtigungen, 3 ungelesen",
       "notifications": "Benachrichtigungen",
       "welcomeBack": "Willkommen zurück, {name}",
@@ -407,6 +411,7 @@
         "users": "Nutzer:innen",
         "studentProfiles": "Lernprofile",
         "instructorProfiles": "Dozentenprofile",
+        "mentors": "Mentor-Freigaben",
         "courses": "Kurse",
         "instructors": "Dozent:innen",
         "enrollments": "Daten & Einschreibungen",
@@ -422,6 +427,7 @@
         "home": "Dashboard",
         "myCourses": "Meine Kurse",
         "createCourse": "Kurs erstellen",
+        "courseStudio": "Kurs-Studio",
         "contentUpload": "Inhalte hochladen",
         "students": "Studierende",
         "analytics": "Analytics",
@@ -430,6 +436,32 @@
         "reviews": "Bewertungen",
         "messages": "Nachrichten",
         "settings": "Einstellungen"
+      },
+      "mentor": {
+        "home": "Dashboard",
+        "profile": "Profil",
+        "messages": "Nachrichten",
+        "settings": "Einstellungen"
+      }
+    },
+    "navGroups": {
+      "admin": {
+        "people": "Personen",
+        "content": "Inhalte",
+        "commerce": "Commerce",
+        "insights": "Einblicke"
+      },
+      "instructor": {
+        "teach": "Unterrichten",
+        "audience": "Publikum",
+        "insights": "Einblicke"
+      },
+      "mentor": {
+        "workspace": "Arbeitsbereich"
+      },
+      "student": {
+        "learning": "Lernen",
+        "account": "Konto"
       }
     },
     "learningProfile": {
@@ -469,7 +501,7 @@
       "learningGoalsPlaceholder": "z. B. Zertifizierung bestehen, Rollenwechsel, Umzug, Studium in Deutschland…",
       "preferredFormatsLabel": "Bevorzugte Lernformate",
       "preferredFormatsHint": "Wählen Sie ein oder mehrere Formate, die am besten zu Ihnen passen.",
-      "preferredFormatsPlaceholder": "z. B. kurze Videolektionen + wöchentliche Live-Q&A + praktische Projekte",
+      "preferredFormatsPlaceholder": "z. B. Kurze Videolektionen + wöchentliche Live-Q&A + praktische Projekte",
       "formatSuggestOnline": "Online (in eigenem Tempo)",
       "formatSuggestLiveOnline": "Live-Online-Kurse",
       "formatSuggestInPerson": "Vor Ort / Präsenz",
@@ -486,7 +518,7 @@
       "weeklyOpt15plus": "15+ Stunden",
       "careerDirectionLabel": "Karriererichtung",
       "careerDirectionHint": "Hilft uns, Empfehlungen mit Ihren Plänen abzugleichen.",
-      "careerDirectionPlaceholder": "z. B. in Datenrollen wechseln, online unterrichten, in Deutschland in der IT arbeiten…",
+      "careerDirectionPlaceholder": "z. B. In Datenrollen wechseln, online unterrichten, in Deutschland in der IT arbeiten…",
       "extraNotesLabel": "Sonstiges (optional)",
       "extraNotesPlaceholder": "Barrierefreiheit, Sprachpräferenzen, Fristen…",
       "privacyNote": "Ihre Angaben werden mit Ihrem Konto gespeichert und zur besseren Orientierung genutzt. Sie können sie jederzeit ändern.",
@@ -586,19 +618,19 @@
       "processing": "Wird verarbeitet…",
       "gatewayNote": "Zahlung und Einschreibung erfolgen in einem Schritt. Später z. B. Stripe anbinden.",
       "payError": "Zahlung fehlgeschlagen",
-      "networkError": "Netzwerkfehler — bitte erneut versuchen.",
+      "networkError": "Netzwerkfehler. Bitte erneut versuchen.",
       "loadCourseError": "Kursdetails konnten nicht geladen werden; Checkout ist trotzdem möglich."
     },
     "coursesTab": {
       "cartTitle": "Im Warenkorb gespeichert",
-      "cartBody": "Kurse, die Sie auf der Website gespeichert haben. Schreiben Sie sich ein, wenn Sie soweit sind — sie bleiben hier, bis Sie sie entfernen.",
+      "cartBody": "Kurse, die Sie auf der Website gespeichert haben. Schreiben Sie sich ein, wenn Sie soweit sind. Sie bleiben hier, bis Sie sie entfernen.",
       "cartEmpty": "Ihr Warenkorb ist leer. Durchsuchen Sie den Katalog und nutzen Sie „In den Warenkorb“, um Kurse hier zu speichern.",
       "browseCatalog": "Kurse durchsuchen",
       "remove": "Entfernen",
       "enroll": "Jetzt einschreiben",
       "enrolling": "Wird eingeschrieben…",
       "enrollError": "Einschreibung nicht möglich",
-      "networkError": "Netzwerkfehler — bitte erneut versuchen.",
+      "networkError": "Netzwerkfehler. Bitte erneut versuchen.",
       "checkingSession": "Sitzung wird geprüft…",
       "signInToEnroll": "Zur Einschreibung anmelden",
       "studentOnlyHint": "Wechseln Sie zu einem Lernenden-Konto, um sich aus dem Warenkorb einzuschreiben.",
@@ -644,7 +676,7 @@
     }
   },
   "coursesPage": {
-    "metaTitle": "Alle Kurse — Multivate",
+    "metaTitle": "Alle Kurse. Multivate",
     "metaDescription": "Multivate-Programme in Tech, Deutsch und Karriere-Skills.",
     "breadcrumbHome": "Start",
     "breadcrumbCourses": "Kurse",
@@ -678,7 +710,7 @@
     "paymentNote": "Die Zahlung erfolgt auf der Seite Zahlungen; danach sind Sie eingeschrieben.",
     "needAccount": "Noch kein Konto? Jetzt erstellen",
     "enrolledMsg": "Einschreibung erfolgreich. Öffnen Sie „Meine Kurse“.",
-    "networkError": "Netzwerkfehler — bitte erneut versuchen.",
+    "networkError": "Netzwerkfehler. Bitte erneut versuchen.",
     "studentOnlyTitle": "Einschreibungen als Lernende nur für Studentenkonten",
     "studentOnlyBody": "Dozenten- und Adminkonten verwalten Kurse und Nutzer:innen. Um als Lernende teilzunehmen, registrieren Sie sich oder melden Sie sich mit einem Studentenkonto an.",
     "studentOnlyDashboard": "Zum Dashboard"

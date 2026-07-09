@@ -123,7 +123,7 @@ export const courses = [
     title: "Data Science & Analytics",
     description: "SQL, visualization, and storytelling with real datasets.",
     detail:
-      "Go from spreadsheets to dashboards hiring managers recognize—using tools teams use in production.",
+      "Go from spreadsheets to dashboards hiring managers recognize, using tools teams use in production.",
     bullets: [
       "Clean, model, and visualize messy business data",
       "Build dashboards stakeholders actually use",

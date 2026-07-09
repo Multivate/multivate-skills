@@ -18,9 +18,11 @@ from app.models.instructor_teaching_profile import InstructorTeachingProfile
 from app.models.role import UserRole
 from app.models.student_learning_profile import StudentLearningProfile
 from app.models.user import User
+from app.services import mentor_service
 from app.schemas.auth import (
     AuthResponse,
     InstructorRegisterRequest,
+    MentorRegisterRequest,
     RegisterStartResponse,
     StudentRegisterRequest,
     TokenPair,
@@ -114,6 +116,13 @@ def _payload_for_instructor(data: InstructorRegisterRequest) -> dict[str, Any]:
     return {"kind": "instructor", "payload": d}
 
 
+def _payload_for_mentor(data: MentorRegisterRequest) -> dict[str, Any]:
+    d = data.model_dump(mode="json")
+    pw = d.pop("password")
+    d["password_hash"] = hash_password(str(pw))
+    return {"kind": "mentor", "payload": d}
+
+
 def start_student_signup(db: Session, data: StudentRegisterRequest) -> RegisterStartResponse:
     email = str(data.email).lower()
     enforce_rate_limit(
@@ -169,6 +178,47 @@ def start_instructor_signup(db: Session, data: InstructorRegisterRequest) -> Reg
     code = _new_six_digit_code()
     otp_hash = hash_password(code)
     body = {"otp_hash": otp_hash, **_payload_for_instructor(data)}
+    token = secrets.token_urlsafe(32)
+    r = redis_client.get_redis()
+    r.setex(_redis_key(token), _SIGNUP_TTL_SEC, json.dumps(body))
+    dev_plain: str | None = None
+    try:
+        dev_plain = _send_signup_verification_email(email, data.name, code)
+    except EmailDeliveryError as exc:
+        r.delete(_redis_key(token))
+        _logger.warning("Signup OTP email blocked recipient=%s: %s", email, exc)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except Exception as exc:
+        _logger.exception("Signup OTP email failed for %s", email)
+        if get_settings().environment != "development":
+            r.delete(_redis_key(token))
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Could not send verification email. Set RESEND_API_KEY and RESEND_FROM, then try again.",
+            ) from exc
+        dev_plain = code
+    include_dev = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
+    return RegisterStartResponse(
+        signup_token=token,
+        email_masked=_mask_email(email),
+        dev_otp=dev_plain if include_dev else None,
+    )
+
+
+def start_mentor_signup(db: Session, data: MentorRegisterRequest) -> RegisterStartResponse:
+    email = str(data.email).lower()
+    enforce_rate_limit(
+        f"signup:email:{email}",
+        limit=5,
+        window_sec=3600,
+        detail="Too many sign-up attempts for this email. Try again later.",
+    )
+    existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    code = _new_six_digit_code()
+    otp_hash = hash_password(code)
+    body = {"otp_hash": otp_hash, **_payload_for_mentor(data)}
     token = secrets.token_urlsafe(32)
     r = redis_client.get_redis()
     r.setex(_redis_key(token), _SIGNUP_TTL_SEC, json.dumps(body))
@@ -262,6 +312,23 @@ def _create_instructor_from_payload(db: Session, payload: dict[str, Any]) -> Aut
     return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
 
 
+def _create_mentor_from_payload(db: Session, payload: dict[str, Any]) -> AuthResponse:
+    user = User(
+        name=payload["name"],
+        email=str(payload["email"]).lower(),
+        password_hash=payload["password_hash"],
+        role=UserRole.MENTOR,
+        is_active=True,
+        two_factor_enabled=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    mentor_service.create_draft_profile_for_user(db, user)
+    tokens = _tokens_for_user(user)
+    return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
+
+
 def verify_student_signup(db: Session, signup_token: str, code: str) -> AuthResponse:
     return _verify_and_create(db, signup_token, code, "student")
 
@@ -270,7 +337,11 @@ def verify_instructor_signup(db: Session, signup_token: str, code: str) -> AuthR
     return _verify_and_create(db, signup_token, code, "instructor")
 
 
-def _verify_and_create(db: Session, signup_token: str, code: str, expect: Literal["student", "instructor"]) -> AuthResponse:
+def verify_mentor_signup(db: Session, signup_token: str, code: str) -> AuthResponse:
+    return _verify_and_create(db, signup_token, code, "mentor")
+
+
+def _verify_and_create(db: Session, signup_token: str, code: str, expect: Literal["student", "instructor", "mentor"]) -> AuthResponse:
     key = _redis_key(signup_token.strip())
     r = redis_client.get_redis()
     raw = r.get(key)
@@ -316,4 +387,6 @@ def _verify_and_create(db: Session, signup_token: str, code: str, expect: Litera
     r.delete(key)
     if expect == "student":
         return _create_student_from_payload(db, payload)
-    return _create_instructor_from_payload(db, payload)
+    if expect == "instructor":
+        return _create_instructor_from_payload(db, payload)
+    return _create_mentor_from_payload(db, payload)

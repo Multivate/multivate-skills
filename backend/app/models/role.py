@@ -6,4 +6,5 @@ class UserRole(str, enum.Enum):
 
     STUDENT = "student"
     INSTRUCTOR = "instructor"
+    MENTOR = "mentor"
     ADMIN = "admin"

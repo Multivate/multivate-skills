@@ -1,10 +1,10 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 import { fetchInternal, handleProxyError } from "@/lib/internal-api";
 
 const secure = process.env.NODE_ENV === "production";
 
-export type RegisterRoleAction = { role: "student" | "instructor"; action: "start" | "verify" };
+export type RegisterRoleAction = { role: "student" | "instructor" | "mentor"; action: "start" | "verify" };
 
 export async function proxyRegisterPost(
   req: Request,

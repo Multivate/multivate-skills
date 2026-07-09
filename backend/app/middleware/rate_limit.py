@@ -17,6 +17,8 @@ _ROUTE_LIMITS: tuple[tuple[str, int, int], ...] = (
     ("/api/v1/auth/register/", 12, 60),
     ("/api/v1/auth/forgot-password/", 10, 60),
     ("/api/v1/discount-codes/validate", 40, 60),
+    ("/api/v1/guidance/chat", 30, 60),
+    ("/api/v1/mentors/", 40, 60),
 )
 
 

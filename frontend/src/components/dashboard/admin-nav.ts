@@ -15,22 +15,33 @@ import {
   Star,
   Tag,
   Users,
+  UserRound,
 } from "lucide-react";
+import { adminNavFlat } from "@/components/dashboard/admin-top-nav";
 
-export const adminNav: { href: string; id: string; icon: LucideIcon }[] = [
-  { href: "/dashboard", id: "home", icon: LayoutDashboard },
-  { href: "/dashboard/admin/data-management", id: "dataManagement", icon: Network },
-  { href: "/dashboard/admin/users", id: "users", icon: Users },
-  { href: "/dashboard/admin/student-profiles", id: "studentProfiles", icon: ListChecks },
-  { href: "/dashboard/admin/instructor-profiles", id: "instructorProfiles", icon: IdCard },
-  { href: "/dashboard/admin/courses", id: "courses", icon: BookOpen },
-  { href: "/dashboard/admin/instructors", id: "instructors", icon: GraduationCap },
-  { href: "/dashboard/admin/enrollments", id: "enrollments", icon: ClipboardList },
-  { href: "/dashboard/admin/payments", id: "payments", icon: CreditCard },
-  { href: "/dashboard/admin/discount-codes", id: "discountCodes", icon: Tag },
-  { href: "/dashboard/admin/certificates", id: "certificates", icon: Award },
-  { href: "/dashboard/admin/analytics", id: "analytics", icon: BarChart3 },
-  { href: "/dashboard/admin/reviews", id: "reviews", icon: Star },
-  { href: "/dashboard/settings", id: "settings", icon: Settings },
-  { href: "/dashboard/admin/system-logs", id: "systemLogs", icon: ScrollText },
-];
+const iconById: Record<string, LucideIcon> = {
+  home: LayoutDashboard,
+  dataManagement: Network,
+  users: Users,
+  studentProfiles: ListChecks,
+  instructorProfiles: IdCard,
+  mentors: UserRound,
+  courses: BookOpen,
+  instructors: GraduationCap,
+  enrollments: ClipboardList,
+  payments: CreditCard,
+  discountCodes: Tag,
+  certificates: Award,
+  analytics: BarChart3,
+  reviews: Star,
+  settings: Settings,
+  systemLogs: ScrollText,
+};
+
+/** @deprecated Use admin-top-nav groups for admin shell. Kept for legacy references. */
+export const adminNav = adminNavFlat.map((item) => ({
+  ...item,
+  icon: iconById[item.id] ?? LayoutDashboard,
+}));
+
+export { adminNavGroups, adminNavFlat } from "@/components/dashboard/admin-top-nav";

@@ -20,7 +20,7 @@ type AuthContextValue = {
   completeMfaLogin: (mfaToken: string, code: string) => Promise<AuthUser>;
   resendMfaLogin: (mfaToken: string) => Promise<{ mfaToken: string; emailMasked: string; devOtp?: string }>;
   registerStart: (payload: RegisterPayload) => Promise<RegisterStartResult>;
-  registerVerify: (role: "student" | "instructor", signupToken: string, code: string) => Promise<AuthUser>;
+  registerVerify: (role: "student" | "instructor" | "mentor", signupToken: string, code: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authApi.registerStart(payload);
   }, []);
 
-  const registerVerify = useCallback(async (role: "student" | "instructor", signupToken: string, code: string) => {
+  const registerVerify = useCallback(async (role: "student" | "instructor" | "mentor", signupToken: string, code: string) => {
     const u = await authApi.registerVerify(role, signupToken, code);
     setUser(u);
     return u;

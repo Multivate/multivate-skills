@@ -1,7 +1,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -48,6 +49,25 @@ def verify_payment(
     user: Annotated[User, Depends(get_current_user)],
 ) -> PaymentVerifyOut:
     return bank_transfer_service.verify_payment(db, user, payload)
+
+
+@router.post("/remita/callback")
+async def remita_callback(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+) -> PlainTextResponse:
+    raw = (await request.body()).decode("utf-8", errors="replace")
+    result = bank_transfer_service.handle_remita_callback(db, raw)
+    return PlainTextResponse(result)
+
+
+@router.post("/remita/refresh/{payment_reference}", response_model=PaymentVerifyOut)
+def refresh_remita_payment(
+    payment_reference: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> PaymentVerifyOut:
+    return bank_transfer_service.refresh_remita_payment(db, user, payment_reference)
 
 
 @router.post("", response_model=PaymentOut, status_code=status.HTTP_201_CREATED)

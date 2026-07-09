@@ -40,7 +40,7 @@
     "searchLabel": "Rechercher cours et sujets",
     "searchPlaceholder": "Rechercher…",
     "cartAria": "Cours enregistrés dans le panier ({count})",
-    "cartEmpty": "Rien pour l’instant — ajoutez des cours depuis le catalogue.",
+    "cartEmpty": "Rien pour l’instant. Ajoutez des cours depuis le catalogue.",
     "cartDashboard": "Ouvrir le panier dans Mes cours"
   },
   "hero": {
@@ -81,7 +81,7 @@
       "ctaStudio": "Ouvrir le studio de cours",
       "ctaBrowse": "Parcourir le catalogue",
       "panelTitle": "Ce que vous pouvez enseigner",
-      "panelBody": "Choisissez les domaines qui correspondent à votre profil — nous vous accompagnons pour l’onboarding et la mise en place du cours.",
+      "panelBody": "Choisissez les domaines qui correspondent à votre profil. Nous vous accompagnons pour l’onboarding et la mise en place du cours.",
       "panelLi1": "Tech : data, cloud, IA, web et préparation professionnelle.",
       "panelLi2": "Niveaux d’allemand alignés sur les objectifs d’études et de travail.",
       "panelLi3": "Ateliers et formats intensifs pour les équipes et organisations."
@@ -91,7 +91,7 @@
       "title": "Tous les cours que nous couvrons",
       "body": "Les cours publiés apparaissent ici. Enregistrez ceux qui vous intéressent, puis inscrivez-vous depuis votre tableau de bord en tant qu’étudiant.",
       "viewAll": "Tout voir sur la page Cours",
-      "empty": "Aucun cours disponible pour le moment — revenez bientôt.",
+      "empty": "Aucun cours disponible pour le moment. Revenez bientôt.",
       "liveBadge": "Live",
       "catalogBadge": "Catalogue",
       "viewDetails": "Voir les détails"
@@ -118,7 +118,7 @@
   "howItWorks": {
     "heading": "Comment ça marche",
     "stepLabel": "Étape {n}",
-    "sub": "Quatre étapes claires de l’inscription au diplôme — pensées pour les adultes actifs.",
+    "sub": "Quatre étapes claires de l’inscription au diplôme. Pensées pour les adultes actifs.",
     "step1Title": "Inscription",
     "step1Body": "Créez votre compte en quelques minutes.",
     "step2Title": "Choisir un cours",
@@ -130,7 +130,7 @@
   },
   "topCourses": {
     "heading": "Des compétences pour transformer carrière et vie",
-    "sub": "Des programmes orientés employabilité et mobilité, avec des portfolios prêts pour les entretiens — comme les attend les apprenants aujourd’hui.",
+    "sub": "Des programmes orientés employabilité et mobilité, avec des portfolios prêts pour les entretiens. Comme les attend les apprenants aujourd’hui.",
     "categoriesAria": "Catégories de cours",
     "scrollLeft": "Faire défiler les cours vers la gauche",
     "scrollRight": "Faire défiler les cours vers la droite",
@@ -189,7 +189,7 @@
     "login": {
       "badge": "Bon retour",
       "brandTitle": "Reprenez là où vous vous êtes arrêté.",
-      "brandDesc": "Vos cours, votre progression et vos certificats vous attendent — sur tous vos appareils.",
+      "brandDesc": "Vos cours, votre progression et vos certificats vous attendent, sur tous vos appareils.",
       "heroAlt": "Ville au crépuscule",
       "title": "Connectez-vous à votre compte",
       "subtitle": "Utilisez votre e-mail et votre mot de passe pour continuer.",
@@ -230,7 +230,7 @@
       "badge": "Apprenez. Progressez. Réussissez.",
       "brandTitle": "Construisez votre avenir en",
       "brandTitleHighlight": "Allemagne",
-      "brandDesc": "Compétences, langue et accompagnement carrière au même endroit — parcours clairs, progression visible et certificats utiles.",
+      "brandDesc": "Compétences, langue et accompagnement carrière au même endroit: parcours clairs, progression visible et certificats utiles.",
       "heroAlt": "Étudiants qui apprennent ensemble",
       "title": "Créez votre compte",
       "subtitle": "Choisissez votre rôle, complétez le court questionnaire, puis définissez votre mot de passe. Nous envoyons un code à 6 chiffres par e-mail (valable 5 minutes) ; le compte est créé après vérification.",
@@ -326,7 +326,7 @@
       "cardStudentTitle": "Étudiant",
       "cardStudentBody": "Parcourir le catalogue, s’inscrire en tant qu’étudiant, suivre la progression sur le tableau de bord.",
       "cardInstructorTitle": "Formateur",
-      "cardInstructorBody": "« Étudiants » liste les inscriptions à vos cours — mêmes faits, filtrés.",
+      "cardInstructorBody": "« Étudiants » liste les inscriptions à vos cours, mêmes faits, filtrés.",
       "cardAdminTitle": "Admin",
       "cardAdminBody": "« Données & inscriptions » liste toutes les lignes avec apprenant, cours et formateur.",
       "openStudentDash": "Tableau de bord étudiant",
@@ -353,7 +353,7 @@
     },
     "relationships": {
       "studentInstructorsTitle": "Vos formateurs (par cours)",
-      "studentInstructorsSubtitle": "Chaque cours affiche le formateur assigné — la même référence côté admin et formateur.",
+      "studentInstructorsSubtitle": "Chaque cours affiche le formateur assigné, la même référence côté admin et formateur.",
       "colCourse": "Cours",
       "colInstructor": "Formateur",
       "colEmail": "Contact",
@@ -381,9 +381,13 @@
       "closeMenu": "Fermer le menu",
       "adminDashboardTitle": "Tableau de bord",
       "instructorDashboardTitle": "Espace formateur",
+      "mentorDashboardTitle": "Espace mentor",
+      "mentorBadge": "Mentor",
       "searchSr": "Recherche",
       "searchAdminPh": "Rechercher…",
       "searchInstructorPh": "Étudiants, cours…",
+      "searchMentorPh": "Rechercher des messages…",
+      "searchStudentPh": "Rechercher vos cours…",
       "notificationsAdmin": "Notifications, 3 non lues",
       "notifications": "Notifications",
       "welcomeBack": "Bon retour, {name}",
@@ -407,6 +411,7 @@
         "users": "Utilisateurs",
         "studentProfiles": "Profils apprenants",
         "instructorProfiles": "Profils formateurs",
+        "mentors": "Approbations mentors",
         "courses": "Cours",
         "instructors": "Formateurs",
         "enrollments": "Données & inscriptions",
@@ -422,6 +427,7 @@
         "home": "Tableau de bord",
         "myCourses": "Mes cours",
         "createCourse": "Créer un cours",
+        "courseStudio": "Studio de cours",
         "contentUpload": "Importer du contenu",
         "students": "Étudiants",
         "analytics": "Analytique",
@@ -430,12 +436,38 @@
         "reviews": "Avis",
         "messages": "Messages",
         "settings": "Paramètres"
+      },
+      "mentor": {
+        "home": "Tableau de bord",
+        "profile": "Mon profil",
+        "messages": "Messages",
+        "settings": "Paramètres"
+      }
+    },
+    "navGroups": {
+      "admin": {
+        "people": "Personnes",
+        "content": "Contenu",
+        "commerce": "Commerce",
+        "insights": "Aperçus"
+      },
+      "instructor": {
+        "teach": "Enseigner",
+        "audience": "Audience",
+        "insights": "Aperçus"
+      },
+      "mentor": {
+        "workspace": "Espace de travail"
+      },
+      "student": {
+        "learning": "Apprentissage",
+        "account": "Compte"
       }
     },
     "learningProfile": {
       "bannerTitle": "Objectifs d'apprentissage",
       "bannerBody": "Indiquez vos compétences actuelles et ce que vous voulez apprendre ensuite pour affiner nos recommandations.",
-      "welcomeAfterRegister": "Bienvenue ! Complétez ensuite ce court formulaire — il nous aide à comprendre votre parcours et vos objectifs.",
+      "welcomeAfterRegister": "Bienvenue ! Complétez ensuite ce court formulaire. Il nous aide à comprendre votre parcours et vos objectifs.",
       "title": "Votre profil d'apprentissage",
       "subtitle": "Indiquez ce que vous savez déjà et ce que vous voulez apprendre pour que nous puissions recommander les bons parcours.",
       "loading": "Chargement de vos réponses…",
@@ -450,10 +482,10 @@
       "educationOptOther": "Autre",
       "currentSkillsLabel": "Compétences que vous avez déjà",
       "currentSkillsHint": "Outils, langues ou domaines maîtrisés (ex. Python, Excel, allemand B1).",
-      "currentSkillsPlaceholder": "ex. bases HTML/CSS, service client, coordination de projets…",
+      "currentSkillsPlaceholder": "ex. Bases HTML/CSS, service client, coordination de projets…",
       "skillsToLearnLabel": "Ce que vous voulez apprendre ensuite",
       "skillsToLearnHint": "Choisissez un ou plusieurs sujets qui correspondent à vos objectifs.",
-      "skillsToLearnPlaceholder": "ex. fondamentaux cloud sur AWS, analyse de données avec SQL, allemand des affaires pour entretiens…",
+      "skillsToLearnPlaceholder": "ex. Fondamentaux cloud sur AWS, analyse de données avec SQL, allemand des affaires pour entretiens…",
       "skillSuggestAi": "Intelligence artificielle",
       "skillSuggestCloud": "Cloud computing",
       "skillSuggestData": "Science des données",
@@ -466,10 +498,10 @@
       "skillSuggestBusinessGerman": "Allemand des affaires",
       "learningGoalsLabel": "Objectifs d'apprentissage",
       "learningGoalsHint": "Quels résultats souhaitez-vous dans les 3 à 12 prochains mois ?",
-      "learningGoalsPlaceholder": "ex. obtenir une certification, changer de poste, déménager, étudier en Allemagne…",
+      "learningGoalsPlaceholder": "ex. Obtenir une certification, changer de poste, déménager, étudier en Allemagne…",
       "preferredFormatsLabel": "Comment vous préférez apprendre",
       "preferredFormatsHint": "Choisissez un ou plusieurs formats qui vous conviennent le mieux.",
-      "preferredFormatsPlaceholder": "ex. vidéos courtes + Q&R hebdomadaire en direct + projets pratiques",
+      "preferredFormatsPlaceholder": "ex. Vidéos courtes + Q&R hebdomadaire en direct + projets pratiques",
       "formatSuggestOnline": "En ligne (à votre rythme)",
       "formatSuggestLiveOnline": "Cours en ligne en direct",
       "formatSuggestInPerson": "En présentiel",
@@ -486,7 +518,7 @@
       "weeklyOpt15plus": "15 heures et plus",
       "careerDirectionLabel": "Orientation de carrière",
       "careerDirectionHint": "Nous aide à aligner les recommandations avec vos projets.",
-      "careerDirectionPlaceholder": "ex. passer aux métiers de la data, enseigner en ligne, travailler en Allemagne dans l'IT…",
+      "careerDirectionPlaceholder": "ex. Passer aux métiers de la data, enseigner en ligne, travailler en Allemagne dans l'IT…",
       "extraNotesLabel": "Autre chose à savoir ? (facultatif)",
       "extraNotesPlaceholder": "Accessibilité, langues, échéances…",
       "privacyNote": "Vos réponses sont enregistrées avec votre compte et servent à mieux vous orienter. Vous pouvez les modifier à tout moment.",
@@ -508,7 +540,7 @@
       "sectionAbout": "À propos de votre enseignement",
       "expertiseLabel": "Domaines d’expertise",
       "expertiseHint": "Choisissez les sujets dans lesquels vous excellez et que vous êtes prêt à enseigner.",
-      "expertisePlaceholder": "ex. culture data, Python débutants, coaching carrière international…",
+      "expertisePlaceholder": "ex. Culture data, Python débutants, coaching carrière international…",
       "expertiseSuggestAi": "Intelligence artificielle",
       "expertiseSuggestCloud": "Cloud computing",
       "expertiseSuggestData": "Science des données",
@@ -524,7 +556,7 @@
       "bioPlaceholder": "Bref aperçu de votre style et de votre expérience…",
       "subjectsLabel": "Matières ou programmes enseignés",
       "subjectsHint": "Sujets, stacks ou langues que vous pouvez animer.",
-      "subjectsPlaceholder": "ex. bases SQL, recherche UX, allemand B1–B2…",
+      "subjectsPlaceholder": "ex. Bases SQL, recherche UX, allemand B1–B2…",
       "yearsLabel": "Années d’expérience d’enseignement",
       "yearsOptPlaceholder": "Choisir une option",
       "yearsOptUnder3": "Moins de 3 ans",
@@ -533,7 +565,7 @@
       "yearsOpt10plus": "10 ans et plus",
       "formatsLabel": "Comment vous préférez enseigner",
       "formatsHint": "Choisissez un ou plusieurs formats que vous proposez ou prévoyez de proposer.",
-      "formatsPlaceholder": "ex. cohortes live, vidéo asynchrone, permanences, revues de projet…",
+      "formatsPlaceholder": "ex. Cohortes live, vidéo asynchrone, permanences, revues de projet…",
       "teachFormatLiveOnline": "Cours en ligne en direct",
       "teachFormatSelfPaced": "Cours vidéo à votre rythme",
       "teachFormatInPerson": "Ateliers en présentiel",
@@ -586,12 +618,12 @@
       "processing": "Traitement…",
       "gatewayNote": "Paiement et inscription sont enregistrés ensemble. Branchez Stripe ou un PSP plus tard.",
       "payError": "Paiement impossible",
-      "networkError": "Erreur réseau — réessayez.",
+      "networkError": "Erreur réseau. Réessayez.",
       "loadCourseError": "Impossible de charger le cours ; vous pouvez quand même payer."
     },
     "coursesTab": {
       "cartTitle": "Enregistré dans votre panier",
-      "cartBody": "Cours ajoutés depuis le site. Inscrivez-vous quand vous êtes prêt — ils restent ici jusqu’à suppression.",
+      "cartBody": "Cours ajoutés depuis le site. Inscrivez-vous quand vous êtes prêt. Ils restent ici jusqu’à suppression.",
       "cartEmpty": "Votre panier est vide. Parcourez le catalogue et utilisez « Ajouter au panier » pour enregistrer des cours ici.",
       "browseCatalog": "Parcourir les cours",
       "remove": "Retirer",
@@ -599,7 +631,7 @@
       "payAndEnroll": "Payer et s’inscrire",
       "enrolling": "Inscription…",
       "enrollError": "Impossible de s’inscrire",
-      "networkError": "Erreur réseau — réessayez.",
+      "networkError": "Erreur réseau. Réessayez.",
       "checkingSession": "Vérification de la session…",
       "signInToEnroll": "Connexion pour s’inscrire",
       "studentOnlyHint": "Passez sur un compte étudiant pour vous inscrire depuis le panier.",
@@ -645,7 +677,7 @@
     }
   },
   "coursesPage": {
-    "metaTitle": "Tous les cours — Multivate",
+    "metaTitle": "Tous les cours | Multivate",
     "metaDescription": "Parcourez les programmes Multivate en tech, allemand et compétences professionnelles.",
     "breadcrumbHome": "Accueil",
     "breadcrumbCourses": "Cours",
@@ -679,7 +711,7 @@
     "paymentNote": "Le paiement se fait sur la page Paiements, puis vous êtes inscrit.",
     "needAccount": "Pas de compte ? Créez-en un",
     "enrolledMsg": "Vous êtes inscrit. Ouvrez Mes cours pour continuer.",
-    "networkError": "Erreur réseau — réessayez.",
+    "networkError": "Erreur réseau. Réessayez.",
     "studentOnlyTitle": "Inscription en tant qu’apprenant réservée aux comptes étudiants",
     "studentOnlyBody": "Les comptes formateur et administrateur gèrent les cours et les utilisateurs. Pour suivre un cours en tant qu’apprenant, créez un compte ou connectez-vous avec un compte étudiant.",
     "studentOnlyDashboard": "Aller au tableau de bord"

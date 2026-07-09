@@ -13,7 +13,7 @@ fi
 # shellcheck disable=SC1091
 source .env.production
 
-DOMAIN="${DOMAIN:-www.multivateskill.com}"
+DOMAIN="${DOMAIN:-www.multivateskills.com}"
 EMAIL="${CERTBOT_EMAIL:?Set CERTBOT_EMAIL in .env.production}"
 
 COMPOSE="docker compose -f docker-compose.prod.yml --env-file .env.production"

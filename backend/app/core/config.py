@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     cors_origins: str = (
         "http://localhost:3000,http://127.0.0.1:3000,"
+        "https://www.multivateskills.com,https://multivateskills.com,"
         "https://www.multivateskill.com,https://multivateskill.com,"
         "https://multivate.com.ng,https://www.multivate.com.ng"
     )
@@ -76,6 +77,14 @@ class Settings(BaseSettings):
     bank_account_number: str = Field(default="0125918288")
     bank_transfer_currency: str = Field(default="NGN", min_length=3, max_length=3)
 
+    platform_public_url: str = Field(
+        default="https://www.multivateskills.com",
+        description="Public site URL for payment return and webhook links.",
+    )
+    remita_merchant_id: str = Field(default="", description="Remita live merchant ID")
+    remita_api_key: str = Field(default="", description="Remita live API key")
+    remita_service_type_id: str = Field(default="", description="Remita service type ID for course payments")
+
     media_root: str = Field(
         default="media",
         description="Directory under backend/ for uploaded course thumbnails and videos.",
@@ -91,6 +100,17 @@ class Settings(BaseSettings):
     apple_team_id: str = Field(default="", description="Apple Developer Team ID")
     apple_key_id: str = Field(default="", description="Apple Sign in with Apple key ID")
     apple_private_key: str = Field(default="", description="Apple .p8 private key contents (use \\n for newlines in .env)")
+
+    gemini_api_key: str = Field(default="", description="Google Gemini API key for career guidance chat")
+    gemini_model: str = Field(default="gemini-2.5-flash", description="Gemini model id for guidance chat")
+
+    @property
+    def remita_return_url(self) -> str:
+        return f"{self.platform_public_url.rstrip('/')}/dashboard/payments/success"
+
+    @property
+    def remita_callback_url(self) -> str:
+        return f"{self.platform_public_url.rstrip('/')}/api/payments/remita/callback"
 
     @property
     def frontend_url(self) -> str:

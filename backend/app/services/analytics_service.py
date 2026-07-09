@@ -1,27 +1,134 @@
 from __future__ import annotations
 
+import logging
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import cast, func, select
 from sqlalchemy.orm import Session, aliased
+from sqlalchemy.types import Date
 
 from app.models.course import Course
 from app.models.enrollment import Enrollment
+from app.models.mentor_conversation import MentorConversation
+from app.models.mentor_message import MentorMessage
+from app.models.mentor_profile import MentorApprovalStatus, MentorProfile
 from app.models.payment import Payment, PaymentStatus
+from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.analytics import (
     AdminDashboardOut,
     AdminTotals,
+    DailyCountPoint,
+    DailyRevenuePoint,
+    GrowthSeries,
     InstructorCourseRow,
     InstructorDashboardOut,
     InstructorStudentRow,
     InstructorTotals,
+    MentorStats,
     PaymentAdminRow,
+    PaymentStatusCount,
     RecentEnrollmentRow,
     RecentPaymentRow,
+    RoleCount,
     TopCourseRow,
 )
 from app.schemas.user import user_public_from_orm
+
+logger = logging.getLogger(__name__)
+
+_GROWTH_DAYS = 30
+
+
+def _date_keys(days: int = _GROWTH_DAYS) -> list[str]:
+    today = datetime.now(timezone.utc).date()
+    return [(today - timedelta(days=offset)).isoformat() for offset in range(days - 1, -1, -1)]
+
+
+def _daily_count_series(db: Session, model, column, days: int = _GROWTH_DAYS) -> list[DailyCountPoint]:
+    start = datetime.now(timezone.utc) - timedelta(days=days - 1)
+    day_expr = cast(func.date_trunc("day", column), Date)
+    rows = db.execute(
+        select(day_expr, func.count())
+        .select_from(model)
+        .where(column >= start)
+        .group_by(day_expr)
+        .order_by(day_expr.asc())
+    ).all()
+    by_day = {str(r[0]): int(r[1] or 0) for r in rows}
+    return [DailyCountPoint(date=d, count=by_day.get(d, 0)) for d in _date_keys(days)]
+
+
+def _daily_revenue_series(db: Session, days: int = _GROWTH_DAYS) -> list[DailyRevenuePoint]:
+    start = datetime.now(timezone.utc) - timedelta(days=days - 1)
+    day_expr = cast(func.date_trunc("day", Payment.created_at), Date)
+    rows = db.execute(
+        select(day_expr, func.coalesce(func.sum(Payment.amount_cents), 0))
+        .where(
+            Payment.created_at >= start,
+            Payment.status.in_([PaymentStatus.COMPLETED, PaymentStatus.PAID]),
+        )
+        .group_by(day_expr)
+        .order_by(day_expr.asc())
+    ).all()
+    by_day = {str(r[0]): int(r[1] or 0) for r in rows}
+    return [DailyRevenuePoint(date=d, amount_cents=by_day.get(d, 0)) for d in _date_keys(days)]
+
+
+def _users_by_role(db: Session) -> list[RoleCount]:
+    rows = db.execute(select(User.role, func.count()).group_by(User.role)).all()
+    order = [UserRole.STUDENT, UserRole.INSTRUCTOR, UserRole.MENTOR, UserRole.ADMIN]
+    counts = {str(r[0].value if hasattr(r[0], "value") else r[0]): int(r[1] or 0) for r in rows}
+    return [RoleCount(role=role.value, count=counts.get(role.value, 0)) for role in order]
+
+
+def _payment_status_breakdown(db: Session) -> list[PaymentStatusCount]:
+    rows = db.execute(select(Payment.status, func.count()).group_by(Payment.status)).all()
+    raw = {str(r[0].value if hasattr(r[0], "value") else r[0]): int(r[1] or 0) for r in rows}
+    completed = raw.get(PaymentStatus.COMPLETED.value, 0) + raw.get(PaymentStatus.PAID.value, 0)
+    pending = raw.get(PaymentStatus.PENDING.value, 0) + raw.get(PaymentStatus.AWAITING_REVIEW.value, 0)
+    failed = raw.get(PaymentStatus.FAILED.value, 0)
+    return [
+        PaymentStatusCount(status="completed", label="Completed", count=completed),
+        PaymentStatusCount(status="pending", label="Pending", count=pending),
+        PaymentStatusCount(status="failed", label="Failed", count=failed),
+    ]
+
+
+def _mentor_stats(db: Session) -> MentorStats:
+    approved = int(
+        db.scalar(
+            select(func.count())
+            .select_from(MentorProfile)
+            .where(MentorProfile.approval_status == MentorApprovalStatus.APPROVED)
+        )
+        or 0
+    )
+    pending = int(
+        db.scalar(
+            select(func.count())
+            .select_from(MentorProfile)
+            .where(MentorProfile.approval_status == MentorApprovalStatus.PENDING)
+        )
+        or 0
+    )
+    conversations = int(db.scalar(select(func.count()).select_from(MentorConversation)) or 0)
+    mentors_replied = int(
+        db.scalar(
+            select(func.count(func.distinct(MentorConversation.mentor_id)))
+            .select_from(MentorConversation)
+            .join(MentorMessage, MentorMessage.conversation_id == MentorConversation.id)
+            .where(MentorMessage.sender_kind == "mentor")
+        )
+        or 0
+    )
+    return MentorStats(
+        approved_profiles=approved,
+        pending_profiles=pending,
+        total_conversations=conversations,
+        mentors_who_replied=mentors_replied,
+    )
 
 
 def _recent_enrollment_rows(db: Session, limit: int) -> list[RecentEnrollmentRow]:
@@ -75,6 +182,24 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
     payments_pending_count = int(
         db.scalar(select(func.count()).select_from(Payment).where(Payment.status == PaymentStatus.PENDING)) or 0
     )
+    avg_progress_pct = int(
+        db.scalar(select(func.coalesce(func.avg(Enrollment.progress_pct), 0)).select_from(Enrollment)) or 0
+    )
+
+    growth = GrowthSeries(
+        users=_daily_count_series(db, User, User.created_at),
+        enrollments=_daily_count_series(db, Enrollment, Enrollment.created_at),
+        revenue=_daily_revenue_series(db),
+    )
+    users_by_role = _users_by_role(db)
+    payment_statuses = _payment_status_breakdown(db)
+    mentor_stats = _mentor_stats(db)
+    logger.info(
+        "Admin dashboard analytics growth_days=%s mentor_conversations=%s avg_progress=%s",
+        _GROWTH_DAYS,
+        mentor_stats.total_conversations,
+        avg_progress_pct,
+    )
 
     top_rows = db.execute(
         select(Course.slug, Course.title, Course.image_url, func.count(Enrollment.id).label("cnt"))
@@ -123,11 +248,16 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
             total_enrollments=total_enrollments,
             revenue_completed_cents=revenue_completed_cents,
             payments_pending_count=payments_pending_count,
+            avg_progress_pct=avg_progress_pct,
         ),
         top_courses=top_courses,
         recent_users=recent_users,
         recent_enrollments=recent_enrollments,
         recent_payments=recent_payments,
+        growth=growth,
+        users_by_role=users_by_role,
+        payment_statuses=payment_statuses,
+        mentor_stats=mentor_stats,
     )
 
 

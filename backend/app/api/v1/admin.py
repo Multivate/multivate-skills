@@ -14,11 +14,12 @@ from app.schemas.analytics import AdminDashboardOut, PaymentAdminRow, RecentEnro
 from app.schemas.bank_transfer import AdminPaymentApproveIn, AdminPaymentRejectIn, PaymentVerifyOut, StudentPaymentOut
 from app.schemas.discount import DiscountCodeCreateIn, DiscountCodeOut
 from app.schemas.instructor_profile import InstructorTeachingProfileAdminRow
+from app.schemas.mentor import MentorAdminFeatureIn, MentorAdminRejectIn, MentorProfileAdminRow
 from app.schemas.review import ReviewOut
 from app.schemas.studio import AdminCourseRejectIn, CourseStudioBasicsOut, StudioCourseListItem
 from app.schemas.student_profile import StudentLearningProfileAdminRow
 from app.schemas.user import UserPublic, user_public_from_orm
-from app.services import analytics_service, bank_transfer_service, course_studio_service, discount_service, instructor_profile_service, learning_service, review_service
+from app.services import analytics_service, bank_transfer_service, course_studio_service, discount_service, instructor_profile_service, learning_service, mentor_service, review_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -188,3 +189,41 @@ def activate_discount_code(
     _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
 ) -> DiscountCodeOut:
     return discount_service.set_discount_active(db, discount_id, is_active=True)
+
+
+@router.get("/mentors", response_model=list[MentorProfileAdminRow])
+def list_admin_mentors(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    limit: int = Query(200, ge=1, le=500),
+) -> list[MentorProfileAdminRow]:
+    return mentor_service.list_admin_mentors(db, limit=limit)
+
+
+@router.post("/mentors/{mentor_id}/approve", response_model=MentorProfileAdminRow)
+def approve_mentor_profile(
+    mentor_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> MentorProfileAdminRow:
+    return mentor_service.admin_approve(db, mentor_id)
+
+
+@router.post("/mentors/{mentor_id}/reject", response_model=MentorProfileAdminRow)
+def reject_mentor_profile(
+    mentor_id: UUID,
+    body: MentorAdminRejectIn,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> MentorProfileAdminRow:
+    return mentor_service.admin_reject(db, mentor_id, body.reason)
+
+
+@router.patch("/mentors/{mentor_id}/feature", response_model=MentorProfileAdminRow)
+def feature_mentor_profile(
+    mentor_id: UUID,
+    body: MentorAdminFeatureIn,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> MentorProfileAdminRow:
+    return mentor_service.admin_set_featured(db, mentor_id, body)

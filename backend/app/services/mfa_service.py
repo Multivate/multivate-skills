@@ -98,7 +98,7 @@ def create_and_send_otp(
         lead = "Use the code below to finish signing in to your Multivate account."
         ctx = "Your verification code:"
     elif purpose == "signup":
-        subject = "Multivate: Welcome — your 6-digit verification code"
+        subject = "Multivate: Welcome. Your 6-digit verification code"
         lead = "Thanks for creating your Multivate account."
         ctx = "Use the code below to verify this email address:"
     elif purpose == "enable":

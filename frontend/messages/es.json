@@ -40,7 +40,7 @@
     "searchLabel": "Buscar cursos y temas",
     "searchPlaceholder": "Buscar…",
     "cartAria": "Cursos guardados en el carrito ({count})",
-    "cartEmpty": "Aún no hay nada — añade cursos desde el catálogo.",
+    "cartEmpty": "Aún no hay nada. Añade cursos desde el catálogo.",
     "cartDashboard": "Abrir carrito en Mis cursos"
   },
   "hero": {
@@ -81,7 +81,7 @@
       "ctaStudio": "Abrir el estudio de cursos",
       "ctaBrowse": "Ver el catálogo",
       "panelTitle": "Qué puedes enseñar",
-      "panelBody": "Elige áreas que encajen con tu perfil — te guiamos en la incorporación y la creación del curso.",
+      "panelBody": "Elige áreas que encajen con tu perfil. Te guiamos en la incorporación y la creación del curso.",
       "panelLi1": "Tech: datos, cloud, IA, web y preparación profesional.",
       "panelLi2": "Niveles de alemán alineados con estudio y trabajo.",
       "panelLi3": "Talleres e intensivos para equipos y organizaciones."
@@ -91,7 +91,7 @@
       "title": "Todos los cursos que ofrecemos",
       "body": "Los cursos publicados aparecen aquí. Guarda los que te interesen e inscríbete desde tu panel como estudiante.",
       "viewAll": "Ver todo en la página de cursos",
-      "empty": "Aún no hay cursos disponibles — vuelve pronto.",
+      "empty": "Aún no hay cursos disponibles. Vuelve pronto.",
       "liveBadge": "En vivo",
       "catalogBadge": "Catálogo",
       "viewDetails": "Ver detalles"
@@ -118,7 +118,7 @@
   "howItWorks": {
     "heading": "Cómo funciona",
     "stepLabel": "Paso {n}",
-    "sub": "Cuatro pasos claros desde el registro hasta la credencial — pensados para adultos ocupados.",
+    "sub": "Cuatro pasos claros desde el registro hasta la credencial, pensados para adultos ocupados.",
     "step1Title": "Regístrate",
     "step1Body": "Crea tu cuenta en minutos.",
     "step2Title": "Elige un curso",
@@ -130,7 +130,7 @@
   },
   "topCourses": {
     "heading": "Habilidades que transforman tu carrera y tu vida",
-    "sub": "Programas orientados a empleabilidad, relocalización y portafolios para entrevistas — como esperan los estudiantes hoy.",
+    "sub": "Programas orientados a empleabilidad, relocalización y portafolios para entrevistas, como esperan los estudiantes hoy.",
     "categoriesAria": "Categorías de cursos",
     "scrollLeft": "Desplazar cursos a la izquierda",
     "scrollRight": "Desplazar cursos a la derecha",
@@ -230,7 +230,7 @@
       "badge": "Aprende. Crece. Triunfa.",
       "brandTitle": "Construye tu futuro en",
       "brandTitleHighlight": "Alemania",
-      "brandDesc": "Habilidades, idioma y apoyo profesional en un solo lugar — rutas claras, progreso visible y certificados para empleadores.",
+      "brandDesc": "Habilidades, idioma y apoyo profesional en un solo lugar: rutas claras, progreso visible y certificados para empleadores.",
       "heroAlt": "Estudiantes aprendiendo juntos",
       "title": "Crea tu cuenta",
       "subtitle": "Elige tu rol, completa el cuestionario breve y define tu contraseña. Te enviamos un código de 6 dígitos por correo (válido 5 minutos); la cuenta se crea al verificarlo.",
@@ -381,9 +381,13 @@
       "closeMenu": "Cerrar menú",
       "adminDashboardTitle": "Panel",
       "instructorDashboardTitle": "Panel del instructor",
+      "mentorDashboardTitle": "Espacio de mentor",
+      "mentorBadge": "Mentor",
       "searchSr": "Buscar",
       "searchAdminPh": "Buscar cualquier cosa…",
       "searchInstructorPh": "Buscar estudiantes, cursos…",
+      "searchMentorPh": "Buscar mensajes…",
+      "searchStudentPh": "Buscar tus cursos…",
       "notificationsAdmin": "Notificaciones, 3 sin leer",
       "notifications": "Notificaciones",
       "welcomeBack": "Bienvenido de nuevo, {name}",
@@ -407,6 +411,7 @@
         "users": "Usuarios",
         "studentProfiles": "Perfiles de estudiantes",
         "instructorProfiles": "Perfiles de instructores",
+        "mentors": "Aprobaciones de mentores",
         "courses": "Cursos",
         "instructors": "Instructores",
         "enrollments": "Datos e inscripciones",
@@ -422,6 +427,7 @@
         "home": "Panel",
         "myCourses": "Mis cursos",
         "createCourse": "Crear curso",
+        "courseStudio": "Estudio de curso",
         "contentUpload": "Subir contenido",
         "students": "Estudiantes",
         "analytics": "Analítica",
@@ -430,6 +436,32 @@
         "reviews": "Reseñas",
         "messages": "Mensajes",
         "settings": "Ajustes"
+      },
+      "mentor": {
+        "home": "Panel",
+        "profile": "Mi perfil",
+        "messages": "Mensajes",
+        "settings": "Ajustes"
+      }
+    },
+    "navGroups": {
+      "admin": {
+        "people": "Personas",
+        "content": "Contenido",
+        "commerce": "Comercio",
+        "insights": "Información"
+      },
+      "instructor": {
+        "teach": "Enseñar",
+        "audience": "Audiencia",
+        "insights": "Información"
+      },
+      "mentor": {
+        "workspace": "Espacio de trabajo"
+      },
+      "student": {
+        "learning": "Aprendizaje",
+        "account": "Cuenta"
       }
     },
     "learningProfile": {
@@ -586,12 +618,12 @@
       "processing": "Procesando…",
       "gatewayNote": "Pago e inscripción se registran juntos. Conecta Stripe u otro PSP después.",
       "payError": "No se pudo completar el pago",
-      "networkError": "Error de red — inténtalo de nuevo.",
+      "networkError": "Error de red. Inténtalo de nuevo.",
       "loadCourseError": "No se pudieron cargar los datos del curso; puedes pagar igualmente."
     },
     "coursesTab": {
       "cartTitle": "Guardado en tu carrito",
-      "cartBody": "Cursos que añadiste desde la web. Inscríbete cuando quieras — permanecen aquí hasta que los quites.",
+      "cartBody": "Cursos que añadiste desde la web. Inscríbete cuando quieras. Permanecen aquí hasta que los quites.",
       "cartEmpty": "Tu carrito está vacío. Explora el catálogo y usa “Añadir al carrito” para guardar cursos aquí.",
       "browseCatalog": "Explorar cursos",
       "remove": "Quitar",
@@ -599,7 +631,7 @@
       "payAndEnroll": "Pagar e inscribirme",
       "enrolling": "Inscribiendo…",
       "enrollError": "No se pudo inscribir",
-      "networkError": "Error de red — inténtalo de nuevo.",
+      "networkError": "Error de red. Inténtalo de nuevo.",
       "checkingSession": "Comprobando la sesión…",
       "signInToEnroll": "Inicia sesión para inscribirte",
       "studentOnlyHint": "Usa una cuenta de estudiante para inscribirte desde el carrito.",
@@ -645,7 +677,7 @@
     }
   },
   "coursesPage": {
-    "metaTitle": "Todos los cursos — Multivate",
+    "metaTitle": "Todos los cursos | Multivate",
     "metaDescription": "Explora programas Multivate en tech, alemán y habilidades profesionales.",
     "breadcrumbHome": "Inicio",
     "breadcrumbCourses": "Cursos",
@@ -679,7 +711,7 @@
     "paymentNote": "El pago se hace en Pagos; después quedas inscrito.",
     "needAccount": "¿Sin cuenta? Créala",
     "enrolledMsg": "Te has inscrito. Abre Mis cursos para continuar.",
-    "networkError": "Error de red — inténtalo de nuevo.",
+    "networkError": "Error de red. Inténtalo de nuevo.",
     "studentOnlyTitle": "Las inscripciones como aprendiz son solo para cuentas de estudiante",
     "studentOnlyBody": "Las cuentas de instructor y administrador gestionan cursos y usuarios. Para cursar como aprendiz, regístrate o inicia sesión con una cuenta de estudiante.",
     "studentOnlyDashboard": "Ir al panel"

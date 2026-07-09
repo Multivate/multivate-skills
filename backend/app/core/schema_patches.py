@@ -141,6 +141,97 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS original_amount_cents INTEGER")
         _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS discount_cents INTEGER NOT NULL DEFAULT 0")
 
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS mentor_profiles (
+                id UUID PRIMARY KEY,
+                slug VARCHAR(128) NOT NULL UNIQUE,
+                user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                full_name VARCHAR(255) NOT NULL,
+                headline VARCHAR(255) NOT NULL DEFAULT '',
+                bio TEXT NOT NULL DEFAULT '',
+                photo_url VARCHAR(512),
+                city VARCHAR(128) NOT NULL DEFAULT '',
+                origin_country VARCHAR(128),
+                years_in_germany INTEGER,
+                german_level VARCHAR(32),
+                field_of_work VARCHAR(128),
+                expertise_areas TEXT NOT NULL DEFAULT '',
+                languages_spoken VARCHAR(512) NOT NULL DEFAULT '',
+                career_tips TEXT,
+                approval_status VARCHAR(16) NOT NULL DEFAULT 'draft',
+                rejection_reason TEXT,
+                submitted_at TIMESTAMPTZ,
+                approved_at TIMESTAMPTZ,
+                is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_profiles_slug ON mentor_profiles (slug)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_profiles_user_id ON mentor_profiles (user_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_profiles_approval ON mentor_profiles (approval_status)")
+        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS approval_status VARCHAR(16) NOT NULL DEFAULT 'draft'")
+        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS rejection_reason TEXT")
+        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ")
+        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ")
+        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS german_level VARCHAR(32)")
+        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS field_of_work VARCHAR(128)")
+        _run(conn, "DELETE FROM mentor_profiles WHERE user_id IS NULL")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'mentor_profiles' AND column_name = 'is_published'
+              ) THEN
+                UPDATE mentor_profiles SET approval_status = 'approved'
+                WHERE approval_status = 'draft' AND is_published IS TRUE;
+                ALTER TABLE mentor_profiles DROP COLUMN is_published;
+              END IF;
+            END $$;
+            """,
+        )
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS mentor_conversations (
+                id UUID PRIMARY KEY,
+                mentor_id UUID NOT NULL REFERENCES mentor_profiles(id) ON DELETE CASCADE,
+                visitor_name VARCHAR(255) NOT NULL,
+                visitor_email VARCHAR(320),
+                guest_token VARCHAR(64) NOT NULL UNIQUE,
+                visitor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                status VARCHAR(16) NOT NULL DEFAULT 'open',
+                last_message_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_conversations_mentor_id ON mentor_conversations (mentor_id)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS mentor_messages (
+                id UUID PRIMARY KEY,
+                conversation_id UUID NOT NULL REFERENCES mentor_conversations(id) ON DELETE CASCADE,
+                sender_kind VARCHAR(16) NOT NULL,
+                sender_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                body TEXT NOT NULL,
+                read_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_messages_conversation_id ON mentor_messages (conversation_id)")
+
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(

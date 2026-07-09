@@ -16,7 +16,7 @@ fi
 # shellcheck disable=SC1091
 source .env.production
 
-DOMAIN="${DOMAIN:-www.multivateskill.com}"
+DOMAIN="${DOMAIN:-www.multivateskills.com}"
 EMAIL="${CERTBOT_EMAIL:-}"
 
 echo "==> Building and starting containers..."

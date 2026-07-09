@@ -24,6 +24,17 @@ class BankTransferInstructions(BaseModel):
     coupon_code: str | None = None
 
 
+class RemitaCheckout(BaseModel):
+    rrr: str
+    merchant_id: str
+    payment_hash: str
+    payment_gateway_url: str
+    response_url: str
+    amount_cents: int
+    currency: str
+    payment_reference: str
+
+
 class StudentPaymentOut(BaseModel):
     id: UUID
     user_id: UUID
@@ -52,6 +63,7 @@ class EnrollmentStartOut(BaseModel):
     student_code: str
     payment: StudentPaymentOut | None = None
     instructions: BankTransferInstructions | None = None
+    remita: RemitaCheckout | None = None
     message: str
 
 
@@ -74,6 +86,7 @@ class PaymentVerifyOut(BaseModel):
 class PaymentStatusOut(BaseModel):
     payment: StudentPaymentOut
     instructions: BankTransferInstructions | None = None
+    remita: RemitaCheckout | None = None
 
 
 class AdminPaymentApproveIn(BaseModel):

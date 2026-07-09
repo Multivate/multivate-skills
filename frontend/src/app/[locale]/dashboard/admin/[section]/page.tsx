@@ -11,6 +11,7 @@ const SECTIONS = new Set([
   "enrollments",
   "payments",
   "discount-codes",
+  "mentors",
   "certificates",
   "analytics",
   "reviews",
@@ -27,6 +28,7 @@ const TITLES: Record<string, string> = {
   enrollments: "Enrollments & relationships",
   payments: "Payments",
   "discount-codes": "Discount codes",
+  mentors: "Mentor approvals",
   certificates: "Certificates",
   analytics: "Analytics",
   reviews: "Reviews",
@@ -43,9 +45,12 @@ export default async function AdminSectionPage({ params }: Props) {
     notFound();
   }
   const title = TITLES[section] ?? "Admin";
+  const isAnalytics = section === "analytics";
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{title}</h1>
+    <div className={isAnalytics ? "space-y-6" : "mx-auto max-w-6xl space-y-6"}>
+      {isAnalytics ? null : (
+        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{title}</h1>
+      )}
       <AdminSectionContent section={section} />
     </div>
   );

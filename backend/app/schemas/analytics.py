@@ -15,6 +15,41 @@ class AdminTotals(BaseModel):
     total_enrollments: int
     revenue_completed_cents: int
     payments_pending_count: int
+    avg_progress_pct: int = 0
+
+
+class DailyCountPoint(BaseModel):
+    date: str
+    count: int
+
+
+class DailyRevenuePoint(BaseModel):
+    date: str
+    amount_cents: int
+
+
+class GrowthSeries(BaseModel):
+    users: list[DailyCountPoint]
+    enrollments: list[DailyCountPoint]
+    revenue: list[DailyRevenuePoint]
+
+
+class RoleCount(BaseModel):
+    role: str
+    count: int
+
+
+class PaymentStatusCount(BaseModel):
+    status: str
+    label: str
+    count: int
+
+
+class MentorStats(BaseModel):
+    approved_profiles: int
+    pending_profiles: int
+    total_conversations: int
+    mentors_who_replied: int
 
 
 class TopCourseRow(BaseModel):
@@ -51,6 +86,10 @@ class AdminDashboardOut(BaseModel):
     recent_users: list[UserPublic]
     recent_enrollments: list[RecentEnrollmentRow]
     recent_payments: list[RecentPaymentRow]
+    growth: GrowthSeries
+    users_by_role: list[RoleCount]
+    payment_statuses: list[PaymentStatusCount]
+    mentor_stats: MentorStats
 
 
 class InstructorTotals(BaseModel):
@@ -93,4 +132,3 @@ class PaymentAdminRow(BaseModel):
     user_email: str
     course_slug: str | None
     course_title: str | None
-

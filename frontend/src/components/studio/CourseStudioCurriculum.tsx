@@ -210,7 +210,7 @@ export function CourseStudioCurriculum({
       setNewLessonTitle("");
       await loadCourse(slug);
       setSelectedLessonId((data as { id: string }).id);
-      showToast("Lesson added — now add your video");
+      showToast("Lesson added. Now add your video.");
     } finally {
       setBusy(false);
     }
@@ -328,7 +328,7 @@ export function CourseStudioCurriculum({
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-violet-200/80 bg-violet-50/60 px-4 py-3 text-sm text-slate-700 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-slate-300">
-        Build your course in sections. Each lesson needs a video — upload a file or paste a YouTube, Vimeo, or direct link. Students watch inside the app; videos are not downloadable.
+        Build your course in sections. Each lesson needs a video: upload a file or paste a YouTube, Vimeo, or direct link. Students watch inside the app; videos are not downloadable.
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
@@ -519,9 +519,9 @@ export function CourseStudioCurriculum({
                 >
                   <Upload className="mx-auto h-8 w-8 text-brand-accent" />
                   <p className="mt-2 text-sm font-semibold text-brand-ink">Click to upload video</p>
-                  <p className="mt-1 text-xs text-slate-500">MP4, WebM, or MOV — up to 512 MB</p>
+                  <p className="mt-1 text-xs text-slate-500">MP4, WebM, or MOV, up to 512 MB</p>
                   {activeLesson.video_url && activeLesson.video_source === "upload" ? (
-                    <p className="mt-2 text-xs font-medium text-emerald-700">Video uploaded — upload again to replace</p>
+                    <p className="mt-2 text-xs font-medium text-emerald-700">Video uploaded. Upload again to replace.</p>
                   ) : null}
                   <input
                     ref={videoFileRef}

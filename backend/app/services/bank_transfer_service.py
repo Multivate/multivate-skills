@@ -26,9 +26,10 @@ from app.schemas.bank_transfer import (
     PaymentStatusOut,
     PaymentVerifyIn,
     PaymentVerifyOut,
+    RemitaCheckout,
     StudentPaymentOut,
 )
-from app.services import course_service, discount_service, mail_service, notification_service
+from app.services import course_service, discount_service, mail_service, notification_service, remita_service
 
 _logger = logging.getLogger(__name__)
 
@@ -99,6 +100,86 @@ def _instructions_for(payment: Payment, course: Course, student_code: str) -> Ba
         discount_cents=payment.discount_cents or 0,
         coupon_code=payment.coupon_code,
     )
+
+
+def _remita_checkout_for(payment: Payment) -> RemitaCheckout:
+    rrr = payment.transaction_reference or ""
+    if not rrr:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment is not ready yet. Please try again.")
+    checkout = remita_service.build_checkout(rrr=rrr, payment_reference=payment.payment_reference or "")
+    return RemitaCheckout(
+        rrr=checkout["rrr"],
+        merchant_id=checkout["merchant_id"],
+        payment_hash=checkout["payment_hash"],
+        payment_gateway_url=checkout["payment_gateway_url"],
+        response_url=checkout["response_url"],
+        amount_cents=payment.amount_cents,
+        currency=payment.currency.upper(),
+        payment_reference=payment.payment_reference or "",
+    )
+
+
+def _ensure_remita_rrr(db: Session, payment: Payment, course: Course, user: User) -> RemitaCheckout:
+    if payment.transaction_reference and payment.payment_method == "remita":
+        return _remita_checkout_for(payment)
+
+    _logger.info(
+        "Creating Remita RRR payment_ref=%s course=%s user_id=%s amount_cents=%s",
+        payment.payment_reference,
+        course.slug,
+        user.id,
+        payment.amount_cents,
+    )
+    try:
+        rrr_payload = remita_service.generate_rrr(
+            order_id=payment.payment_reference or str(payment.id),
+            amount_cents=payment.amount_cents,
+            payer_name=user.name,
+            payer_email=user.email,
+            payer_phone=remita_service.normalize_phone(None),
+            description=f"Multivate course: {course.title}",
+        )
+    except Exception as exc:
+        _logger.exception("Remita RRR generation failed payment_ref=%s", payment.payment_reference)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="We couldn't start online payment right now. Please try again shortly.",
+        ) from exc
+
+    rrr = str(rrr_payload.get("RRR") or rrr_payload.get("rrr") or "").strip()
+    payment.payment_method = "remita"
+    payment.transaction_reference = rrr
+    payment.external_ref = payment.payment_reference
+    payment.verification_response = json.dumps({"rrr_init": rrr_payload})
+    db.add(payment)
+    db.flush()
+    _audit(db, payment.id, user.id, "remita_rrr_created", f"rrr={rrr}")
+    return _remita_checkout_for(payment)
+
+
+def _enrollment_start_message(*, remita: bool, awaiting_review: bool) -> str:
+    if awaiting_review:
+        return "We received your payment details and are reviewing them."
+    if remita:
+        return "Continue to secure payment to finish enrollment."
+    return "Transfer the exact amount and include your payment reference."
+
+
+def _payment_status_bundle(
+    db: Session,
+    payment: Payment,
+    course: Course | None,
+    owner: User,
+) -> tuple[BankTransferInstructions | None, RemitaCheckout | None]:
+    instructions = None
+    remita = None
+    if payment.status != PaymentStatus.PENDING or not course:
+        return instructions, remita
+    if payment.payment_method == "remita" and remita_service.remita_configured():
+        remita = _ensure_remita_rrr(db, payment, course, owner)
+    elif not remita_service.remita_configured():
+        instructions = _instructions_for(payment, course, owner.student_code or "")
+    return instructions, remita
 
 
 def _payment_out(
@@ -263,7 +344,7 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
             student_code=student_code,
             payment=_payment_out(db, payment, course, user),
             instructions=None,
-            message="Your discount covers the full price — you are enrolled.",
+            message="Your discount covers the full price. You are enrolled.",
         )
 
     student_code = ensure_student_code(db, user)
@@ -287,6 +368,7 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
     ).scalar_one_or_none()
 
     if pending_payment and pending_payment.payment_reference:
+        amount_changed = pending_payment.amount_cents != amount_cents
         pending_payment.amount_cents = amount_cents
         pending_payment.currency = currency
         _attach_discount_to_payment(
@@ -296,6 +378,8 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
             discount_row=discount_row,
             normalized_code=normalized_code,
         )
+        if amount_changed and pending_payment.payment_method == "remita":
+            pending_payment.transaction_reference = None
         if not existing_enr:
             existing_enr = Enrollment(
                 user_id=user.id,
@@ -311,16 +395,21 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
         db.commit()
         db.refresh(pending_payment)
         waiting = pending_payment.status == PaymentStatus.AWAITING_REVIEW
+        remita_checkout = None
+        instructions = None
+        if not waiting:
+            if remita_service.remita_configured():
+                remita_checkout = _ensure_remita_rrr(db, pending_payment, course, user)
+                db.commit()
+            else:
+                instructions = _instructions_for(pending_payment, course, student_code)
         return EnrollmentStartOut(
             enrollment_status=EnrollmentStatus.PENDING_PAYMENT,
             student_code=student_code,
             payment=_payment_out(db, pending_payment, course, user),
-            instructions=_instructions_for(pending_payment, course, student_code) if not waiting else None,
-            message=(
-                "We received your payment details and are reviewing them."
-                if waiting
-                else "Continue with your pending bank transfer."
-            ),
+            instructions=instructions,
+            remita=remita_checkout,
+            message=_enrollment_start_message(remita=remita_checkout is not None, awaiting_review=waiting),
         )
 
     enrollment = existing_enr
@@ -340,6 +429,7 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
         db.flush()
 
     payment_ref = _new_payment_reference(db)
+    use_remita = remita_service.remita_configured()
     payment = Payment(
         user_id=user.id,
         course_id=course.id,
@@ -348,8 +438,8 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
         currency=currency,
         status=PaymentStatus.PENDING,
         payment_reference=payment_ref,
-        payment_method="bank_transfer",
-        external_ref="bank_transfer_v1",
+        payment_method="remita" if use_remita else "bank_transfer",
+        external_ref="remita_v1" if use_remita else "bank_transfer_v1",
     )
     _attach_discount_to_payment(
         payment,
@@ -365,12 +455,22 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
     db.refresh(payment)
     db.refresh(enrollment)
 
+    remita_checkout = None
+    instructions = None
+    if use_remita:
+        remita_checkout = _ensure_remita_rrr(db, payment, course, user)
+        db.commit()
+        db.refresh(payment)
+    else:
+        instructions = _instructions_for(payment, course, student_code)
+
     return EnrollmentStartOut(
         enrollment_status=EnrollmentStatus.PENDING_PAYMENT,
         student_code=student_code,
         payment=_payment_out(db, payment, course, user),
-        instructions=_instructions_for(payment, course, student_code),
-        message="Transfer the exact amount and include your payment reference.",
+        instructions=instructions,
+        remita=remita_checkout,
+        message=_enrollment_start_message(remita=remita_checkout is not None, awaiting_review=False),
     )
 
 
@@ -380,12 +480,11 @@ def get_payment_status(db: Session, user: User, payment_reference: str) -> Payme
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
     course = db.get(Course, payment.course_id) if payment.course_id else None
     owner = db.get(User, payment.user_id)
-    instructions = None
-    if payment.status == PaymentStatus.PENDING and course and owner:
-        instructions = _instructions_for(payment, course, owner.student_code or "")
+    instructions, remita = _payment_status_bundle(db, payment, course, owner or user)
     return PaymentStatusOut(
         payment=_payment_out(db, payment, course, owner or user),
         instructions=instructions,
+        remita=remita,
     )
 
 
@@ -745,3 +844,120 @@ def _send_enrollment_confirmed_email(user: User, course: Course) -> None:
         _logger.info("Enrollment confirmation email sent to %s course=%s", user.email, course.slug)
     except Exception:
         _logger.exception("Failed to send enrollment confirmation to %s", user.email)
+
+
+def _find_payment_for_remita(db: Session, *, rrr: str, order_ref: str) -> Payment | None:
+    if rrr:
+        payment = db.execute(select(Payment).where(Payment.transaction_reference == rrr)).scalar_one_or_none()
+        if payment:
+            return payment
+    if order_ref:
+        return db.execute(select(Payment).where(Payment.payment_reference == order_ref.upper())).scalar_one_or_none()
+    return None
+
+
+def handle_remita_callback(db: Session, raw_body: str) -> str:
+    _logger.info("Remita callback received bytes=%s", len(raw_body))
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        _logger.warning("Remita callback invalid JSON")
+        return "not ok"
+
+    items = payload if isinstance(payload, list) else [payload]
+    all_ok = True
+    for item in items:
+        if not isinstance(item, dict):
+            all_ok = False
+            continue
+        rrr = str(item.get("rrr") or item.get("RRR") or "").strip()
+        order_ref = str(item.get("orderRef") or item.get("orderId") or "").strip()
+        payment = _find_payment_for_remita(db, rrr=rrr, order_ref=order_ref)
+        if not payment:
+            _logger.warning("Remita callback payment not found rrr=%s order_ref=%s", rrr, order_ref)
+            all_ok = False
+            continue
+        if payment.status in (PaymentStatus.PAID, PaymentStatus.COMPLETED):
+            _logger.info("Remita callback payment already paid ref=%s", payment.payment_reference)
+            continue
+        check_rrr = rrr or payment.transaction_reference or ""
+        if not check_rrr:
+            all_ok = False
+            continue
+        try:
+            status_payload = remita_service.check_rrr_status(check_rrr)
+        except Exception:
+            _logger.exception("Remita callback status check failed rrr=%s", check_rrr)
+            all_ok = False
+            continue
+        if not remita_service.remita_status_is_paid(status_payload):
+            _logger.info(
+                "Remita callback not paid yet ref=%s status=%s",
+                payment.payment_reference,
+                status_payload.get("status"),
+            )
+            all_ok = False
+            continue
+        try:
+            _complete_payment(
+                db,
+                payment,
+                None,
+                check_rrr,
+                {"remita_callback": item, "remita_status": status_payload},
+            )
+            _logger.info("Remita callback completed payment ref=%s rrr=%s", payment.payment_reference, check_rrr)
+        except HTTPException as exc:
+            if exc.status_code == status.HTTP_409_CONFLICT:
+                _logger.info("Remita callback duplicate completion ref=%s", payment.payment_reference)
+            else:
+                _logger.warning("Remita callback completion failed ref=%s detail=%s", payment.payment_reference, exc.detail)
+                all_ok = False
+        except Exception:
+            _logger.exception("Remita callback completion error ref=%s", payment.payment_reference)
+            all_ok = False
+    return "OK" if all_ok else "not ok"
+
+
+def refresh_remita_payment(db: Session, user: User, payment_reference: str) -> PaymentVerifyOut:
+    _rate_limit_verify(user.id)
+    payment = _payment_by_reference(db, payment_reference)
+    if payment.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
+    if payment.status in (PaymentStatus.PAID, PaymentStatus.COMPLETED):
+        course = db.get(Course, payment.course_id) if payment.course_id else None
+        student = db.get(User, payment.user_id)
+        if not student:
+            raise HTTPException(status_code=500, detail="Payment owner missing")
+        return PaymentVerifyOut(
+            success=True,
+            payment=_payment_out(db, payment, course, student),
+            message="Payment confirmed. You now have access to the course.",
+        )
+    if payment.payment_method != "remita" or not payment.transaction_reference:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This payment is not an online checkout.")
+    try:
+        status_payload = remita_service.check_rrr_status(payment.transaction_reference)
+    except Exception as exc:
+        _logger.exception("Remita refresh failed ref=%s", payment.payment_reference)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="We couldn't check payment status right now. Please try again shortly.",
+        ) from exc
+    if remita_service.remita_status_is_paid(status_payload):
+        return _complete_payment(
+            db,
+            payment,
+            user,
+            payment.transaction_reference,
+            {"remita_refresh": status_payload},
+        )
+    course = db.get(Course, payment.course_id) if payment.course_id else None
+    student = db.get(User, payment.user_id)
+    if not student:
+        raise HTTPException(status_code=500, detail="Payment owner missing")
+    return PaymentVerifyOut(
+        success=False,
+        payment=_payment_out(db, payment, course, student),
+        message="Payment not confirmed yet. If you already paid, wait a moment and check again.",
+    )

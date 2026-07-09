@@ -2,9 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
+import { DashboardLiveBadge } from "@/components/dashboard/DashboardLiveBadge";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
+import { useRealtimePoll } from "@/hooks/useRealtimePoll";
 
 type StudentRow = {
   user_id: string;
@@ -190,6 +192,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
   const [students, setStudents] = useState<StudentRow[] | null>(null);
   const [dash, setDash] = useState<InstructorDashboard | null>(null);
   const [reviews, setReviews] = useState<ReviewRow[] | null>(null);
+  const [dashUpdatedAt, setDashUpdatedAt] = useState<Date | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -219,28 +222,24 @@ export function InstructorSectionContent({ section }: { section: string }) {
     };
   }, [section]);
 
-  useEffect(() => {
-    if (!["analytics", "earnings"].includes(section)) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/instructor/dashboard", { credentials: "include", cache: "no-store" });
-        const data = await res.json().catch(() => null);
-        if (cancelled) return;
-        if (!res.ok) {
-          setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load your stats.");
-          setDash(null);
-          return;
-        }
-        setDash(data as InstructorDashboard);
-      } catch {
-        if (!cancelled) setErr("Connection problem. Please try again.");
+  const loadDash = useCallback(async () => {
+    try {
+      const res = await fetch("/api/instructor/dashboard", { credentials: "include", cache: "no-store" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load your stats.");
+        setDash(null);
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [section]);
+      setDash(data as InstructorDashboard);
+      setDashUpdatedAt(new Date());
+      setErr(null);
+    } catch {
+      setErr("Connection problem. Please try again.");
+    }
+  }, []);
+
+  useRealtimePoll(["analytics", "earnings"].includes(section), loadDash);
 
   useEffect(() => {
     if (section !== "reviews") return;
@@ -281,7 +280,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
     return (
       <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <p className="text-sm leading-relaxed text-slate-600">
-          Add lessons and videos in Course Studio — upload a file or paste a YouTube, Vimeo, or video link. Students watch inside the app.
+          Add lessons and videos in Course Studio: upload a file or paste a YouTube, Vimeo, or video link. Students watch inside the app.
         </p>
         <Link href="/dashboard/instructor/studio" className="btn-primary-brand mt-5 inline-flex !min-w-0 text-sm !no-underline">
           Open course studio
@@ -354,6 +353,13 @@ export function InstructorSectionContent({ section }: { section: string }) {
     const { totals, courses } = dash;
     return (
       <div className="space-y-8">
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-brand-ink">Analytics</h1>
+            <p className="mt-1 text-sm text-slate-600">Your teaching stats update automatically.</p>
+          </div>
+          <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
+        </header>
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Your courses</p>
@@ -416,7 +422,15 @@ export function InstructorSectionContent({ section }: { section: string }) {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (!dash) return <p className="text-sm text-slate-600">Loading earnings…</p>;
     return (
-      <div className="space-y-6 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
+      <div className="space-y-6">
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-brand-ink">Earnings</h1>
+            <p className="mt-1 text-sm text-slate-600">Revenue from your courses updates automatically.</p>
+          </div>
+          <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
+        </header>
+        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed course revenue</p>
           <p
@@ -427,12 +441,13 @@ export function InstructorSectionContent({ section }: { section: string }) {
           </p>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             Sum of completed payments tied to your published courses. For your own purchases and receipts, open Billing
-            in the sidebar.
+            from the top menu.
           </p>
         </div>
         <Link href="/dashboard/payments" className="inline-flex text-sm font-semibold text-instructor-purple hover:underline">
           Open billing and payments
         </Link>
+        </div>
       </div>
     );
   }

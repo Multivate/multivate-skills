@@ -67,6 +67,23 @@ async def _read_upload(file: UploadFile, *, max_bytes: int, allowed: set[str]) -
     return data, content_type
 
 
+async def save_mentor_photo(mentor_id: UUID, file: UploadFile) -> StoredFile:
+    data, content_type = await _read_upload(file, max_bytes=4 * 1024 * 1024, allowed=ALLOWED_IMAGE)
+    ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[content_type]
+    rel = f"mentors/{mentor_id}.{ext}"
+    path = media_root() / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    logger.info("Saved mentor photo mentor_id=%s bytes=%s", mentor_id, len(data))
+    return StoredFile(
+        storage_key=rel,
+        public_path=f"/api/media/public/{rel}",
+        filename=f"mentor.{ext}",
+        content_type=content_type,
+        file_size_bytes=len(data),
+    )
+
+
 async def save_user_avatar(user_id: UUID, file: UploadFile) -> StoredFile:
     data, content_type = await _read_upload(file, max_bytes=3 * 1024 * 1024, allowed=ALLOWED_IMAGE)
     ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[content_type]

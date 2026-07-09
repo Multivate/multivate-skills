@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
@@ -23,11 +23,23 @@ type Instructions = {
   coupon_code?: string | null;
 };
 
+type RemitaCheckout = {
+  rrr: string;
+  merchant_id: string;
+  payment_hash: string;
+  payment_gateway_url: string;
+  response_url: string;
+  amount_cents: number;
+  currency: string;
+  payment_reference: string;
+};
+
 type StartResponse = {
   enrollment_status: string;
   student_code: string;
   payment?: { payment_reference?: string; status?: string; amount_cents?: number; currency?: string };
   instructions?: Instructions;
+  remita?: RemitaCheckout;
   message?: string;
 };
 
@@ -190,7 +202,9 @@ export function BankTransferCheckoutPanel() {
   }
 
   const inst = data?.instructions;
-  const ref = inst?.payment_reference ?? data?.payment?.payment_reference ?? "";
+  const remita = data?.remita;
+  const ref = inst?.payment_reference ?? remita?.payment_reference ?? data?.payment?.payment_reference ?? "";
+  const remitaFormRef = useRef<HTMLFormElement>(null);
 
   return (
     <section className="space-y-6">
@@ -201,7 +215,7 @@ export function BankTransferCheckoutPanel() {
       ) : null}
 
       <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
-        <h2 className="text-lg font-extrabold text-brand-ink">{t("title")}</h2>
+        <h2 className="text-lg font-extrabold text-brand-ink">{remita ? t("remitaTitle") : t("title")}</h2>
         <p className="mt-2 text-sm text-slate-600">{data?.message ?? t("subtitle")}</p>
 
         {!awaitingReview && data?.enrollment_status !== "enrolled" ? (
@@ -223,6 +237,42 @@ export function BankTransferCheckoutPanel() {
             >
               {couponBusy ? t("couponApplying") : t("couponApply")}
             </button>
+          </div>
+        ) : null}
+
+        {remita ? (
+          <div className="mt-6 space-y-4">
+            <div className="rounded-xl border-2 border-brand-accent/35 bg-brand-accent/5 p-5 shadow-sm transition hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-wide text-brand-accent">{t("remitaAmount")}</p>
+              <p className="mt-2 text-2xl font-extrabold text-brand-ink">
+                {formatMoney(remita.amount_cents, remita.currency)}
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-slate-700">{t("remitaBody")}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => remitaFormRef.current?.requestSubmit()}
+                  className="btn-primary-brand !px-6 !py-2.5 text-sm transition active:scale-[0.98]"
+                >
+                  {t("remitaPayCta")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void copyReference(remita.rrr)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-accent/30 px-3 py-2 text-xs font-semibold text-brand-accent transition hover:bg-brand-accent/10 active:scale-95"
+                >
+                  {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? t("copied") : t("remitaCopyRrr")}
+                </button>
+              </div>
+              <p className="mt-3 font-mono text-xs text-slate-500">{remita.rrr}</p>
+            </div>
+            <form ref={remitaFormRef} method="POST" action={remita.payment_gateway_url} className="hidden">
+              <input type="hidden" name="merchantId" value={remita.merchant_id} />
+              <input type="hidden" name="rrr" value={remita.rrr} />
+              <input type="hidden" name="hash" value={remita.payment_hash} />
+              <input type="hidden" name="responseurl" value={remita.response_url} />
+            </form>
           </div>
         ) : null}
 
@@ -297,7 +347,7 @@ export function BankTransferCheckoutPanel() {
               {t("viewPayments")}
             </Link>
           </div>
-        ) : (
+        ) : remita ? null : (
           <div className="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
             <label htmlFor="txn-ref" className="text-sm font-semibold text-brand-ink">
               {t("txnLabel")}

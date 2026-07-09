@@ -22,6 +22,7 @@
     "signIn": "Sign In",
     "viewCourse": "View course",
     "viewAllCourses": "View all courses",
+    "viewAllMentors": "View all mentors",
     "addToCart": "Add to cart",
     "copyright": "© {year} Multivate. All rights reserved."
   },
@@ -29,8 +30,9 @@
     "explore": "Explore",
     "teach": "Teach",
     "courses": "Courses",
-    "german": "German Language",
-    "organizations": "For Organizations",
+    "mentors": "Mentors",
+    "german": "German",
+    "organizations": "Organizations",
     "about": "About Us",
     "resources": "Resources",
     "openMenu": "Open menu",
@@ -130,7 +132,7 @@
   },
   "topCourses": {
     "heading": "Skills to transform your career and life",
-    "sub": "Programs built for employability, relocation readiness, and portfolios you can show in interviews.",
+    "sub": "Courses for jobs, relocation, and interviews.",
     "categoriesAria": "Course categories",
     "scrollLeft": "Scroll courses left",
     "scrollRight": "Scroll courses right",
@@ -148,6 +150,30 @@
       "german": "German",
       "career": "Career skills"
     }
+  },
+  "mentors": {
+    "eyebrow": "Guides in Germany",
+    "heading": "Learn from people who've made the move",
+    "subheading": "People already in Germany. Send them a message.",
+    "messageCta": "Message",
+    "viewAll": "Meet all mentors",
+    "loading": "Loading mentors…",
+    "empty": "No mentors yet.",
+    "scrollLeft": "Scroll mentors left",
+    "scrollRight": "Scroll mentors right",
+    "continueChat": "Continue chat",
+    "chat": {
+      "label": "Message",
+      "yourName": "Your name",
+      "yourEmail": "Email (optional)",
+      "yourQuestion": "Your message",
+      "sendFirst": "Send",
+      "typeMessage": "Write a message…",
+      "startError": "Message not sent. Try again.",
+      "sendError": "Message not sent. Try again."
+    },
+    "pageTitle": "Mentors",
+    "pageIntro": "Message people living and working in Germany."
   },
   "testimonials": {
     "heading": "Learners who changed course with Multivate",
@@ -228,10 +254,10 @@
       "badge": "Learn. Grow. Succeed.",
       "brandTitle": "Build your future in",
       "brandTitleHighlight": "Germany",
-      "brandDesc": "Skills, language, and career support in one place - structured paths, clear progress, and certificates you can show employers.",
+      "brandDesc": "Skills, German, and career help in one place.",
       "heroAlt": "Students collaborating and learning together",
       "title": "Create your account",
-      "subtitle": "Choose your role, complete the short questionnaire, then set your password. We email a 6-digit code (valid 5 minutes); your account is created after you verify it.",
+      "subtitle": "Pick your role, answer a few questions, then set your password.",
       "studentBlockTitle": "Learning questionnaire (students)",
       "instructorBlockTitle": "Teaching questionnaire (instructors)",
       "accountSectionTitle": "Account details",
@@ -263,6 +289,7 @@
       "rolePlaceholder": "Select your role",
       "roleStudent": "Student",
       "roleInstructor": "Instructor",
+      "roleMentor": "Mentor",
       "termsLead": "I agree to the",
       "terms": "Terms of Service",
       "and": "and",
@@ -360,6 +387,7 @@
     "roles": {
       "student": "Student",
       "instructor": "Instructor",
+      "mentor": "Mentor",
       "admin": "Admin"
     },
     "shell": {
@@ -377,9 +405,13 @@
       "closeMenu": "Close menu",
       "adminDashboardTitle": "Dashboard",
       "instructorDashboardTitle": "Instructor dashboard",
+      "mentorDashboardTitle": "Mentor workspace",
+      "mentorBadge": "Mentor",
       "searchSr": "Search",
       "searchAdminPh": "Search anything…",
       "searchInstructorPh": "Search students, courses…",
+      "searchMentorPh": "Search messages…",
+      "searchStudentPh": "Search your courses…",
       "notificationsAdmin": "Notifications, 3 unread",
       "notifications": "Notifications",
       "welcomeBack": "Welcome back, {name}",
@@ -403,16 +435,17 @@
         "users": "Users",
         "studentProfiles": "Student profiles",
         "instructorProfiles": "Instructor profiles",
+        "mentors": "Mentor approvals",
         "courses": "Courses",
         "instructors": "Instructors",
-        "enrollments": "Data & enrollments",
+        "enrollments": "Enrollments",
         "payments": "Payments",
         "discountCodes": "Discount codes",
         "certificates": "Certificates",
         "analytics": "Analytics",
         "reviews": "Reviews",
         "settings": "Settings",
-        "systemLogs": "System Logs"
+        "systemLogs": "System logs"
       },
       "instructor": {
         "home": "Dashboard",
@@ -427,6 +460,32 @@
         "reviews": "Reviews",
         "messages": "Messages",
         "settings": "Settings"
+      },
+      "mentor": {
+        "home": "Dashboard",
+        "profile": "My profile",
+        "messages": "Messages",
+        "settings": "Settings"
+      }
+    },
+    "navGroups": {
+      "admin": {
+        "people": "People",
+        "content": "Content",
+        "commerce": "Commerce",
+        "insights": "Insights"
+      },
+      "instructor": {
+        "teach": "Teach",
+        "audience": "Audience",
+        "insights": "Insights"
+      },
+      "mentor": {
+        "workspace": "Workspace"
+      },
+      "student": {
+        "learning": "Learning",
+        "account": "Account"
       }
     },
     "learningProfile": {
@@ -603,11 +662,20 @@
       "couponPlaceholder": "Enter code",
       "couponApply": "Apply code",
       "couponApplying": "Applying…",
-      "couponSaved": "You save {amount} with {code}"
+      "couponSaved": "You save {amount} with {code}",
+      "remitaTitle": "Pay securely online",
+      "remitaAmount": "Amount due",
+      "remitaBody": "Continue to our payment partner to pay by card, bank transfer, or USSD. Access is granted as soon as payment is confirmed.",
+      "remitaPayCta": "Continue to payment",
+      "remitaCopyRrr": "Copy payment code"
     },
     "bankTransferSuccess": {
       "title": "You're enrolled!",
       "body": "Your payment was confirmed. The course is in your dashboard now. Start learning when you are ready.",
+      "checkingTitle": "Confirming your payment…",
+      "checkingBody": "This usually takes a few seconds. Please keep this page open.",
+      "pendingTitle": "Payment still processing",
+      "pendingBody": "If you already paid, give it a moment and check your payment history. Access will appear once payment is confirmed.",
       "myCourses": "Go to my courses",
       "payments": "Payment history"
     },

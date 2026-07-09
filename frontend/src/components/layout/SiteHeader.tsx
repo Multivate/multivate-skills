@@ -17,6 +17,7 @@ export function SiteHeader() {
   const navLinks = [
     { href: "/#teach", label: t("teach") },
     { href: "/courses", label: t("courses") },
+    { href: "/mentors", label: t("mentors") },
     { href: "#german", label: t("german") },
     { href: "#organizations", label: t("organizations") },
     { href: "#about", label: t("about") },
@@ -25,23 +26,24 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/90 bg-white/98 backdrop-blur-md dark:border-slate-800/90 dark:bg-slate-950/95 dark:backdrop-blur-md">
-      <div className="container-page relative flex h-[4.25rem] items-center gap-3 lg:h-[4.5rem]">
+      <div className="container-page flex h-[4.25rem] items-center gap-2 lg:h-[4.5rem] lg:gap-3">
         <Link
           href="/"
-          className="relative z-10 flex shrink-0 items-center py-1"
+          className="flex shrink-0 items-center py-1"
           aria-label={t("homeAria")}
         >
           <LogoMark className="max-w-[9.5rem] sm:max-w-[11rem]" priority />
         </Link>
 
-        <SiteHeaderSearch className="hidden min-w-0 flex-1 md:block lg:max-w-xs lg:flex-none" />
+        <SiteHeaderSearch className="hidden shrink-0 md:block" />
 
-        <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-6 xl:flex xl:gap-7">
+        <nav className="hidden min-w-0 flex-1 xl:flex xl:justify-center">
+          <div className="flex max-w-full items-center justify-center gap-3 overflow-x-auto 2xl:gap-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navLinks.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className="inline-flex items-center gap-1 whitespace-nowrap text-[0.8125rem] font-medium text-slate-600 transition hover:text-brand-primary dark:text-slate-300 dark:hover:text-violet-300"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-slate-600 transition hover:text-brand-primary 2xl:text-[0.8125rem] dark:text-slate-300 dark:hover:text-violet-300"
             >
               {l.label}
               {"hasChevron" in l && l.hasChevron ? (
@@ -49,9 +51,10 @@ export function SiteHeader() {
               ) : null}
             </Link>
           ))}
+          </div>
         </nav>
 
-        <div className="relative z-10 ml-auto flex items-center gap-2 sm:gap-3 lg:gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
           <SiteHeaderCart />
           <LocaleSwitcher className="hidden sm:inline-flex" />
           <div className="hidden items-center gap-5 lg:flex lg:gap-6">

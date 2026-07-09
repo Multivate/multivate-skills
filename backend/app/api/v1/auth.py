@@ -15,6 +15,7 @@ from app.schemas.auth import (
     InstructorRegisterRequest,
     LoginMfaRequired,
     LoginRequest,
+    MentorRegisterRequest,
     MfaDisableRequest,
     MfaEnableConfirmRequest,
     MfaVerifyRequest,
@@ -66,6 +67,22 @@ def register_instructor_verify(
 ) -> AuthResponse:
     """Verify OTP from Redis and create the instructor account + JWT."""
     return signup_otp_service.verify_instructor_signup(db, data.signup_token, data.code)
+
+
+@router.post("/register/mentor/start", response_model=RegisterStartResponse)
+def register_mentor_start(
+    data: MentorRegisterRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> RegisterStartResponse:
+    return signup_otp_service.start_mentor_signup(db, data)
+
+
+@router.post("/register/mentor/verify", response_model=AuthResponse, status_code=201)
+def register_mentor_verify(
+    data: RegisterVerifyRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> AuthResponse:
+    return signup_otp_service.verify_mentor_signup(db, data.signup_token, data.code)
 
 
 @router.post("/login")
