@@ -1,14 +1,14 @@
 """Bank transfer payment workflow schema.
 
 Revision ID: 001_bank_transfer
-Revises:
+Revises: 000_create_base_tables
 Create Date: 2026-05-23
 """
 
 from alembic import op
 
 revision = "001_bank_transfer"
-down_revision = None
+down_revision = "000_create_base_tables"
 branch_labels = None
 depends_on = None
 
