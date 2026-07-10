@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE="docker-compose -f docker-compose.prod.yml --env-file .env.production"
+COMPOSE="docker compose -f docker-compose.prod.yml --env-file .env.production"
 
 if [ ! -f .env.production ]; then
   echo "Missing .env.production — copy .env.production.example and fill in secrets."
