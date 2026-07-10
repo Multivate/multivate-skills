@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     cors_origins: str = (
         "http://localhost:3000,http://127.0.0.1:3000,"
         "https://www.multivateskills.com,https://multivateskills.com,"
-        "https://www.multivateskill.com,https://multivateskill.com,"
+        "https://www.multivateskills.com,https://multivateskills.com,"
         "https://multivate.com.ng,https://www.multivate.com.ng"
     )
 

@@ -32,7 +32,7 @@ if [ ! -f "docker/nginx/conf.d/app.ssl.conf" ] || [ ! -d "/etc/letsencrypt/live/
   echo "Next: issue SSL certificate, then enable HTTPS:"
   echo "  docker run --rm -v certbot_conf:/etc/letsencrypt \\"
   echo "    -v certbot_www:/var/www/certbot certbot/certbot certonly \\"
-  echo "    --webroot -w /var/www/certbot -d ${DOMAIN} -d multivateskill.com \\"
+  echo "    --webroot -w /var/www/certbot -d ${DOMAIN} -d multivateskills.com \\"
   echo "    --email ${EMAIL} --agree-tos --no-eff-email"
   echo ""
   echo "  cp docker/nginx/conf.d/app.ssl.conf docker/nginx/conf.d/app.conf"

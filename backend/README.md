@@ -136,7 +136,7 @@ Use email + password, then the **one-time code** sent to that mailbox, or use **
 
 ### Production deployment
 
-Production runs on **Ubuntu + Docker Compose + Nginx + SSL**. See repo root **`DEPLOYMENT.md`** for the full guide (`www.multivateskill.com`).
+Production runs on **Ubuntu + Docker Compose + Nginx + SSL**. See repo root **`DEPLOYMENT.md`** for the full guide (`www.multivateskills.com`).
 
 For production checklist: set `ENVIRONMENT=production`, `AUTO_CREATE_TABLES=false`, strong `SECRET_KEY`, managed Postgres, Redis, Resend, and restrict `CORS_ORIGINS` to your live domain.
 

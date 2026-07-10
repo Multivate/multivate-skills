@@ -6,7 +6,7 @@ sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Verify:
 docker compose version
-**Architecture:** Developer → GitHub → Ubuntu Server → Docker Compose → Nginx → `www.multivateskill.com` → HTTPS → Users
+**Architecture:** Developer → GitHub → Ubuntu Server → Docker Compose → Nginx → `www.multivateskills.com` → HTTPS → Users
 
 ```mermaid
 flowchart LR
@@ -45,8 +45,8 @@ Only **Nginx** is exposed to the internet. The API is internal to the Docker net
 
 - Ubuntu 22.04 or 24.04 LTS
 - Docker Engine + Docker Compose v2
-- Domain `www.multivateskill.com` DNS A record → server IP
-- Optional: `multivateskill.com` → same IP (for redirect)
+- Domain `www.multivateskills.com` DNS A record → server IP
+- Optional: `multivateskills.com` → same IP (for redirect)
 
 Install Docker on Ubuntu:
 
@@ -85,7 +85,7 @@ Fill in at minimum:
 - `PLATFORM_ADMIN_PASSWORD` — min 12 characters
 - `RESEND_API_KEY` — from Resend dashboard
 - `CERTBOT_EMAIL` — for Let's Encrypt
-- `CORS_ORIGINS` — `https://www.multivateskill.com,https://multivateskill.com`
+- `CORS_ORIGINS` — `https://www.multivateskills.com,https://multivateskills.com`
 
 ### 3. Start the stack (HTTP first)
 
@@ -103,7 +103,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.production ps
 docker compose -f docker-compose.prod.yml --env-file .env.production logs -f api
 ```
 
-Visit `http://www.multivateskill.com` — you should see the app.
+Visit `http://www.multivateskills.com` — you should see the app.
 
 ### 4. Enable HTTPS (Let's Encrypt)
 
@@ -120,7 +120,7 @@ This:
 3. Removes the HTTP-only config
 4. Reloads Nginx
 
-Visit `https://www.multivateskill.com`.
+Visit `https://www.multivateskills.com`.
 
 ### 5. Renew SSL (cron)
 
@@ -150,8 +150,8 @@ Migrations run automatically when the API container starts (`alembic upgrade hea
 
 Register these with Google / Apple:
 
-- `https://www.multivateskill.com/api/auth/oauth/google/callback`
-- `https://www.multivateskill.com/api/auth/oauth/apple/callback`
+- `https://www.multivateskills.com/api/auth/oauth/google/callback`
+- `https://www.multivateskills.com/api/auth/oauth/apple/callback`
 
 Set `GOOGLE_*` and `APPLE_*` in `.env.production`.
 
@@ -173,7 +173,7 @@ See root `README.md` for details.
 
 ## Post-deploy checklist
 
-- [ ] `https://www.multivateskill.com` loads
+- [ ] `https://www.multivateskills.com` loads
 - [ ] Sign up / login works (Redis + Resend configured)
 - [ ] Dashboard accessible after login
 - [ ] Course enrollment + bank transfer flow works
