@@ -67,6 +67,9 @@ async def lifespan(_: FastAPI):
                 "Database unreachable during startup (create_all). See log above for DATABASE_URL tail and fix."
             ) from exc
         raise
+    except Exception as exc:
+        logger.exception("Schema bootstrap failed: %s", exc)
+        raise
     if not _settings.auto_create_tables:
         logger.info("Schema bootstrap: create_all skipped (AUTO_CREATE_TABLES=false); patches applied.")
 

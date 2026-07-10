@@ -245,5 +245,8 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             "('pending_payment', 'enrolled', 'cancelled')",
         )
 
-    Base.metadata.create_all(bind=engine)
-    logger.info("Schema patches: column/table patches finished")
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Schema patches: column/table patches finished")
+    except Exception as exc:
+        logger.warning("Schema patches: create_all() skipped (may already exist): %s", exc)
