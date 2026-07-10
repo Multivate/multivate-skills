@@ -30,7 +30,6 @@ def upgrade() -> None:
             languages_spoken VARCHAR(512) NOT NULL DEFAULT '',
             career_tips TEXT,
             is_featured BOOLEAN NOT NULL DEFAULT FALSE,
-            is_published BOOLEAN NOT NULL DEFAULT TRUE,
             sort_order INTEGER NOT NULL DEFAULT 0,
             user_id UUID REFERENCES users(id) ON DELETE SET NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -40,7 +39,6 @@ def upgrade() -> None:
     )
     op.execute("CREATE INDEX IF NOT EXISTS ix_mentor_profiles_slug ON mentor_profiles (slug)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_mentor_profiles_user_id ON mentor_profiles (user_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_mentor_profiles_published ON mentor_profiles (is_published)")
 
     op.execute(
         """

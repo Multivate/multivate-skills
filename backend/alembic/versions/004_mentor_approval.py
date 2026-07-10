@@ -21,17 +21,10 @@ def upgrade() -> None:
     op.execute("ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS german_level VARCHAR(32)")
     op.execute("ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS field_of_work VARCHAR(128)")
     op.execute("DELETE FROM mentor_profiles WHERE user_id IS NULL")
-    op.execute(
-        "UPDATE mentor_profiles SET approval_status = 'approved' "
-        "WHERE is_published IS TRUE AND (approval_status IS NULL OR approval_status = 'draft')"
-    )
-    op.execute("ALTER TABLE mentor_profiles DROP COLUMN IF EXISTS is_published")
     op.execute("CREATE INDEX IF NOT EXISTS ix_mentor_profiles_approval ON mentor_profiles (approval_status)")
 
 
 def downgrade() -> None:
-    op.execute("ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE")
-    op.execute("UPDATE mentor_profiles SET is_published = TRUE WHERE approval_status = 'approved'")
     op.execute("ALTER TABLE mentor_profiles DROP COLUMN IF EXISTS field_of_work")
     op.execute("ALTER TABLE mentor_profiles DROP COLUMN IF EXISTS german_level")
     op.execute("ALTER TABLE mentor_profiles DROP COLUMN IF EXISTS approved_at")
