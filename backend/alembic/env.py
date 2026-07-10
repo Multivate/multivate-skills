@@ -8,11 +8,14 @@ from alembic import context
 import os
 import sys
 
-# Add backend directory to path so imports work
-sys.path.insert(0, os.path.dirname(__file__) or '.')
+# Fix Python path so alembic can import app modules
+# When running from /app/alembic, we need to add /app to sys.path
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
 from app.core.config import get_settings
-from app.core.database import Base  # Base is in core.database, not models
+from app.core.database import Base
 
 # This is the Alembic Config object
 config = context.config
