@@ -20,8 +20,8 @@ COMPOSE="docker compose -f docker-compose.prod.yml --env-file .env.production"
 
 echo "==> Requesting certificate for ${DOMAIN} and multivateskills.com..."
 docker run --rm \
-  -v certbot_conf:/etc/letsencrypt \
-  -v certbot_www:/var/www/certbot \
+  -v multivate-prod_certbot_conf:/etc/letsencrypt \
+  -v multivate-prod_certbot_www:/var/www/certbot \
   certbot/certbot certonly \
   --webroot -w /var/www/certbot \
   -d "${DOMAIN}" \
