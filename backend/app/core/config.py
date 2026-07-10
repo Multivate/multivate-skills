@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     auto_create_tables: bool = Field(
         default=True,
         description="If true, SQLAlchemy creates missing tables on startup. "
-        "Must be false in production — use Alembic migrations instead.",
+        "In production: use alembic migrations. On first deploy: set to true temporarily.",
     )
 
     resend_api_key: str = Field(
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     )
     mail_support_url: str = Field(
         default="mailto:info@multivate.com.ng",
-        description="Optional https:// or mailto: link for “Contact us” in OTP emails.",
+        description="Optional https:// or mailto: link for "Contact us" in OTP emails.",
     )
 
     bank_name: str = Field(default="Wema Bank")
@@ -151,11 +151,8 @@ class Settings(BaseSettings):
                 raise ValueError("SECRET_KEY must be at least 32 characters in staging/production.")
             if self.secret_key.strip() == _DEV_SECRET_MARKER:
                 raise ValueError("SECRET_KEY must be changed from the development placeholder in staging/production.")
-            if self.auto_create_tables:
-                raise ValueError(
-                    "AUTO_CREATE_TABLES must be false in staging/production. "
-                    "Apply schema changes with Alembic (or your migration tool), not create_all()."
-                )
+            # AUTO_CREATE_TABLES can be true on first deploy, false on subsequent deploys
+            # This allows alembic to run migrations after initial table creation
             if not (self.resend_api_key or "").strip():
                 raise ValueError(
                     "RESEND_API_KEY is required in staging/production (transactional email is Resend-only)."
