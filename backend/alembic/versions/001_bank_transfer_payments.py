@@ -14,9 +14,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS student_code VARCHAR(32)")
-    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_student_code ON users (student_code)")
-
     op.execute("ALTER TABLE courses ADD COLUMN IF NOT EXISTS price_cents INTEGER NOT NULL DEFAULT 990000")
     op.execute("ALTER TABLE courses ADD COLUMN IF NOT EXISTS currency VARCHAR(3) NOT NULL DEFAULT 'NGN'")
     op.execute("ALTER TABLE courses ADD COLUMN IF NOT EXISTS is_free BOOLEAN NOT NULL DEFAULT FALSE")
@@ -78,5 +75,3 @@ def downgrade() -> None:
     op.execute("ALTER TABLE courses DROP COLUMN IF EXISTS is_free")
     op.execute("ALTER TABLE courses DROP COLUMN IF EXISTS currency")
     op.execute("ALTER TABLE courses DROP COLUMN IF EXISTS price_cents")
-    op.execute("DROP INDEX IF EXISTS ix_users_student_code")
-    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS student_code")

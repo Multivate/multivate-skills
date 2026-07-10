@@ -31,11 +31,6 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             conn,
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT TRUE",
         )
-        _run(
-            conn,
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS student_code VARCHAR(32)",
-        )
-        _run(conn, "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_student_code ON users (student_code)")
 
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS price_cents INTEGER NOT NULL DEFAULT 990000")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS currency VARCHAR(3) NOT NULL DEFAULT 'NGN'")
@@ -174,29 +169,6 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_profiles_slug ON mentor_profiles (slug)")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_profiles_user_id ON mentor_profiles (user_id)")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_profiles_approval ON mentor_profiles (approval_status)")
-        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS approval_status VARCHAR(16) NOT NULL DEFAULT 'draft'")
-        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS rejection_reason TEXT")
-        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ")
-        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ")
-        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS german_level VARCHAR(32)")
-        _run(conn, "ALTER TABLE mentor_profiles ADD COLUMN IF NOT EXISTS field_of_work VARCHAR(128)")
-        _run(conn, "DELETE FROM mentor_profiles WHERE user_id IS NULL")
-        _run(
-            conn,
-            """
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_schema = 'public' AND table_name = 'mentor_profiles' AND column_name = 'is_published'
-              ) THEN
-                UPDATE mentor_profiles SET approval_status = 'approved'
-                WHERE approval_status = 'draft' AND is_published IS TRUE;
-                ALTER TABLE mentor_profiles DROP COLUMN is_published;
-              END IF;
-            END $$;
-            """,
-        )
 
         _run(
             conn,
@@ -249,4 +221,4 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         Base.metadata.create_all(bind=engine)
         logger.info("Schema patches: column/table patches finished")
     except Exception as exc:
-        logger.warning("Schema patches: create_all() skipped (may already exist): %s", exc)
+        logger.warning("Schema patches: create_all() skipped (tables may already exist): %s", exc)
