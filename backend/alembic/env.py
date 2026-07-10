@@ -6,8 +6,13 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 import os
+import sys
+
+# Add backend directory to path so imports work
+sys.path.insert(0, os.path.dirname(__file__) or '.')
+
 from app.core.config import get_settings
-from app.models import Base  # Import your Base declarative
+from app.core.database import Base  # Base is in core.database, not models
 
 # This is the Alembic Config object
 config = context.config
