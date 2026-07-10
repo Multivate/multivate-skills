@@ -36,7 +36,6 @@ def upgrade() -> None:
         """
     )
     op.execute("CREATE INDEX IF NOT EXISTS ix_discount_codes_code ON discount_codes (code)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_discount_codes_course_id ON discount_codes (course_id)")
 
     op.execute(
         """
