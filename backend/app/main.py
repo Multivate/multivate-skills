@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
@@ -41,6 +43,7 @@ from app.models.mentor_message import MentorMessage  # noqa: F401
 from app.models.mentor_profile import MentorProfile  # noqa: F401
 from app.models.student_learning_profile import StudentLearningProfile  # noqa: F401
 from app.models.user import User  # noqa: F401
+from app.models.media_file import MediaFile  # noqa: F401
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
@@ -114,6 +117,20 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+# ---------------------------------------------------------------------------
+# Static file serving for uploads (development only; Nginx serves in production)
+# ---------------------------------------------------------------------------
+_upload_root = (Path(__file__).resolve().parents[1] / _settings.upload_root)
+_upload_root.mkdir(parents=True, exist_ok=True)
+try:
+    app.mount(
+        _settings.public_upload_url,
+        StaticFiles(directory=str(_upload_root)),
+        name="uploads",
+    )
+except Exception as _mount_err:  # noqa: BLE001
+    logger.warning("Could not mount static upload directory: %s", _mount_err)
 
 
 @app.exception_handler(RequestValidationError)

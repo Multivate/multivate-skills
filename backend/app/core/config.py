@@ -93,6 +93,31 @@ class Settings(BaseSettings):
         description="Signed stream token lifetime for protected lesson videos.",
     )
 
+    upload_root: str = Field(
+        default="media",
+        description="Root directory on disk where generic media uploads are stored.",
+    )
+    public_upload_url: str = Field(
+        default="/uploads",
+        description="Base public URL path or full URL for static uploads.",
+    )
+    max_upload_size: int = Field(
+        default=50 * 1024 * 1024,
+        description="Maximum allowed upload size in bytes.",
+    )
+    allowed_image_types: str = Field(
+        default="image/jpeg,image/png,image/webp,image/gif,image/svg+xml",
+        description="Comma-separated allowed image MIME types.",
+    )
+    allowed_document_types: str = Field(
+        default="application/pdf,application/zip,application/x-zip-compressed",
+        description="Comma-separated allowed document MIME types.",
+    )
+    allowed_video_types: str = Field(
+        default="video/mp4,video/webm,video/quicktime",
+        description="Comma-separated allowed video MIME types.",
+    )
+
     google_client_id: str = Field(default="", description="Google OAuth client ID")
     google_client_secret: str = Field(default="", description="Google OAuth client secret")
     apple_client_id: str = Field(default="", description="Apple Services ID (Sign in with Apple)")

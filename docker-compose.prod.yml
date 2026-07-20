@@ -42,6 +42,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-multivate}:${POSTGRES_PASSWORD}@db:5432/multivate
       REDIS_URL: redis://redis:6379/0
+      UPLOAD_ROOT: media
+      PUBLIC_UPLOAD_URL: /uploads
     volumes:
       - multivate_media:/app/media
     depends_on:
@@ -89,6 +91,7 @@ services:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot_conf:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
+      - multivate_media:/var/www/uploads:ro
     depends_on:
       frontend:
         condition: service_healthy

@@ -8,6 +8,8 @@ const __dirname = path.dirname(__filename);
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+const INTERNAL_API_URL = process.env.INTERNAL_API_URL ?? "http://localhost:8000";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname),
@@ -22,6 +24,15 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      // Proxy /uploads/* → FastAPI static mount (dev only; Nginx handles it in prod)
+      {
+        source: "/uploads/:path*",
+        destination: `${INTERNAL_API_URL}/uploads/:path*`,
       },
     ];
   },
@@ -43,6 +54,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.onrender.com",
         pathname: "/**",
+      },
+      // Allow Next.js Image to load locally-uploaded files in development
+      {
+        protocol: "http",
+        hostname: "localhost",
+        pathname: "/uploads/**",
       },
     ],
   },

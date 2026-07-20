@@ -10,6 +10,18 @@ server {
         root /var/www/certbot;
     }
 
+    # Static media uploads — served directly by Nginx from the shared volume
+    location /uploads/ {
+        alias /var/www/uploads/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options "nosniff";
+        # Prevent execution of uploaded files
+        location ~* \.(php|py|sh|pl|rb|exe|dll|bat|cmd)$ {
+            return 403;
+        }
+    }
+
     location / {
         proxy_pass http://multivate_web;
         proxy_http_version 1.1;

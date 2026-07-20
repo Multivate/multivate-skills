@@ -3,8 +3,9 @@
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { Upload } from "@/components/ui/Upload";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuth } from "@/contexts/auth-context";
 import { readApiError } from "@/lib/api-error";
@@ -239,24 +240,21 @@ export default function DashboardSettingsPage() {
                   <div>
                     <p className="text-sm font-semibold text-brand-ink">{t("photoLabel")}</p>
                     <p className="mt-1 text-xs text-slate-500">{t("photoHint")}</p>
-                    <input
-                      ref={fileRef}
-                      type="file"
+                    <Upload
+                      folder="avatars"
+                      token={user?.access_token ?? ""}
                       accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) void uploadAvatar(f);
+                      label={avatarBusy ? t("uploadingPhoto") : t("uploadPhoto")}
+                      compact
+                      className="mt-3"
+                      onSuccess={(result) => {
+                        // Keep existing state update path — re-fetch me
+                        void refreshUser();
+                        setProfileMsg(t("photoSaved"));
+                        setMe((prev) => prev ? { ...prev, avatar_url: result.file.public_url } : prev);
                       }}
+                      onError={(msg) => setProfileErr(msg)}
                     />
-                    <button
-                      type="button"
-                      disabled={avatarBusy}
-                      onClick={() => fileRef.current?.click()}
-                      className="mt-3 rounded-xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-sm font-semibold text-brand-ink transition hover:bg-brand-secondary/20 active:scale-[0.98]"
-                    >
-                      {avatarBusy ? t("uploadingPhoto") : t("uploadPhoto")}
-                    </button>
                   </div>
                 </div>
                 <div className="mt-8">
