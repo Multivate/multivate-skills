@@ -43,8 +43,7 @@ from app.schemas.studio import (
     StudioLessonUpdateIn,
 )
 from app.core.cache_service import invalidate_catalog_cache
-from app.services import course_service
-from app.services.media_storage_service import save_course_thumbnail, save_lesson_resource, save_lesson_video
+from app.services import course_service, media_service
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
@@ -280,8 +279,14 @@ def update_studio_basics(db: Session, slug: str, payload: CourseStudioBasicsIn, 
 async def upload_thumbnail(db: Session, slug: str, file: UploadFile, actor: User) -> CourseStudioBasicsOut:
     course = course_service.get_course_for_management(db, slug, actor)
     course_service.assert_can_manage_course(actor, course)
-    stored = await save_course_thumbnail(course.id, file)
-    course.image_url = stored.public_path
+    media = await media_service.upload_file(
+        db,
+        file=file,
+        folder="courses",
+        uploaded_by=actor.id,
+        subfolder=str(course.id),
+    )
+    course.image_url = media.public_url
     db.add(course)
     _audit(db, course.id, actor.id, "thumbnail_uploaded")
     db.commit()
@@ -542,15 +547,21 @@ async def upload_lesson_video(db: Session, lesson_id: UUID, file: UploadFile, ac
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
     course_service.assert_can_manage_course(actor, course)
 
-    stored = await save_lesson_video(course.id, lesson.id, file)
+    media = await media_service.upload_file(
+        db,
+        file=file,
+        folder="lessons",
+        uploaded_by=actor.id,
+        subfolder=f"{course.id}/{lesson.id}",
+    )
     lesson.lesson_type = LessonType.VIDEO
     lesson.video_source = VideoSource.UPLOAD
-    lesson.video_url = stored.storage_key
-    lesson.video_duration_seconds = stored.duration_seconds
+    lesson.video_url = media.relative_path
+    lesson.video_duration_seconds = 0
     lesson.video_metadata = json.dumps(
         {
-            "file_size_bytes": stored.file_size_bytes,
-            "content_type": stored.content_type,
+            "file_size_bytes": media.size_bytes,
+            "content_type": media.mime_type,
             "uploaded_at": datetime.now(timezone.utc).isoformat(),
             "streaming": "progressive",
             "hls_ready": False,
@@ -560,7 +571,7 @@ async def upload_lesson_video(db: Session, lesson_id: UUID, file: UploadFile, ac
     _sync_duration_minutes(db, course.id)
     db.commit()
     db.refresh(lesson)
-    logger.info("Lesson video uploaded lesson_id=%s size=%s", lesson_id, stored.file_size_bytes)
+    logger.info("Lesson video uploaded lesson_id=%s size=%s", lesson_id, media.size_bytes)
     return _lesson_out(db, lesson)
 
 
@@ -575,13 +586,19 @@ async def upload_lesson_resource(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
     course_service.assert_can_manage_course(actor, course)
 
-    stored = await save_lesson_resource(course.id, lesson.id, file)
+    media = await media_service.upload_file(
+        db,
+        file=file,
+        folder="resources",
+        uploaded_by=actor.id,
+        subfolder=f"{course.id}/{lesson.id}",
+    )
     row = LessonResource(
         lesson_id=lesson.id,
-        title=title.strip() or stored.filename,
-        file_path=stored.storage_key,
-        file_type=stored.content_type,
-        file_size_bytes=stored.file_size_bytes,
+        title=title.strip() or media.original_filename,
+        file_path=media.relative_path,
+        file_type=media.mime_type,
+        file_size_bytes=media.size_bytes,
     )
     db.add(row)
     db.commit()

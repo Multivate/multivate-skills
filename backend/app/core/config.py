@@ -110,7 +110,7 @@ class Settings(BaseSettings):
         description="Comma-separated allowed image MIME types.",
     )
     allowed_document_types: str = Field(
-        default="application/pdf,application/zip,application/x-zip-compressed",
+        default="application/pdf,application/zip,application/x-zip-compressed,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain,text/x-python,application/json",
         description="Comma-separated allowed document MIME types.",
     )
     allowed_video_types: str = Field(

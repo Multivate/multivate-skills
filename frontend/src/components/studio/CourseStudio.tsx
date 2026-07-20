@@ -3,7 +3,6 @@
 import { Link, useRouter } from "@/i18n/navigation";
 import {
   ChevronRight,
-  ImagePlus,
   Loader2,
   Play,
   Send,
@@ -13,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CourseStudioCurriculum } from "@/components/studio/CourseStudioCurriculum";
 import { formInputClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
 import { resolveCourseImageUrl } from "@/lib/course-image";
+import { Upload } from "@/components/ui/Upload";
 
 const CATEGORIES = [
   "Artificial Intelligence",
@@ -56,6 +56,7 @@ type Lesson = {
 };
 
 type CourseDetail = {
+  id: string;
   slug: string;
   title: string;
   subtitle: string | null;
@@ -119,7 +120,6 @@ export function CourseStudio({ initialSlug }: Props) {
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -211,34 +211,6 @@ export function CourseStudio({ initialSlug }: Props) {
       setStep(1);
     } finally {
       setBusy(false);
-    }
-  };
-
-  const uploadThumbnail = async (file: File) => {
-    if (!slug) return;
-    setUploadPct(0);
-    const preview = URL.createObjectURL(file);
-    setThumbPreview(preview);
-    const fd = new FormData();
-    fd.append("file", file);
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/thumbnail`, {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setError(typeof data?.detail === "string" ? data.detail : "Upload failed.");
-        return;
-      }
-      setUploadPct(100);
-      await loadCourse(slug);
-      showToast("Cover updated");
-    } finally {
-      setBusy(false);
-      window.setTimeout(() => setUploadPct(null), 800);
     }
   };
 
@@ -440,39 +412,20 @@ export function CourseStudio({ initialSlug }: Props) {
             Upload a cover or paste an image link (recommended for live courses; links stay visible after server updates).
           </p>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <div
-              className="group relative flex aspect-video cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-brand-accent/60 hover:bg-violet-50/40"
-              onClick={() => fileRef.current?.click()}
-            >
-              {thumbDisplay ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumbDisplay} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-              ) : (
-                <>
-                  <ImagePlus className="h-10 w-10 text-brand-accent" />
-                  <p className="mt-2 text-sm font-semibold text-slate-700">Drop or click to upload</p>
-                </>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadThumbnail(f);
-                }}
-              />
-            </div>
+            <Upload
+              folder="courses"
+              subfolder={course?.id}
+              uploadUrl={`/api/studio/courses/${encodeURIComponent(slug ?? "")}/thumbnail`}
+              accept="image/jpeg,image/png,image/webp"
+              label="Drop or click to upload cover image"
+              previewUrl={thumbDisplay}
+              onSuccess={async () => {
+                await loadCourse(slug ?? "");
+                showToast("Cover updated");
+              }}
+              onError={(msg) => setError(msg)}
+            />
             <div className="flex flex-col justify-center space-y-4">
-              {uploadPct !== null ? (
-                <div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-brand-accent transition-all" style={{ width: `${uploadPct}%` }} />
-                  </div>
-                  <p className="mt-2 text-xs font-medium text-slate-600">Uploading… {uploadPct}%</p>
-                </div>
-              ) : null}
               <label className={formLabelClass}>
                 Or paste image link
                 <input

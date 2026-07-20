@@ -16,7 +16,7 @@ from app.schemas.auth import ForgotPasswordResetRequest, ForgotPasswordStartRequ
 from app.schemas.user import ChangePasswordRequest, UpdateProfileRequest, UserPublic, user_public_from_orm
 from app.services import mail_service, otp_email
 from app.services.mail_service import EmailDeliveryError
-from app.services.media_storage_service import save_user_avatar
+from app.services import media_service
 
 _logger = logging.getLogger(__name__)
 
@@ -54,12 +54,17 @@ def update_profile(db: Session, user: User, payload: UpdateProfileRequest) -> Us
 
 
 async def upload_avatar(db: Session, user: User, file: UploadFile) -> UserPublic:
-    stored = await save_user_avatar(user.id, file)
-    user.avatar_url = stored.public_path
+    media = await media_service.upload_file(
+        db,
+        file=file,
+        folder="avatars",
+        uploaded_by=user.id,
+    )
+    user.avatar_url = media.public_url
     db.add(user)
     db.commit()
     db.refresh(user)
-    _logger.info("avatar updated user_id=%s path=%s", user.id, stored.public_path)
+    _logger.info("avatar updated user_id=%s path=%s", user.id, media.public_url)
     return user_public_from_orm(user)
 
 

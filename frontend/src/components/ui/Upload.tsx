@@ -35,13 +35,17 @@ export type UploadProps = {
   /** Hint text shown below the label */
   hint?: string;
   /** Called on successful upload */
-  onSuccess?: (result: UploadResult) => void;
+  onSuccess?: (result: any) => void;
   /** Called on error */
   onError?: (message: string) => void;
   /** Additional class names for the outer container */
   className?: string;
   /** If true shows a small inline variant instead of full drop zone */
   compact?: boolean;
+  /** Optional custom POST upload URL. If provided, overrides default BFF proxy route. */
+  uploadUrl?: string;
+  /** Optional URL of an existing file/image to display as a preview */
+  previewUrl?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -68,6 +72,8 @@ export function Upload({
   onError,
   className = "",
   compact = false,
+  uploadUrl,
+  previewUrl,
 }: UploadProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,11 +98,11 @@ export function Upload({
       formData.append("file", file);
 
       try {
-        // Route through the BFF proxy at /api/media/upload which appends the
-        // httpOnly access_token cookie for us.
-        const result = await new Promise<UploadResult>((resolve, reject) => {
+        // Route through the BFF proxy or the custom uploadUrl
+        const result = await new Promise<any>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open("POST", `/api/media/upload?${params.toString()}`);
+          const targetUrl = uploadUrl || `/api/media/upload?${params.toString()}`;
+          xhr.open("POST", targetUrl);
 
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
@@ -107,7 +113,7 @@ export function Upload({
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               try {
-                resolve(JSON.parse(xhr.responseText) as UploadResult);
+                resolve(JSON.parse(xhr.responseText));
               } catch {
                 reject(new Error("Invalid server response."));
               }
@@ -125,7 +131,9 @@ export function Upload({
           xhr.send(formData);
         });
 
-        setUploaded(result.file);
+        if (result && result.file) {
+          setUploaded(result.file);
+        }
         onSuccess?.(result);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Upload failed.";
@@ -136,7 +144,7 @@ export function Upload({
         setProgress(null);
       }
     },
-    [folder, subfolder, onSuccess, onError],
+    [folder, subfolder, uploadUrl, onSuccess, onError],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,6 +261,19 @@ export function Upload({
               </div>
             )}
           </>
+        ) : previewUrl || (uploaded && uploaded.mime_type.startsWith("image/")) ? (
+          <div className="relative h-full w-full min-h-[140px] overflow-hidden rounded-lg">
+            <img
+              src={uploaded ? uploaded.public_url : (previewUrl || "")}
+              alt="Preview"
+              className="absolute inset-0 h-full w-full object-cover rounded-lg"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+              <span className="text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-md">
+                Change Image
+              </span>
+            </div>
+          </div>
         ) : (
           <>
             <UploadIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />

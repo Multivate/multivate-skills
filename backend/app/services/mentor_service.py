@@ -27,7 +27,7 @@ from app.schemas.mentor import (
     MentorProfileSelfOut,
     MentorProfileSelfUpdateIn,
 )
-from app.services.media_storage_service import save_mentor_photo
+from app.services import media_service
 from app.core.config import get_settings
 from app.services.mail_service import send_plain_email
 
@@ -307,8 +307,13 @@ def submit_self_profile(db: Session, user: User) -> MentorProfileSelfOut:
 
 async def upload_self_photo(db: Session, user: User, file: UploadFile) -> MentorProfileSelfOut:
     row = get_mentor_for_user(db, user) or create_draft_profile_for_user(db, user)
-    stored = await save_mentor_photo(row.id, file)
-    row.photo_url = stored.public_path
+    media = await media_service.upload_file(
+        db,
+        file=file,
+        folder="mentors",
+        uploaded_by=user.id,
+    )
+    row.photo_url = media.public_url
     if _is_approved(row):
         row.approval_status = MentorApprovalStatus.PENDING
         row.approved_at = None

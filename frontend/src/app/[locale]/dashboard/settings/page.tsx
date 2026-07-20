@@ -30,13 +30,11 @@ export default function DashboardSettingsPage() {
   const [editName, setEditName] = useState("");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
   const [profileErr, setProfileErr] = useState<string | null>(null);
-  const [avatarBusy, setAvatarBusy] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
   const [passwordErr, setPasswordErr] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -122,26 +120,6 @@ export default function DashboardSettingsPage() {
     void refreshUser();
   }
 
-  async function uploadAvatar(file: File) {
-    setAvatarBusy(true);
-    setProfileErr(null);
-    setProfileMsg(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/auth/me/avatar", { method: "POST", credentials: "include", body: fd });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) {
-        setProfileErr(readApiError(body, "We couldn't upload your photo."));
-        return;
-      }
-      setMe(body as AuthUser);
-      setProfileMsg(t("photoSaved"));
-      void refreshUser();
-    } finally {
-      setAvatarBusy(false);
-    }
-  }
 
   async function savePassword() {
     setPasswordErr(null);
@@ -242,16 +220,15 @@ export default function DashboardSettingsPage() {
                     <p className="mt-1 text-xs text-slate-500">{t("photoHint")}</p>
                     <Upload
                       folder="avatars"
-                      token={user?.access_token ?? ""}
+                      uploadUrl="/api/auth/me/avatar"
                       accept="image/jpeg,image/png,image/webp"
-                      label={avatarBusy ? t("uploadingPhoto") : t("uploadPhoto")}
+                      label={t("uploadPhoto")}
                       compact
                       className="mt-3"
-                      onSuccess={(result) => {
-                        // Keep existing state update path — re-fetch me
+                      onSuccess={(userResult) => {
                         void refreshUser();
                         setProfileMsg(t("photoSaved"));
-                        setMe((prev) => prev ? { ...prev, avatar_url: result.file.public_url } : prev);
+                        setMe(userResult);
                       }}
                       onError={(msg) => setProfileErr(msg)}
                     />

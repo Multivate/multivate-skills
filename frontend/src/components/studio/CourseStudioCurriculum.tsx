@@ -1,6 +1,7 @@
 "use client";
 
-import { GripVertical, Loader2, Plus, Trash2, Upload, Video, Link2 } from "lucide-react";
+import { GripVertical, Loader2, Plus, Trash2, Upload as UploadIcon, Video, Link2 } from "lucide-react";
+import { Upload } from "@/components/ui/Upload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedVideoPlayer } from "@/components/player/ProtectedVideoPlayer";
 import { formInputClass, formInputCompactClass, formLabelClass } from "@/lib/form-styles";
@@ -25,6 +26,7 @@ type Lesson = {
 };
 
 type CourseDetail = {
+  id: string;
   slug: string;
   sections: Section[];
   lessons: Lesson[];
@@ -78,7 +80,7 @@ export function CourseStudioCurriculum({
   const [newLessonSection, setNewLessonSection] = useState<string>("");
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const dragLesson = useRef<string | null>(null);
-  const videoFileRef = useRef<HTMLInputElement>(null);
+
 
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
@@ -262,30 +264,7 @@ export function CourseStudioCurriculum({
     }
   };
 
-  const uploadLessonVideo = async (lessonId: string, file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    setBusy(true);
-    setUploadPct(8);
-    try {
-      const res = await fetch(`/api/studio/lessons/${lessonId}/video`, {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      setUploadPct(100);
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "Video upload failed.");
-        return;
-      }
-      await loadCourse(slug);
-      showToast("Video uploaded");
-    } finally {
-      setBusy(false);
-      window.setTimeout(() => setUploadPct(null), 800);
-    }
-  };
+
 
   const saveVideoLink = async () => {
     if (!activeLesson) return;
@@ -513,27 +492,22 @@ export function CourseStudioCurriculum({
               </div>
 
               {videoSource === "upload" ? (
-                <div
-                  className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center transition hover:border-brand-accent/50 hover:bg-violet-50/30 dark:border-slate-700 dark:bg-slate-900/50"
-                  onClick={() => videoFileRef.current?.click()}
-                >
-                  <Upload className="mx-auto h-8 w-8 text-brand-accent" />
-                  <p className="mt-2 text-sm font-semibold text-brand-ink">Click to upload video</p>
-                  <p className="mt-1 text-xs text-slate-500">MP4, WebM, or MOV, up to 512 MB</p>
-                  {activeLesson.video_url && activeLesson.video_source === "upload" ? (
-                    <p className="mt-2 text-xs font-medium text-emerald-700">Video uploaded. Upload again to replace.</p>
-                  ) : null}
-                  <input
-                    ref={videoFileRef}
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void uploadLessonVideo(activeLesson.id, f);
-                    }}
-                  />
-                </div>
+                <Upload
+                  folder="lessons"
+                  subfolder={`${course.id}/${activeLesson.id}`}
+                  uploadUrl={`/api/studio/lessons/${activeLesson.id}/video`}
+                  accept="video/mp4,video/webm,video/quicktime"
+                  label="Drop or click to upload lesson video"
+                  hint={activeLesson.video_url && activeLesson.video_source === "upload"
+                    ? "Video uploaded. Upload/Drop a new file to replace."
+                    : "MP4, WebM, or MOV, up to 512 MB"
+                  }
+                  onSuccess={async () => {
+                    await loadCourse(slug);
+                    showToast("Video uploaded");
+                  }}
+                  onError={(msg) => setError(msg)}
+                />
               ) : (
                 <label className={formLabelClass}>
                   {videoSource === "youtube" ? "YouTube link" : videoSource === "vimeo" ? "Vimeo link" : "Direct video link (MP4/WebM)"}
@@ -552,14 +526,7 @@ export function CourseStudioCurriculum({
                 </label>
               )}
 
-              {uploadPct !== null ? (
-                <div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-brand-accent transition-all" style={{ width: `${uploadPct}%` }} />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">Uploading… {uploadPct}%</p>
-                </div>
-              ) : null}
+
 
               {videoSource !== "upload" ? (
                 <button

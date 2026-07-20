@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckCircle2, Clock, Loader2, Send, Upload, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Send, Upload as UploadIcon, XCircle } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { readApiError } from "@/lib/api-error";
 import { resolveAvatarUrl } from "@/lib/avatar-url";
+import { Upload } from "@/components/ui/Upload";
 
 type Profile = {
   id: string;
@@ -103,24 +104,7 @@ export function MentorProfileEditor() {
     }
   }
 
-  async function uploadPhoto(file: File) {
-    setBusy(true);
-    setErr(null);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/mentor/profile/photo", { method: "POST", credentials: "include", body: form });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setErr(readApiError(data, "Could not upload photo."));
-        return;
-      }
-      setProfile(data as Profile);
-      setMsg("Photo updated.");
-    } finally {
-      setBusy(false);
-    }
-  }
+
 
   if (!profile) {
     return (
@@ -154,19 +138,18 @@ export function MentorProfileEditor() {
                 </div>
               )}
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-brand-accent/40 bg-brand-accent/10 px-4 py-2.5 text-sm font-semibold text-brand-accent hover:bg-brand-accent/20">
-              <Upload className="h-4 w-4" />
-              Upload photo
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadPhoto(f);
-                }}
-              />
-            </label>
+            <Upload
+              folder="mentors"
+              uploadUrl="/api/mentor/profile/photo"
+              accept="image/jpeg,image/png,image/webp"
+              compact
+              label="Upload photo"
+              onSuccess={(profileResult) => {
+                setMsg("Photo updated.");
+                setProfile(profileResult);
+              }}
+              onError={(msg) => setErr(msg)}
+            />
           </div>
         </section>
 
