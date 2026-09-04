@@ -74,7 +74,7 @@ export default function DashboardCoursesPage() {
 
   if (items === null) {
     return (
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200/90 bg-white p-10 text-center shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+      <div className="mx-auto max-w-3xl rounded-md border border-slate-200/90 bg-white p-10 text-center shadow-none dark:border-slate-800/90 dark:bg-slate-900">
         <p className="text-sm font-medium text-slate-600">Loading your courses…</p>
       </div>
     );
@@ -84,7 +84,7 @@ export default function DashboardCoursesPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <DashboardSavedCart />
-        <div className="rounded-2xl border border-red-200/90 bg-red-50/80 p-8 text-center shadow-sm sm:p-10">
+        <div className="rounded-md border border-red-200/90 bg-red-50/80 p-8 text-center shadow-none sm:p-10">
           <h1 className="text-lg font-extrabold text-brand-ink">We could not load your courses</h1>
           <p className="mt-2 text-sm text-red-900/90">{error}</p>
           <Link href="/login" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
@@ -102,7 +102,7 @@ export default function DashboardCoursesPage() {
       <DashboardSavedCart />
 
       {!hasEnrollments ? (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-10">
+        <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none dark:border-slate-800/90 dark:bg-slate-900 sm:p-10">
           <h1 className="text-lg font-extrabold text-brand-ink sm:text-xl">My courses</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             You have not enrolled in any courses yet. Saved courses from your cart appear above; browse the catalog to
@@ -131,7 +131,7 @@ export default function DashboardCoursesPage() {
                 <Link
                   key={row.slug}
                   href={`/learn/${row.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-slate-800/90 dark:bg-slate-900"
+                  className="group flex flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-none transition hover:border-slate-300 hover:shadow-md dark:border-slate-800/90 dark:bg-slate-900"
                 >
                   <div className="relative aspect-[16/10] w-full bg-slate-100">
                     <CourseThumbnail
@@ -167,7 +167,7 @@ export default function DashboardCoursesPage() {
             </div>
           </div>
 
-          <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
+          <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
             <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Rate a course</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
               Share feedback on courses you are enrolled in. You can update your review anytime. Only enrolled

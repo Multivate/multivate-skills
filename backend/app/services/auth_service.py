@@ -26,7 +26,6 @@ from app.core.security import (
     verify_password,
     verify_token_type,
 )
-from app.core.config import get_settings
 from app.core.rate_limit import enforce_rate_limit
 from app.services import instructor_profile_service
 from app.services import learning_service
@@ -80,12 +79,12 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequir
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
     _require_profile_for_session(db, user)
+    # Optional extra step only when the user has enabled email 2FA in settings.
     if user.two_factor_enabled:
         try:
             mfa_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
         except EmailDeliveryError as exc:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
-        settings = get_settings()
         include_dev_otp = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
         return LoginMfaRequired(
             mfa_token=mfa_token,
@@ -94,6 +93,36 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequir
         )
     tokens = _tokens_for_user(user)
     return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
+
+
+def start_code_login(db: Session, email: str) -> LoginMfaRequired:
+    """Passwordless sign-in: send a one-time email code (no password required)."""
+    email_key = str(email).lower().strip()
+    enforce_rate_limit(
+        f"login-code:email:{email_key}",
+        limit=8,
+        window_sec=900,
+        detail="Too many code requests. Please wait and try again.",
+    )
+    user = db.execute(select(User).where(User.email == email_key)).scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found for that email.",
+        )
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+    _require_profile_for_session(db, user)
+    try:
+        mfa_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    include_dev_otp = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
+    return LoginMfaRequired(
+        mfa_token=mfa_token,
+        email_masked=masked,
+        dev_otp=dev_plain if include_dev_otp else None,
+    )
 
 
 def complete_mfa_login(db: Session, data: MfaVerifyRequest) -> AuthResponse:
@@ -125,7 +154,6 @@ def resend_login_mfa(db: Session, mfa_token: str) -> LoginMfaRequired:
         new_token, masked, dev_plain = mfa_service.begin_login_mfa(db, user)
     except EmailDeliveryError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
-    settings = get_settings()
     include_dev_otp = bool(mail_service.expose_dev_otp_if_allowed(dev_plain))
     return LoginMfaRequired(
         mfa_token=new_token,

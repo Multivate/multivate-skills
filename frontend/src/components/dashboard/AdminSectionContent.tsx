@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminDiscountCodes } from "@/components/dashboard/AdminDiscountCodes";
 import { AdminMentorApprovals } from "@/components/dashboard/AdminMentorApprovals";
 import { AdminAnalyticsDashboard, type AdminAnalyticsData } from "@/components/dashboard/AdminAnalyticsDashboard";
+import { DashboardState } from "@/components/dashboard/dashboard-ui";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { useRealtimePoll } from "@/hooks/useRealtimePoll";
@@ -311,34 +312,34 @@ export function AdminSectionContent({ section }: { section: string }) {
     const { totals } = dmDash;
     return (
       <div className="space-y-8">
-        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 px-5 py-4 text-sm leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
+        <div className="rounded-md border border-slate-200/90 bg-slate-50/90 px-5 py-4 text-sm leading-relaxed text-slate-800 dark:border-slate-700 /50 dark:text-slate-200">
           <p className="font-bold text-brand-ink dark:text-slate-100">{tDm("hubTitle")}</p>
           <p className="mt-2">{tDm("hubIntro")}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+          <div className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{tDm("cardStudentTitle")}</p>
             <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{tDm("cardStudentBody")}</p>
-            <Link href="/dashboard" className="mt-4 inline-block text-sm font-bold text-admin-indigo hover:underline">
+            <Link href="/dashboard" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
               {tDm("openStudentDash")}
             </Link>
           </div>
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+          <div className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{tDm("cardInstructorTitle")}</p>
             <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{tDm("cardInstructorBody")}</p>
-            <Link href="/dashboard/instructor/students" className="mt-4 inline-block text-sm font-bold text-admin-indigo hover:underline">
+            <Link href="/dashboard/instructor/students" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
               {tDm("openInstructorStudents")}
             </Link>
           </div>
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+          <div className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{tDm("cardAdminTitle")}</p>
             <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{tDm("cardAdminBody")}</p>
-            <Link href="/dashboard/admin/enrollments" className="mt-4 inline-block text-sm font-bold text-admin-indigo hover:underline">
+            <Link href="/dashboard/admin/enrollments" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
               {tDm("openAdminEnrollments")}
             </Link>
           </div>
         </div>
-        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+        <section className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
           <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">{tDm("snapshotTitle")}</h2>
           <dl className="mt-4 grid gap-3 sm:grid-cols-3">
             <div>
@@ -355,7 +356,7 @@ export function AdminSectionContent({ section }: { section: string }) {
             </div>
           </dl>
         </section>
-        <section className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+        <section className="overflow-x-auto rounded-md border border-slate-200/90 bg-white shadow-none ">
           <h2 className="border-b border-slate-200 px-4 py-3 text-sm font-extrabold uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
             {tDm("recentTitle")}
           </h2>
@@ -404,7 +405,7 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (instructors === null) return <p className="text-sm text-slate-600">Loading instructors…</p>;
     return (
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
             <tr>
@@ -437,7 +438,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           Onboarding questionnaire from instructors who completed registration (joined to name and email).
         </p>
         {instructorProfiles.length === 0 ? (
-          <p className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 text-sm text-slate-600 shadow-sm">
+          <p className="rounded-md border border-slate-200/90 bg-white  p-6 text-sm text-slate-600 shadow-none">
             No instructor teaching profiles yet.
           </p>
         ) : (
@@ -445,7 +446,7 @@ export function AdminSectionContent({ section }: { section: string }) {
             {instructorProfiles.map((row) => (
               <details
                 key={row.user_id}
-                className="group rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm open:ring-1 open:ring-slate-200"
+                className="group rounded-md border border-slate-200/90 bg-white  shadow-none open:ring-1 open:ring-slate-200"
               >
                 <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -457,7 +458,7 @@ export function AdminSectionContent({ section }: { section: string }) {
                       Updated {new Date(row.updated_at).toLocaleString()}
                     </p>
                   </div>
-                  <p className="mt-2 text-xs text-admin-indigo group-open:hidden">Click to expand full responses</p>
+                  <p className="mt-2 text-xs text-brand-accent group-open:hidden">Click to expand full responses</p>
                 </summary>
                 <div className="border-t border-slate-100 px-4 py-4 text-sm sm:px-5">
                   <dl className="grid gap-3 sm:grid-cols-2">
@@ -487,7 +488,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           Submitted questionnaire data from learners. Only students who have saved the form appear here.
         </p>
         {studentProfiles.length === 0 ? (
-          <p className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 text-sm text-slate-600 shadow-sm">
+          <p className="rounded-md border border-slate-200/90 bg-white  p-6 text-sm text-slate-600 shadow-none">
             No learning profiles saved yet.
           </p>
         ) : (
@@ -495,7 +496,7 @@ export function AdminSectionContent({ section }: { section: string }) {
             {studentProfiles.map((row) => (
               <details
                 key={row.user_id}
-                className="group rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm open:ring-1 open:ring-slate-200"
+                className="group rounded-md border border-slate-200/90 bg-white  shadow-none open:ring-1 open:ring-slate-200"
               >
                 <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -507,7 +508,7 @@ export function AdminSectionContent({ section }: { section: string }) {
                       Updated {new Date(row.updated_at).toLocaleString()}
                     </p>
                   </div>
-                  <p className="mt-2 text-xs text-admin-indigo group-open:hidden">Click to expand full responses</p>
+                  <p className="mt-2 text-xs text-brand-accent group-open:hidden">Click to expand full responses</p>
                 </summary>
                 <div className="border-t border-slate-100 px-4 py-4 text-sm sm:px-5">
                   <dl className="grid gap-3 sm:grid-cols-2">
@@ -530,8 +531,16 @@ export function AdminSectionContent({ section }: { section: string }) {
   }
 
   if (section === "analytics") {
-    if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (analyticsDash === null) return <p className="text-sm text-slate-600">Loading analytics…</p>;
+    if (err) {
+      return (
+        <DashboardState tone="error">
+          <p className="font-semibold">{err}</p>
+        </DashboardState>
+      );
+    }
+    if (analyticsDash === null) {
+      return <DashboardState>Loading analytics…</DashboardState>;
+    }
     return <AdminAnalyticsDashboard data={analyticsDash} lastUpdated={analyticsUpdatedAt} live />;
   }
 
@@ -540,13 +549,13 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (adminReviews === null) return <p className="text-sm text-slate-600">Loading reviews…</p>;
     if (adminReviews.length === 0) {
       return (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/50">
+        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
           <p className="text-sm leading-relaxed text-slate-600">No learner reviews yet. They appear here after enrolled students rate a course.</p>
         </div>
       );
     }
     return (
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white shadow-none ">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
             <tr>
@@ -562,7 +571,7 @@ export function AdminSectionContent({ section }: { section: string }) {
               <tr key={r.id}>
                 <td className="px-4 py-3 text-xs text-slate-600">{new Date(r.created_at).toLocaleString()}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/courses/${r.course_slug}`} className="font-semibold text-admin-indigo hover:underline">
+                  <Link href={`/courses/${r.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                     {r.course_title}
                   </Link>
                 </td>
@@ -594,7 +603,7 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
     if (users === null) return <p className="text-sm text-slate-600">Loading users…</p>;
     return (
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
             <tr>
@@ -699,7 +708,7 @@ export function AdminSectionContent({ section }: { section: string }) {
             {paymentMsg}
           </p>
         ) : null}
-        <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
               <tr>
@@ -737,7 +746,7 @@ export function AdminSectionContent({ section }: { section: string }) {
                           type="button"
                           disabled={paymentBusyId === p.id}
                           onClick={() => void approvePayment(p.id)}
-                          className="rounded-lg bg-admin-indigo px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90 active:scale-95 disabled:opacity-50"
+                          className="rounded-lg bg-brand-ink px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90 active:scale-95 disabled:opacity-50"
                         >
                           {paymentBusyId === p.id ? "Saving…" : "Approve"}
                         </button>
@@ -768,10 +777,10 @@ export function AdminSectionContent({ section }: { section: string }) {
     if (enrollments === null) return <p className="text-sm text-slate-600">Loading enrollments…</p>;
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
+        <div className="rounded-md border border-slate-200/90 bg-slate-50/90 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 /50 dark:text-slate-300">
           {tDash("adminEnrollmentsBlurb")}
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
           <table className="w-full min-w-[880px] text-left text-sm">
             <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <tr>
@@ -790,7 +799,7 @@ export function AdminSectionContent({ section }: { section: string }) {
                     <p className="text-xs text-slate-500">{e.user_email}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/courses/${e.course_slug}`} className="font-semibold text-admin-indigo hover:underline">
+                    <Link href={`/courses/${e.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                       {e.course_title}
                     </Link>
                   </td>
@@ -893,13 +902,13 @@ export function AdminSectionContent({ section }: { section: string }) {
             <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Awaiting approval</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {pendingCourses.map((c) => (
-                <div key={c.slug} className="rounded-2xl border border-amber-200/90 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                <div key={c.slug} className="rounded-md border border-amber-200/90 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
                   <p className="font-bold text-brand-ink">{c.title}</p>
                   <p className="mt-1 text-xs text-slate-600">{c.lessons_count} lessons · {c.slug}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Link
                       href={`/learn/${c.slug}?preview=1`}
-                      className="rounded-lg border border-brand-primary/30 bg-violet-50 px-3 py-1.5 text-xs font-bold text-brand-primary transition hover:bg-violet-100"
+                      className="rounded-lg border border-brand-primary/30 bg-brand-muted px-3 py-1.5 text-xs font-bold text-brand-primary transition hover:bg-brand-muted"
                     >
                       Preview
                     </Link>
@@ -925,7 +934,7 @@ export function AdminSectionContent({ section }: { section: string }) {
             </div>
           </section>
         ) : (
-          <section className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
+          <section className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 /50">
             <p className="text-sm text-slate-600">No courses are waiting for review right now.</p>
           </section>
         )}
@@ -936,7 +945,7 @@ export function AdminSectionContent({ section }: { section: string }) {
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {courses.map((c) => (
-                <div key={c.slug} className="flex gap-3 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-4 shadow-sm">
+                <div key={c.slug} className="flex gap-3 rounded-md border border-slate-200/90 bg-white  p-4 shadow-none">
                   <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                     <CourseThumbnail src={c.image_url} alt={c.title} sizes="112px" />
                   </div>
@@ -945,7 +954,7 @@ export function AdminSectionContent({ section }: { section: string }) {
                     <p className="line-clamp-2 text-xs text-slate-600">{c.description}</p>
                     <p className="mt-1 text-xs text-slate-500">{c.lessons_count} lessons · {c.slug}</p>
                     <div className="mt-2 flex flex-wrap gap-3">
-                      <Link href={`/courses/${c.slug}`} className="text-xs font-bold text-admin-indigo hover:underline">
+                      <Link href={`/courses/${c.slug}`} className="text-xs font-bold text-brand-accent hover:underline">
                         Course page
                       </Link>
                       <Link href={`/learn/${c.slug}`} className="text-xs font-bold text-brand-accent hover:underline">

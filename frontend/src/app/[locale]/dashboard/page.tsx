@@ -9,15 +9,17 @@ import { useAuth } from "@/contexts/auth-context";
 export default function DashboardPage() {
   const { user } = useAuth();
 
-  if (user?.role === "admin") {
-    return <AdminDashboardHome />;
+  if (!user) return null;
+
+  if (user.role === "admin") {
+    return <AdminDashboardHome key={user.id} />;
   }
-  if (user?.role === "instructor") {
-    return <InstructorDashboardHome />;
+  if (user.role === "instructor") {
+    return <InstructorDashboardHome key={user.id} />;
   }
-  if (user?.role === "mentor") {
-    return <MentorDashboardHome />;
+  if (user.role === "mentor") {
+    return <MentorDashboardHome key={user.id} />;
   }
 
-  return <StudentDashboardHome />;
+  return <StudentDashboardHome key={user.id} />;
 }

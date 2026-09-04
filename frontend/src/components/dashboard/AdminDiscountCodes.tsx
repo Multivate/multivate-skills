@@ -156,7 +156,7 @@ export function AdminDiscountCodes() {
       {showForm ? (
         <form
           onSubmit={(e) => void createCode(e)}
-          className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+          className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-800 "
         >
           <h2 className="flex items-center gap-2 text-lg font-bold text-brand-ink dark:text-slate-100">
             <Sparkles className="h-5 w-5 text-brand-accent" />
@@ -193,7 +193,7 @@ export function AdminDiscountCodes() {
               </select>
             </label>
             <label className={formLabelClass}>
-              {discountType === "percent" ? "Percent (1–100)" : "Amount off in kobo"}
+              {discountType === "percent" ? "Percent (1-100)" : "Amount off in kobo"}
               <input
                 type="number"
                 min={1}
@@ -235,7 +235,7 @@ export function AdminDiscountCodes() {
         </form>
       ) : null}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white shadow-none dark:border-slate-800 ">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
             <tr>

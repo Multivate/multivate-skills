@@ -2,8 +2,14 @@
 
 import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
+import {
+  DashboardMetricStrip,
+  DashboardPageHeader,
+  DashboardPanel,
+  DashboardQuietLink,
+  DashboardState,
+} from "@/components/dashboard/dashboard-ui";
 import { Link } from "@/i18n/navigation";
-import { BarChart3, BookOpen, GraduationCap, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type AdminDashboard = {
@@ -34,7 +40,6 @@ type AdminDashboard = {
     course_title: string | null;
   }[];
 };
-
 
 export function AdminDashboardHome() {
   const [data, setData] = useState<AdminDashboard | null>(null);
@@ -68,188 +73,147 @@ export function AdminDashboardHome() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-red-200/90 bg-red-50/80 p-8 text-center shadow-sm">
-        <p className="text-sm font-semibold text-red-900">{error}</p>
-        <Link href="/login" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
+      <DashboardState tone="error">
+        <p className="font-semibold">{error}</p>
+        <Link href="/login" className="mt-4 inline-block font-semibold text-brand-accent hover:text-brand-accent-dark">
           Sign in
         </Link>
-      </div>
+      </DashboardState>
     );
   }
 
   if (!data) {
-    return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-sm">
-        <p className="text-sm font-medium text-slate-600">Loading platform metrics…</p>
-      </div>
-    );
+    return <DashboardState>Loading platform metrics…</DashboardState>;
   }
 
   const { totals } = data;
 
   return (
-    <div className="mx-auto max-w-[90rem] space-y-8">
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total users</p>
-            <span className="rounded-full bg-violet-100 p-2 text-admin-indigo">
-              <Users className="h-4 w-4" strokeWidth={2} aria-hidden />
-            </span>
-          </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums text-brand-ink">{totals.total_users}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total enrollments</p>
-            <span className="rounded-full bg-sky-100 p-2 text-sky-700">
-              <GraduationCap className="h-4 w-4" strokeWidth={2} aria-hidden />
-            </span>
-          </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums text-brand-ink">{totals.total_enrollments}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Catalog courses</p>
-            <span className="rounded-full bg-emerald-100 p-2 text-emerald-800">
-              <BookOpen className="h-4 w-4" strokeWidth={2} aria-hidden />
-            </span>
-          </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums text-brand-ink">{totals.total_courses}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Revenue (completed)</p>
-            <span className="rounded-full bg-orange-100 p-2 text-orange-700">
-              <TrendingUp className="h-4 w-4" strokeWidth={2} aria-hidden />
-            </span>
-          </div>
-          <p
-            className="mt-3 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink sm:text-3xl"
-            title={formatMoney(totals.revenue_completed_cents)}
-          >
-            {formatMoneyCompact(totals.revenue_completed_cents)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:col-span-2 xl:col-span-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Pending payments</p>
-            <span className="rounded-full bg-violet-100 p-2 text-admin-violet">
-              <BarChart3 className="h-4 w-4" strokeWidth={2} aria-hidden />
-            </span>
-          </div>
-          <p className="mt-3 text-3xl font-extrabold tabular-nums text-brand-ink">{totals.payments_pending_count}</p>
-        </div>
-      </section>
+    <div className="mx-auto max-w-[90rem] space-y-10">
+      <DashboardPageHeader
+        eyebrow="Administration"
+        title="Platform overview"
+        description="Users, enrollments, revenue, and recent activity across Multivate."
+      />
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:p-6 xl:col-span-5">
-          <h3 className="text-base font-extrabold tracking-tight text-brand-ink">Recent enrollments</h3>
-          <p className="mt-1 text-xs text-slate-500">Latest activity from the database</p>
-          <ul className="mt-4 max-h-[28rem] space-y-3 overflow-y-auto">
-            {data.recent_enrollments.length === 0 ? (
-              <li className="text-sm text-slate-600">No enrollments yet.</li>
-            ) : (
-              data.recent_enrollments.map((e) => (
-                <li key={`${e.user_email}-${e.course_slug}-${e.created_at}`} className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm">
+      <DashboardMetricStrip
+        items={[
+          { label: "Users", value: totals.total_users },
+          { label: "Enrollments", value: totals.total_enrollments },
+          { label: "Courses", value: totals.total_courses },
+          {
+            label: "Revenue",
+            value: formatMoneyCompact(totals.revenue_completed_cents),
+            hint: <span title={formatMoney(totals.revenue_completed_cents)}>Completed payments</span>,
+          },
+          {
+            label: "Pending",
+            value: totals.payments_pending_count,
+            hint: <DashboardQuietLink href="/dashboard/admin/payments">Review payments</DashboardQuietLink>,
+          },
+        ]}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-12">
+        <DashboardPanel title="Recent enrollments" description="Latest learner activity" className="xl:col-span-5">
+          {data.recent_enrollments.length === 0 ? (
+            <p className="text-sm text-brand-ink/60">No enrollments yet.</p>
+          ) : (
+            <ul className="max-h-[28rem] divide-y divide-brand-ink/10 overflow-y-auto">
+              {data.recent_enrollments.map((e) => (
+                <li key={`${e.user_email}-${e.course_slug}-${e.created_at}`} className="py-3.5">
                   <p className="font-semibold text-brand-ink">{e.course_title}</p>
-                  <p className="text-xs text-slate-600">
+                  <p className="mt-1 text-xs text-brand-ink/55">
                     {e.user_name} · {new Date(e.created_at).toLocaleString()}
                   </p>
                 </li>
-              ))
-            )}
-          </ul>
-        </div>
+              ))}
+            </ul>
+          )}
+        </DashboardPanel>
 
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:p-6 xl:col-span-4">
-          <h3 className="text-base font-extrabold tracking-tight text-brand-ink">Top courses by enrollments</h3>
-          <ul className="mt-4 space-y-3">
-            {data.top_courses.length === 0 ? (
-              <li className="text-sm text-slate-600">No courses in catalog.</li>
-            ) : (
-              data.top_courses.map((c) => (
-                <li key={c.slug} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-2">
-                  <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200">
+        <DashboardPanel title="Top courses" className="xl:col-span-4">
+          {data.top_courses.length === 0 ? (
+            <p className="text-sm text-brand-ink/60">No courses in catalog.</p>
+          ) : (
+            <ul className="divide-y divide-brand-ink/10">
+              {data.top_courses.map((c) => (
+                <li key={c.slug} className="flex items-center gap-3 py-3">
+                  <div className="relative h-12 w-16 shrink-0 overflow-hidden bg-brand-muted">
                     <CourseThumbnail src={c.image_url} alt={c.title} sizes="64px" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-brand-ink">{c.title}</p>
-                    <p className="text-xs text-slate-600">{c.enrollment_count} enrollments</p>
+                    <p className="truncate text-sm font-semibold text-brand-ink">{c.title}</p>
+                    <p className="text-xs text-brand-ink/55">{c.enrollment_count} enrollments</p>
                   </div>
-                  <Link href={`/courses/${c.slug}`} className="shrink-0 text-xs font-bold text-admin-indigo hover:underline">
-                    View
-                  </Link>
+                  <DashboardQuietLink href={`/courses/${c.slug}`}>View</DashboardQuietLink>
                 </li>
-              ))
-            )}
-          </ul>
-        </div>
+              ))}
+            </ul>
+          )}
+        </DashboardPanel>
 
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:p-6 xl:col-span-3">
-          <h3 className="text-base font-extrabold tracking-tight text-brand-ink">Recent payments</h3>
-          <ul className="mt-4 max-h-[28rem] space-y-2 overflow-y-auto text-sm">
-            {data.recent_payments.length === 0 ? (
-              <li className="text-slate-600">No payment records.</li>
-            ) : (
-              data.recent_payments.map((p) => (
-                <li key={p.id} className="rounded-lg border border-slate-100 px-2 py-2">
+        <DashboardPanel
+          title="Recent payments"
+          action={<DashboardQuietLink href="/dashboard/admin/payments">Workspace</DashboardQuietLink>}
+          className="xl:col-span-3"
+        >
+          {data.recent_payments.length === 0 ? (
+            <p className="text-sm text-brand-ink/60">No payment records.</p>
+          ) : (
+            <ul className="max-h-[28rem] divide-y divide-brand-ink/10 overflow-y-auto">
+              {data.recent_payments.map((p) => (
+                <li key={p.id} className="py-3">
                   <p className="font-semibold text-brand-ink">{formatMoney(p.amount_cents, p.currency)}</p>
-                  <p className="text-xs text-slate-600">
+                  <p className="mt-1 text-xs text-brand-ink/55">
                     {p.status} · {p.user_email}
                   </p>
-                  {p.course_title ? <p className="text-xs text-slate-500">{p.course_title}</p> : null}
+                  {p.course_title ? <p className="mt-0.5 text-xs text-brand-ink/45">{p.course_title}</p> : null}
                 </li>
-              ))
-            )}
-          </ul>
-          <Link href="/dashboard/admin/payments" className="mt-4 inline-block text-xs font-bold text-admin-indigo hover:underline">
-            Open payments workspace
-          </Link>
-        </div>
-      </section>
+              ))}
+            </ul>
+          )}
+        </DashboardPanel>
+      </div>
 
-      <section className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-extrabold tracking-tight text-brand-ink">Recent users</h3>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-admin-indigo">
-            <Link href="/dashboard/admin/users" className="hover:underline">
-              Manage users
-            </Link>
-            <Link href="/dashboard/admin/student-profiles" className="hover:underline">
-              Student learning profiles
-            </Link>
-            <Link href="/dashboard/admin/instructor-profiles" className="hover:underline">
-              Instructor teaching profiles
-            </Link>
+      <DashboardPanel
+        title="Recent users"
+        action={
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <DashboardQuietLink href="/dashboard/admin/users">Manage users</DashboardQuietLink>
+            <DashboardQuietLink href="/dashboard/admin/student-profiles">Student profiles</DashboardQuietLink>
+            <DashboardQuietLink href="/dashboard/admin/instructor-profiles">Instructor profiles</DashboardQuietLink>
           </div>
-        </div>
-        <div className="mt-4 overflow-x-auto">
+        }
+      >
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                <th className="pb-2 pr-2">User</th>
-                <th className="pb-2 pr-2">Role</th>
-                <th className="pb-2 pr-2">Joined</th>
-                <th className="pb-2">Status</th>
+              <tr className="border-b border-brand-ink/10 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-brand-ink/45">
+                <th className="pb-3 pr-4">User</th>
+                <th className="pb-3 pr-4">Role</th>
+                <th className="pb-3 pr-4">Joined</th>
+                <th className="pb-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-brand-ink/10">
               {data.recent_users.map((u) => (
                 <tr key={u.id}>
-                  <td className="py-3 pr-2">
+                  <td className="py-3.5 pr-4">
                     <p className="font-semibold text-brand-ink">{u.name}</p>
-                    <p className="truncate text-xs text-slate-500">{u.email}</p>
+                    <p className="truncate text-xs text-brand-ink/50">{u.email}</p>
                   </td>
-                  <td className="py-3 pr-2 text-xs font-bold capitalize text-slate-800">{u.role}</td>
-                  <td className="py-3 pr-2 text-xs text-slate-600">{new Date(u.created_at).toLocaleDateString()}</td>
-                  <td className="py-3 text-xs font-bold">{u.is_active ? <span className="text-emerald-600">Active</span> : <span className="text-slate-400">Inactive</span>}</td>
+                  <td className="py-3.5 pr-4 capitalize text-brand-ink/80">{u.role}</td>
+                  <td className="py-3.5 pr-4 text-xs text-brand-ink/55">{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td className="py-3.5 text-xs font-semibold">
+                    {u.is_active ? <span className="text-brand-ink">Active</span> : <span className="text-brand-ink/40">Inactive</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </DashboardPanel>
     </div>
   );
 }

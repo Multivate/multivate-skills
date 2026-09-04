@@ -6,7 +6,7 @@ This service is structured for a **real** deployment: explicit environment modes
 
 1. **Platform shell** (this iteration): `ENVIRONMENT`, logging, `/health` + `/health/ready`, `X-Request-ID`, validation error shape, production config guards.
 2. **Migrations**: Alembic revisions as the single source of schema truth; `AUTO_CREATE_TABLES=false` everywhere except local dev.
-3. **Domain APIs**: courses, enrollments, payments — each behind role checks and integration tests.
+3. **Domain APIs**: courses, enrollments, payments - each behind role checks and integration tests.
 4. **Observability**: metrics, structured JSON logs in production, optional OpenTelemetry.
 
 ## Setup
@@ -78,13 +78,13 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Windows (recommended):** from `backend/`, run **`.\run-api.ps1`** — it clears a stray **`DATABASE_URL`** in your shell (which overrides `.env`), runs **`scripts/verify_local_setup.py`**, then starts uvicorn on **`http://127.0.0.1:8000`**. If the script exits before uvicorn, Postgres is probably down or **`DATABASE_URL`** is wrong.
+**Windows (recommended):** from `backend/`, run **`.\run-api.ps1`** - it clears a stray **`DATABASE_URL`** in your shell (which overrides `.env`), runs **`scripts/verify_local_setup.py`**, then starts uvicorn on **`http://127.0.0.1:8000`**. If the script exits before uvicorn, Postgres is probably down or **`DATABASE_URL`** is wrong.
 
 ### 5. Verify
 
-- **`/health`** — process is up.
-- **`/health/ready`** — database reachable (use after API is running).
-- **`/docs`** — OpenAPI UI.
+- **`/health`** - process is up.
+- **`/health/ready`** - database reachable (use after API is running).
+- **`/docs`** - OpenAPI UI.
 
 **If “nothing works” locally:** run **`python scripts/verify_local_setup.py`** from `backend/` (checks DB + optional `/health`). **Outbound OTP email** uses **Resend** only: set **`RESEND_API_KEY`** and **`RESEND_FROM`** (see **`.env.example`**). One API key on the server; learners only enter the 6-digit code from email. With **`ENVIRONMENT=development`** and **`RESEND_API_KEY`** unset, **`POST /api/v1/auth/login`** can include **`dev_otp`**; codes are also logged as **`MULTIVATE_DEV_OTP`**. After changing email env, run **`python scripts/test_resend.py your@email.com`** and restart uvicorn.
 
@@ -101,7 +101,7 @@ pytest tests -q
 
 **What you get**
 
-- **`admin@example.com`** / **`Multivate2026!`** — role **admin**, **email two-factor enabled** (set **`RESEND_API_KEY`** + **`RESEND_FROM`** in `.env` to deliver codes). With no Resend key and **`ENVIRONMENT=development`**, login JSON may include **`dev_otp`** and **`MULTIVATE_DEV_OTP`** is logged.
+- **`admin@example.com`** / **`Multivate2026!`** - role **admin**, **email two-factor enabled** (set **`RESEND_API_KEY`** + **`RESEND_FROM`** in `.env` to deliver codes). With no Resend key and **`ENVIRONMENT=development`**, login JSON may include **`dev_otp`** and **`MULTIVATE_DEV_OTP`** is logged.
 - **Students** enroll via **`POST /api/v1/enrollments`** (student role only). **Instructors** see who enrolled in **their** courses at **`GET /api/v1/instructor/students`**. **Admins** see **all** enrollments (including instructor name/email per row) at **`GET /api/v1/admin/enrollments`**.
 - The web app links these flows under **Admin → Data management** and shows **instructors on each enrolled course** in the student dashboard (“my courses” API).
 
@@ -144,24 +144,24 @@ For production checklist: set `ENVIRONMENT=production`, `AUTO_CREATE_TABLES=fals
 
 `python scripts/promote_user_to_admin.py your@email.com`
 
-Or: `python scripts/ensure_dev_account.py` (development only — do not use default passwords in production).
+Or: `python scripts/ensure_dev_account.py` (development only - do not use default passwords in production).
 
 ## Auth endpoints
 
-- **Registration (two-step, Redis + email OTP, 5-minute code):** `POST /api/v1/auth/register/student/start` | `.../instructor/start` — same body as before (name, email, password, questionnaire). Stores a pending signup in **Redis** (`REDIS_URL`), emails a **6-digit HTML OTP** (logo when configured), returns `{ signup_token, email_masked [, dev_otp] }`. Then `POST /api/v1/auth/register/student/verify` | `.../instructor/verify` — body `{ signup_token, code }`; on success creates the user and returns **JWT** (`access_token`, `refresh_token`, `user`) like login.
-- `POST /api/v1/auth/login` — body: email, password; returns tokens **or** `{ "mfa_required": true, "mfa_token", "email_masked" [, "dev_otp"] }` when **`two_factor_enabled`** is true (`dev_otp` only in **development** when **`RESEND_API_KEY`** is unset). Returns 403 `profile_incomplete` for legacy incomplete profiles. **Completed registration** returns tokens from the **verify** step above; **later sign-ins** go through email OTP when 2FA is enabled.
-- `POST /api/v1/auth/login/mfa` — body: `mfa_token`, `code` (email OTP) — returns tokens on success
-- `POST /api/v1/auth/mfa/enable/start` | `.../confirm` | `.../disable` — manage email 2FA (authenticated; confirm/disable as documented in OpenAPI)
-- `POST /api/v1/auth/refresh` — body: `{ "refresh_token": "..." }`
-- `GET /api/v1/auth/me` — header: `Authorization: Bearer <access_token>`
+- **Registration (two-step, Redis + email OTP, 5-minute code):** `POST /api/v1/auth/register/student/start` | `.../instructor/start` - same body as before (name, email, password, questionnaire). Stores a pending signup in **Redis** (`REDIS_URL`), emails a **6-digit HTML OTP** (logo when configured), returns `{ signup_token, email_masked [, dev_otp] }`. Then `POST /api/v1/auth/register/student/verify` | `.../instructor/verify` - body `{ signup_token, code }`; on success creates the user and returns **JWT** (`access_token`, `refresh_token`, `user`) like login.
+- `POST /api/v1/auth/login` - body: email, password; returns tokens **or** `{ "mfa_required": true, "mfa_token", "email_masked" [, "dev_otp"] }` when **`two_factor_enabled`** is true (`dev_otp` only in **development** when **`RESEND_API_KEY`** is unset). Returns 403 `profile_incomplete` for legacy incomplete profiles. **Completed registration** returns tokens from the **verify** step above; **later sign-ins** go through email OTP when 2FA is enabled.
+- `POST /api/v1/auth/login/mfa` - body: `mfa_token`, `code` (email OTP) - returns tokens on success
+- `POST /api/v1/auth/mfa/enable/start` | `.../confirm` | `.../disable` - manage email 2FA (authenticated; confirm/disable as documented in OpenAPI)
+- `POST /api/v1/auth/refresh` - body: `{ "refresh_token": "..." }`
+- `GET /api/v1/auth/me` - header: `Authorization: Bearer <access_token>`
 
 ## Enrollments (learner vs admin views)
 
-- `POST /api/v1/enrollments` — **student role only**; body `{ "course_slug" }`. Instructors and admins manage courses instead; use a student account to take a course.
-- `GET /api/v1/instructor/students` — instructor: learners enrolled in **your** courses (with progress).
-- `GET /api/v1/admin/enrollments` — admin: all enrollments, including **instructor** name/email per course when assigned.
+- `POST /api/v1/enrollments` - **student role only**; body `{ "course_slug" }`. Instructors and admins manage courses instead; use a student account to take a course.
+- `GET /api/v1/instructor/students` - instructor: learners enrolled in **your** courses (with progress).
+- `GET /api/v1/admin/enrollments` - admin: all enrollments, including **instructor** name/email per course when assigned.
 
 ## Roles
 
-- `GET /api/v1/users/` — **admin** only (lists users).
+- `GET /api/v1/users/` - **admin** only (lists users).
 - Use `require_roles(...)` in `app/core/deps.py` for other routers.

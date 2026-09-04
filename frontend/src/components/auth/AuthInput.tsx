@@ -28,7 +28,7 @@ export function AuthInput({
 }) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-semibold text-slate-800">
+      <label htmlFor={id} className="block text-sm font-semibold text-brand-ink">
         {label}
       </label>
       <div className="relative mt-1.5">
@@ -47,7 +47,7 @@ export function AuthInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/25"
+          className="w-full rounded-md border border-brand-ink/15 bg-white py-3 pl-11 pr-4 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
         />
       </div>
     </div>

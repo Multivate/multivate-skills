@@ -8,7 +8,7 @@ Local:
   set WIPE_FRESH_START_CONFIRM=yes
   python scripts/wipe_fresh_start.py
 
-Production (Render Shell — uses DATABASE_URL from the web service):
+Production (Render Shell - uses DATABASE_URL from the web service):
   cd backend
   export WIPE_FRESH_START_CONFIRM=yes
   python scripts/wipe_fresh_start.py
@@ -151,7 +151,7 @@ def main() -> None:
         logger.info("Fresh-start wipe committed.")
     except Exception:
         db.rollback()
-        logger.exception("Fresh-start wipe failed — rolled back.")
+        logger.exception("Fresh-start wipe failed - rolled back.")
         raise
     finally:
         db.close()

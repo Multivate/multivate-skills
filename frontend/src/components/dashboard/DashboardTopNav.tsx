@@ -60,8 +60,8 @@ function NavDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-          active ? accent.active : "text-slate-700 hover:bg-slate-100 hover:text-brand-ink"
+        className={`inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+          active ? accent.active : "text-brand-ink/70 hover:bg-brand-muted hover:text-brand-ink"
         }`}
         aria-expanded={open}
       >
@@ -69,7 +69,7 @@ function NavDropdown({
         <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] border border-brand-ink/10 bg-white py-1.5 shadow-lift">
           {group.items.map((item) => {
             const itemActive = navHrefActive(pathname, item.href);
             return (
@@ -120,11 +120,11 @@ export function DashboardTopNav({
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-brand-ink/10 bg-brand-paper/95 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-4 px-4 sm:px-6 lg:px-8 xl:px-10">
           <button
             type="button"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-700 lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-brand-ink/15 text-brand-ink lg:hidden"
             aria-label={tDash("shell.openMenu")}
             onClick={() => setMobileOpen(true)}
           >
@@ -138,8 +138,8 @@ export function DashboardTopNav({
           <nav className="hidden items-center gap-1 lg:flex" aria-label={tDash("shell.mainNav")}>
             <Link
               href="/dashboard"
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                homeActive ? accent.active : "text-slate-700 hover:bg-slate-100 hover:text-brand-ink"
+              className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
+                homeActive ? accent.active : "text-brand-ink/70 hover:bg-brand-muted hover:text-brand-ink"
               }`}
             >
               {tNavItem("home")}
@@ -156,8 +156,8 @@ export function DashboardTopNav({
             ))}
             <Link
               href="/dashboard/settings"
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                settingsActive ? accent.active : "text-slate-700 hover:bg-slate-100 hover:text-brand-ink"
+              className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
+                settingsActive ? accent.active : "text-brand-ink/70 hover:bg-brand-muted hover:text-brand-ink"
               }`}
             >
               {tNavItem("settings")}
@@ -172,7 +172,7 @@ export function DashboardTopNav({
                 <input
                   type="search"
                   placeholder={searchPlaceholder}
-                  className={`w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-brand-ink placeholder:text-slate-400 outline-none transition ${accent.focus}`}
+                  className={`w-full rounded-md border border-brand-ink/15 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-brand-ink placeholder:text-brand-ink/40 outline-none transition ${accent.focus}`}
                 />
               </label>
             </div>
@@ -184,7 +184,7 @@ export function DashboardTopNav({
             <NotificationBell label={notificationsLabel} />
             <Link
               href="/dashboard/settings"
-              className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 transition hover:border-slate-300 sm:flex"
+              className="hidden items-center gap-2 rounded-md border border-brand-ink/15 bg-white py-1.5 pl-1.5 pr-3 transition hover:border-brand-ink/30 sm:flex"
             >
               <UserAvatar name={userName} avatarUrl={userAvatar} className="h-9 w-9 text-sm" fallbackClassName={accent.avatar} />
               <div className="min-w-0 text-left">
@@ -195,7 +195,7 @@ export function DashboardTopNav({
             <button
               type="button"
               onClick={onLogout}
-              className="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-brand-ink lg:inline-flex"
+              className="hidden items-center gap-2 rounded-md border border-brand-ink/15 px-3 py-2 text-sm font-semibold text-brand-ink/80 transition hover:border-brand-ink hover:text-brand-ink lg:inline-flex"
             >
               <LogOut className="h-4 w-4" aria-hidden />
               {tDash("shell.logOut")}

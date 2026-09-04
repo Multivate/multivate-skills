@@ -18,6 +18,7 @@ _settings = get_settings()
 
 ALLOWED_IMAGE = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_VIDEO = {"video/mp4", "video/webm", "video/quicktime"}
+ALLOWED_AUDIO = {"audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/webm", "audio/mp4", "audio/aac"}
 ALLOWED_DOCS = {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -130,6 +131,34 @@ async def save_lesson_video(course_id: UUID, lesson_id: UUID, file: UploadFile) 
         storage_key=rel,
         public_path="",
         filename=f"video.{ext}",
+        content_type=content_type,
+        file_size_bytes=len(data),
+        duration_seconds=0,
+    )
+
+
+async def save_phrase_audio(course_id: UUID, phrase_id: UUID, file: UploadFile) -> StoredFile:
+    data, content_type = await _read_upload(file, max_bytes=40 * 1024 * 1024, allowed=ALLOWED_AUDIO)
+    ext_map = {
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/wav": "wav",
+        "audio/x-wav": "wav",
+        "audio/ogg": "ogg",
+        "audio/webm": "webm",
+        "audio/mp4": "m4a",
+        "audio/aac": "aac",
+    }
+    ext = ext_map.get(content_type, "mp3")
+    rel = f"courses/{course_id}/phrases/{phrase_id}/audio.{ext}"
+    path = media_root() / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    logger.info("Saved phrase audio phrase_id=%s bytes=%s", phrase_id, len(data))
+    return StoredFile(
+        storage_key=rel,
+        public_path=f"/api/media/public/{rel}",
+        filename=f"audio.{ext}",
         content_type=content_type,
         file_size_bytes=len(data),
         duration_seconds=0,

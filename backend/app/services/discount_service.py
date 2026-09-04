@@ -31,7 +31,7 @@ def normalize_code(raw: str) -> str:
     if not _CODE_RE.match(code):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Code must be 3–32 letters, numbers, hyphens, or underscores.",
+            detail="Code must be 3-32 letters, numbers, hyphens, or underscores.",
         )
     return code
 

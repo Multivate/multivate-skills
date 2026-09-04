@@ -2,7 +2,7 @@
 
 TEST_DATABASE_URL overrides everything. Otherwise the test DB is taken from
 backend/.env DATABASE_URL with the database name switched to multivate_test
-(same host, user, password — no secrets committed in this file).
+(same host, user, password - no secrets committed in this file).
 """
 
 from __future__ import annotations

@@ -63,17 +63,17 @@ export function MentorsSection({ initialMentors = [] }: { initialMentors?: Publi
   const useGrid = mentors.length <= 4;
 
   return (
-    <section id="mentors" className="section-y border-y border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <section id="mentors" className="section-y border-y border-brand-ink/10 bg-brand-muted">
       <div className="container-page">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-wide text-brand-accent">{t("eyebrow")}</p>
-            <h2 className="heading-section mt-2 text-2xl sm:text-3xl lg:text-[2rem]">{t("heading")}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">{t("subheading")}</p>
+            <p className="tag-overline">{t("eyebrow")}</p>
+            <h2 className="heading-section mt-4 text-3xl sm:text-4xl">{t("heading")}</h2>
+            <p className="mt-4 text-base leading-relaxed text-brand-ink/65">{t("subheading")}</p>
           </div>
           <Link
             href="/mentors"
-            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-primary transition hover:text-brand-primary-dark"
+            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark"
           >
             {tCommon("viewAllMentors")}
             <ArrowRight className="h-4 w-4" strokeWidth={2.25} />

@@ -61,11 +61,11 @@ function PaymentsHistory() {
       {error ? (
         <p className="text-sm font-medium text-red-800">{error}</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
+        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
           <p className="text-sm leading-relaxed text-slate-600">{t("empty")}</p>
         </div>
       ) : (
-        <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800/90 dark:bg-slate-900">
+        <ul className="divide-y divide-slate-100 rounded-md border border-slate-200/90 bg-white shadow-none dark:divide-slate-800 dark:border-slate-800/90 dark:bg-slate-900">
           {rows.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
               <div>
@@ -104,7 +104,7 @@ export default function DashboardPaymentsPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <Suspense
         fallback={
-          <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+          <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-800/90 dark:bg-slate-900">
             <p className="text-sm text-slate-600">{t("loadingCheckout")}</p>
           </section>
         }

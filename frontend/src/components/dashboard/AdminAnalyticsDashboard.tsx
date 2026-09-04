@@ -1,9 +1,13 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
-import { GraduationCap, MessageSquare, TrendingUp, Users } from "lucide-react";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { DonutChart, GrowthLineChart, RevenueBarChart } from "@/components/dashboard/admin-analytics-charts";
+import {
+  DashboardMetricStrip,
+  DashboardPageHeader,
+  DashboardPanel,
+  DashboardQuietLink,
+} from "@/components/dashboard/dashboard-ui";
 import { DashboardLiveBadge } from "@/components/dashboard/DashboardLiveBadge";
 import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 
@@ -56,44 +60,28 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  student: "#4338CA",
-  instructor: "#6366F1",
-  mentor: "#F27D0C",
-  admin: "#7C3AED",
+  student: "#0E1420",
+  instructor: "#3A4660",
+  mentor: "#C45F08",
+  admin: "#E8790A",
 };
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent = false,
-  title,
-}: {
-  label: string;
-  value: string | number;
-  icon: typeof Users;
-  accent?: boolean;
-  title?: string;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-        accent ? "border-brand-accent/25 bg-brand-accent/5" : "border-slate-200/90 bg-white"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className={`text-xs font-bold uppercase tracking-wide ${accent ? "text-brand-accent" : "text-slate-500"}`}>
-          {label}
-        </p>
-        <span className={`rounded-lg p-2 ${accent ? "bg-brand-accent/15 text-brand-accent" : "bg-slate-100 text-admin-indigo"}`}>
-          <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-        </span>
-      </div>
-      <p className="mt-3 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink sm:text-3xl" title={title}>
-        {value}
-      </p>
-    </div>
-  );
+function formatDay(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function paymentStatusClass(status: string) {
+  const s = status.toLowerCase();
+  if (s === "completed" || s === "success" || s === "paid") {
+    return "bg-emerald-50 text-emerald-800";
+  }
+  if (s === "pending" || s === "processing") {
+    return "bg-amber-50 text-amber-900";
+  }
+  if (s === "failed" || s === "cancelled" || s === "canceled") {
+    return "bg-red-50 text-red-800";
+  }
+  return "bg-brand-muted text-brand-ink/70";
 }
 
 export function AdminAnalyticsDashboard({
@@ -122,158 +110,190 @@ export function AdminAnalyticsDashboard({
       color: ROLE_COLORS[r.role],
     }));
 
+  const avgProgress =
+    typeof totals.avg_progress_pct === "number" && Number.isFinite(totals.avg_progress_pct)
+      ? Math.round(totals.avg_progress_pct)
+      : null;
+
   return (
-    <div className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-brand-ink">Analytics</h1>
-          <p className="mt-1 text-sm text-slate-600">Platform overview for the last 30 days.</p>
-        </div>
-        {live ? <DashboardLiveBadge lastUpdated={lastUpdated} /> : null}
-      </header>
+    <div className="mx-auto max-w-[90rem] space-y-10">
+      <DashboardPageHeader
+        eyebrow="Administration"
+        title="Analytics"
+        description="Growth, revenue, and platform activity over the last 30 days."
+        action={live ? <DashboardLiveBadge lastUpdated={lastUpdated} /> : undefined}
+      />
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Users" value={totals.total_users} icon={Users} />
-        <StatCard label="Enrollments" value={totals.total_enrollments} icon={GraduationCap} />
-        <StatCard
-          label="Completed revenue"
-          value={formatMoneyCompact(totals.revenue_completed_cents)}
-          icon={TrendingUp}
-          title={formatMoney(totals.revenue_completed_cents)}
-        />
-        <StatCard label="Pending payments" value={totals.payments_pending_count} icon={TrendingUp} accent />
+      <DashboardMetricStrip
+        items={[
+          {
+            label: "Users",
+            value: totals.total_users,
+            hint: `${totals.total_courses} courses published`,
+          },
+          {
+            label: "Enrollments",
+            value: totals.total_enrollments,
+            hint: avgProgress !== null ? `${avgProgress}% avg. progress` : "Active learner seats",
+          },
+          {
+            label: "Revenue",
+            value: formatMoneyCompact(totals.revenue_completed_cents),
+            hint: (
+              <span title={formatMoney(totals.revenue_completed_cents)}>Completed payments</span>
+            ),
+          },
+          {
+            label: "Pending",
+            value: totals.payments_pending_count,
+            hint: <DashboardQuietLink href="/dashboard/admin/payments">Review payments</DashboardQuietLink>,
+          },
+        ]}
+      />
+
+      <section className="grid gap-6 xl:grid-cols-12">
+        <DashboardPanel
+          title="Growth"
+          description="New users and enrollments per day"
+          className="xl:col-span-8"
+        >
+          <GrowthLineChart
+            users={growth.users.map((p) => ({ date: p.date, value: p.count }))}
+            enrollments={growth.enrollments.map((p) => ({ date: p.date, value: p.count }))}
+          />
+        </DashboardPanel>
+
+        <DashboardPanel title="Users by role" description="Share of total accounts" className="xl:col-span-4">
+          <DonutChart segments={roleSegments} centerLabel={String(totals.total_users)} />
+        </DashboardPanel>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-12">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 xl:col-span-8">
-          <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Growth</h2>
-          <p className="mt-1 text-xs text-slate-500">New users and enrollments per day</p>
-          <div className="mt-4">
-            <GrowthLineChart
-              users={growth.users.map((p) => ({ date: p.date, value: p.count }))}
-              enrollments={growth.enrollments.map((p) => ({ date: p.date, value: p.count }))}
-            />
-          </div>
-        </div>
+        <DashboardPanel
+          title="Revenue"
+          description="Completed payment volume by day"
+          className="xl:col-span-8"
+        >
+          <RevenueBarChart points={growth.revenue.map((p) => ({ date: p.date, value: p.amount_cents }))} />
+        </DashboardPanel>
 
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 xl:col-span-4">
-          <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Users by role</h2>
-          <div className="mt-4">
-            <DonutChart segments={roleSegments} centerLabel={String(totals.total_users)} />
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-12">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 xl:col-span-7">
-          <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Revenue</h2>
-          <p className="mt-1 text-xs text-slate-500">Completed payments per day</p>
-          <div className="mt-4">
-            <RevenueBarChart points={growth.revenue.map((p) => ({ date: p.date, value: p.amount_cents }))} />
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 xl:col-span-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Mentors</h2>
-            <MessageSquare className="h-4 w-4 text-brand-accent" aria-hidden />
-          </div>
-          <dl className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-              <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Live</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{mentorStats.approved_profiles}</dd>
-            </div>
-            <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 p-3">
-              <dt className="text-[10px] font-bold uppercase tracking-wide text-brand-accent">In review</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{mentorStats.pending_profiles}</dd>
-            </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-              <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Chats</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{mentorStats.total_conversations}</dd>
-            </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-              <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Replied</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{mentorStats.mentors_who_replied}</dd>
-            </div>
+        <DashboardPanel
+          title="Mentorship"
+          description="Directory and conversation health"
+          action={<DashboardQuietLink href="/dashboard/admin/mentors">Approvals</DashboardQuietLink>}
+          className="xl:col-span-4"
+        >
+          <dl className="grid grid-cols-2 gap-px overflow-hidden border border-brand-ink/10 bg-brand-ink/10">
+            {[
+              { label: "Live mentors", value: mentorStats.approved_profiles },
+              { label: "In review", value: mentorStats.pending_profiles, accent: true },
+              { label: "Conversations", value: mentorStats.total_conversations },
+              { label: "Mentors replied", value: mentorStats.mentors_who_replied },
+            ].map((item) => (
+              <div key={item.label} className="bg-white px-4 py-4">
+                <dt
+                  className={`text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${
+                    item.accent ? "text-brand-accent" : "text-brand-ink/45"
+                  }`}
+                >
+                  {item.label}
+                </dt>
+                <dd className="mt-2 font-display text-2xl font-bold tabular-nums text-brand-ink">
+                  {item.value}
+                </dd>
+              </div>
+            ))}
           </dl>
-          <Link href="/dashboard/admin/mentors" className="mt-4 inline-block text-xs font-bold text-admin-indigo hover:underline">
-            Mentor approvals
-          </Link>
-        </div>
+        </DashboardPanel>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Top courses</h2>
-          <ul className="mt-4 space-y-3">
-            {data.top_courses.length === 0 ? (
-              <li className="text-sm text-slate-500">No courses yet.</li>
-            ) : (
-              data.top_courses.slice(0, 6).map((c) => (
-                <li key={c.slug} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-2">
-                  <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200">
+      <section className="grid gap-6 xl:grid-cols-12">
+        <DashboardPanel
+          title="Top courses"
+          description="Highest enrollment in the catalog"
+          className="xl:col-span-5"
+        >
+          {data.top_courses.length === 0 ? (
+            <p className="text-sm text-brand-ink/60">No courses yet.</p>
+          ) : (
+            <ul className="divide-y divide-brand-ink/10">
+              {data.top_courses.slice(0, 6).map((c, index) => (
+                <li key={c.slug} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="w-5 shrink-0 text-sm font-semibold tabular-nums text-brand-ink/35">
+                    {index + 1}
+                  </span>
+                  <div className="relative h-11 w-16 shrink-0 overflow-hidden bg-brand-muted">
                     <CourseThumbnail src={c.image_url} alt={c.title} sizes="64px" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-brand-ink">{c.title}</p>
-                    <p className="text-xs text-slate-500">{c.enrollment_count} enrollments</p>
+                    <p className="truncate text-sm font-semibold text-brand-ink">{c.title}</p>
+                    <p className="mt-0.5 text-xs text-brand-ink/55">
+                      {c.enrollment_count} enrollment{c.enrollment_count === 1 ? "" : "s"}
+                    </p>
                   </div>
-                  <Link href={`/courses/${c.slug}`} className="shrink-0 text-xs font-bold text-admin-indigo hover:underline">
-                    View
-                  </Link>
+                  <DashboardQuietLink href={`/courses/${c.slug}`}>View</DashboardQuietLink>
                 </li>
-              ))
-            )}
-          </ul>
-        </div>
-
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Recent enrollments</h2>
-              <Link href="/dashboard/admin/enrollments" className="text-xs font-bold text-admin-indigo hover:underline">
-                View all
-              </Link>
-            </div>
-            <ul className="mt-4 max-h-52 space-y-2 overflow-y-auto">
-              {data.recent_enrollments.length === 0 ? (
-                <li className="text-sm text-slate-500">No enrollments yet.</li>
-              ) : (
-                data.recent_enrollments.slice(0, 6).map((e) => (
-                  <li key={`${e.user_email}-${e.course_slug}-${e.created_at}`} className="rounded-lg border border-slate-100 px-3 py-2">
-                    <p className="text-sm font-semibold text-brand-ink">{e.course_title}</p>
-                    <p className="text-xs text-slate-500">
-                      {e.user_name} · {new Date(e.created_at).toLocaleDateString()}
-                    </p>
-                  </li>
-                ))
-              )}
+              ))}
             </ul>
-          </div>
+          )}
+        </DashboardPanel>
 
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-base font-extrabold tracking-tight text-brand-ink">Recent payments</h2>
-              <Link href="/dashboard/admin/payments" className="text-xs font-bold text-admin-indigo hover:underline">
-                View all
-              </Link>
-            </div>
-            <ul className="mt-4 max-h-52 space-y-2 overflow-y-auto">
-              {data.recent_payments.length === 0 ? (
-                <li className="text-sm text-slate-500">No payments yet.</li>
-              ) : (
-                data.recent_payments.slice(0, 6).map((p) => (
-                  <li key={p.id} className="rounded-lg border border-slate-100 px-3 py-2">
-                    <p className="text-sm font-semibold text-brand-ink">{formatMoney(p.amount_cents, p.currency)}</p>
-                    <p className="text-xs capitalize text-slate-500">
-                      {p.status} · {new Date(p.created_at).toLocaleDateString()}
-                    </p>
-                  </li>
-                ))
-              )}
+        <DashboardPanel
+          title="Recent enrollments"
+          description="Latest learner sign-ups"
+          action={<DashboardQuietLink href="/dashboard/admin/enrollments">View all</DashboardQuietLink>}
+          className="xl:col-span-3"
+        >
+          {data.recent_enrollments.length === 0 ? (
+            <p className="text-sm text-brand-ink/60">No enrollments yet.</p>
+          ) : (
+            <ul className="divide-y divide-brand-ink/10">
+              {data.recent_enrollments.slice(0, 7).map((e) => (
+                <li key={`${e.user_email}-${e.course_slug}-${e.created_at}`} className="py-3 first:pt-0 last:pb-0">
+                  <p className="truncate text-sm font-semibold text-brand-ink">{e.course_title}</p>
+                  <p className="mt-1 truncate text-xs text-brand-ink/55">
+                    {e.user_name}
+                    <span className="text-brand-ink/30"> · </span>
+                    {formatDay(e.created_at)}
+                  </p>
+                </li>
+              ))}
             </ul>
-          </div>
-        </div>
+          )}
+        </DashboardPanel>
+
+        <DashboardPanel
+          title="Recent payments"
+          description="Latest checkout activity"
+          action={<DashboardQuietLink href="/dashboard/admin/payments">View all</DashboardQuietLink>}
+          className="xl:col-span-4"
+        >
+          {data.recent_payments.length === 0 ? (
+            <p className="text-sm text-brand-ink/60">No payments yet.</p>
+          ) : (
+            <ul className="divide-y divide-brand-ink/10">
+              {data.recent_payments.slice(0, 7).map((p) => (
+                <li key={p.id} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="font-semibold tabular-nums text-brand-ink">
+                      {formatMoney(p.amount_cents, p.currency)}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-brand-ink/55">
+                      {p.course_title || p.user_email}
+                      <span className="text-brand-ink/30"> · </span>
+                      {formatDay(p.created_at)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${paymentStatusClass(p.status)}`}
+                  >
+                    {p.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DashboardPanel>
       </section>
     </div>
   );

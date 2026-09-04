@@ -47,12 +47,12 @@ def main() -> None:
             conn.execute(text("SELECT 1"))
         print("DATABASE: OK (SELECT 1)")
     except OperationalError as exc:
-        print("DATABASE: FAILED (cannot connect) —", exc.orig if getattr(exc, "orig", None) else exc)
+        print("DATABASE: FAILED (cannot connect) -", exc.orig if getattr(exc, "orig", None) else exc)
         print("Hint: start Postgres from repo root:  docker compose up -d db")
         print("Or create the DB manually (see database/pgadmin/) and set DATABASE_URL in backend/.env.")
         sys.exit(1)
     except Exception as exc:
-        print("DATABASE: FAILED —", exc)
+        print("DATABASE: FAILED -", exc)
         sys.exit(1)
 
     base = "http://127.0.0.1:8000"
@@ -63,7 +63,7 @@ def main() -> None:
                 body = r.read().decode("utf-8", errors="replace")
                 print(f"API {path}:", r.status, body[:200])
         except urllib.error.URLError as exc:
-            print(f"API {path}: not reachable —", exc.reason)
+            print(f"API {path}: not reachable -", exc.reason)
             print(f"Hint: start API from backend/ with: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000")
 
 

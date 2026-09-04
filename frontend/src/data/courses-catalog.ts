@@ -94,7 +94,7 @@ export const courses = [
   {
     slug: "german",
     category: "german" as CourseCategory,
-    title: "German Language (A1–B2)",
+    title: "German Language (A1-B2)",
     description: "Learn German step-by-step from A1 to B2 level.",
     detail:
       "Structured tracks for exams, workplace German, and daily life in Germany.",

@@ -58,7 +58,7 @@ export default function DashboardProgressPage() {
 
   if (items === null) {
     return (
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-sm">
+      <div className="mx-auto max-w-3xl rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-none">
         <p className="text-sm font-medium text-slate-600">Loading progress…</p>
       </div>
     );
@@ -75,7 +75,7 @@ export default function DashboardProgressPage() {
       </header>
       {error ? <p className="text-sm font-medium text-red-800">{error}</p> : null}
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
+        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
           <p className="text-sm text-slate-600">
             You are not enrolled in any courses yet.{" "}
             <Link href="/courses" className="font-bold text-brand-primary hover:underline">
@@ -87,7 +87,7 @@ export default function DashboardProgressPage() {
       ) : (
         <ul className="space-y-4">
           {items.map((c) => (
-            <li key={c.slug} className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm sm:p-6">
+            <li key={c.slug} className="rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-none sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-bold text-brand-ink">{c.title}</p>

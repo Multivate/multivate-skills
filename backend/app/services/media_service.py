@@ -28,9 +28,10 @@ def _parse_types(csv: str) -> set[str]:
 _ALLOWED_IMAGES = _parse_types(_settings.allowed_image_types)
 _ALLOWED_DOCS = _parse_types(_settings.allowed_document_types)
 _ALLOWED_VIDEOS = _parse_types(_settings.allowed_video_types)
-_ALL_ALLOWED = _ALLOWED_IMAGES | _ALLOWED_DOCS | _ALLOWED_VIDEOS
+_ALLOWED_AUDIO = _parse_types(getattr(_settings, "allowed_audio_types", "audio/mpeg,audio/wav,audio/ogg"))
+_ALL_ALLOWED = _ALLOWED_IMAGES | _ALLOWED_DOCS | _ALLOWED_VIDEOS | _ALLOWED_AUDIO
 
-# Dangerous executable signatures — reject these regardless of reported MIME
+# Dangerous executable signatures - reject these regardless of reported MIME
 _EXEC_MAGIC: list[bytes] = [
     b"MZ",            # Windows PE / DLL
     b"\x7fELF",       # Linux ELF
@@ -49,8 +50,8 @@ _EXEC_MAGIC: list[bytes] = [
 FOLDER_TYPES: dict[str, set[str]] = {
     "avatars": _ALLOWED_IMAGES,
     "mentors": _ALLOWED_IMAGES,
-    "courses": _ALLOWED_IMAGES | _ALLOWED_DOCS | _ALLOWED_VIDEOS,
-    "lessons": _ALLOWED_DOCS | _ALLOWED_VIDEOS,
+    "courses": _ALLOWED_IMAGES | _ALLOWED_DOCS | _ALLOWED_VIDEOS | _ALLOWED_AUDIO,
+    "lessons": _ALLOWED_DOCS | _ALLOWED_VIDEOS | _ALLOWED_AUDIO,
     "resources": _ALLOWED_DOCS,
     "general": _ALL_ALLOWED,
 }
@@ -276,7 +277,7 @@ def delete_media_file(
             detail="You do not have permission to delete this file.",
         )
 
-    # Remove from disk (best-effort — do not abort if the file is already gone)
+    # Remove from disk (best-effort - do not abort if the file is already gone)
     disk_path = _upload_root() / Path(media.relative_path)
     try:
         if disk_path.is_file():

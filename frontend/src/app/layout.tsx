@@ -1,12 +1,19 @@
-import { Inter } from "next/font/google";
+import { Manrope, Syne } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
   variable: "--font-sans",
+});
+
+const syne = Syne({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -22,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={inter.variable} suppressHydrationWarning lang="en">
+    <html className={`${manrope.variable} ${syne.variable}`} suppressHydrationWarning lang="en">
       <body className="min-h-screen font-sans" suppressHydrationWarning>
         {children}
       </body>

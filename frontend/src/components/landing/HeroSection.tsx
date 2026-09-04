@@ -1,115 +1,61 @@
-import { ArrowRight, GraduationCap, TrendingUp, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import heroImage from "../../../public/footer-image.png";
 import { Link } from "@/i18n/navigation";
-
-const HERO_MOCKUP = encodeURI("/landing logo.png");
-
-const avatars = [
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=96&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=96&q=80",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=96&q=80",
-  "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=96&q=80",
-];
 
 export async function HeroSection() {
   const t = await getTranslations("hero");
 
   return (
-    <section className="relative overflow-hidden surface-section">
-      <div className="container-page relative pb-[4.5rem] pt-11 sm:pb-24 sm:pt-14 lg:pb-28 lg:pt-16">
-        <div className="grid items-start gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
-          <div className="max-w-copy lg:max-w-none lg:pr-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200/90 bg-violet-50/90 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-primary sm:text-xs">
-              <span aria-hidden className="text-brand-primary">
-                +
-              </span>
-              {t("badge")}
-            </div>
+    <section className="relative isolate min-h-[min(92vh,52rem)] overflow-hidden bg-brand-navy text-white">
+      <div className="absolute inset-0">
+        <Image
+          src={heroImage}
+          alt=""
+          fill
+          priority
+          className="animate-hero-zoom object-cover object-[center_28%]"
+          sizes="100vw"
+        />
+        <div
+          className="absolute inset-0 bg-[linear-gradient(105deg,rgba(10,15,26,0.92)_0%,rgba(10,15,26,0.78)_42%,rgba(10,15,26,0.45)_100%)]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 opacity-[0.14] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+          aria-hidden
+        />
+      </div>
 
-            <h1 className="heading-display mt-5 text-hero sm:mt-6 lg:mt-7 lg:text-hero-lg">
-              {t("title")}{" "}
-              <span className="text-brand-primary">{t("titleHighlight")}</span>
-            </h1>
+      <div className="container-page relative flex min-h-[min(92vh,52rem)] flex-col justify-end pb-16 pt-28 sm:pb-20 sm:pt-32 lg:justify-center lg:pb-24 lg:pt-28">
+        <div className="max-w-3xl">
+          <p className="animate-fade-up font-display text-[clamp(2.6rem,8vw,5.5rem)] font-extrabold leading-none tracking-[-0.04em] text-white">
+            {t("brand")}
+          </p>
+          <div className="marketing-rule mt-5 animate-rule-grow sm:mt-6" aria-hidden />
 
-            <p className="mt-5 max-w-copy text-[1.05rem] leading-relaxed text-slate-600 sm:text-lg">{t("subtitle")}</p>
+          <h1 className="animate-fade-up-delay mt-7 max-w-[18ch] font-display text-[clamp(1.65rem,3.6vw,2.65rem)] font-semibold leading-[1.15] tracking-tight text-white/95 sm:mt-8">
+            {t("title")}{" "}
+            <span className="text-brand-accent">{t("titleHighlight")}</span>
+          </h1>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
-              <Link href="/register" className="btn-primary-brand sm:min-w-0">
-                {t("ctaPrimary")}
-                <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-              </Link>
-              <Link href="#courses" className="btn-outline-brand sm:w-auto">
-                {t("ctaSecondary")}
-              </Link>
-            </div>
+          <p className="animate-fade-up-delay-2 mt-5 max-w-copy text-base leading-relaxed text-white/75 sm:text-lg">
+            {t("subtitle")}
+          </p>
 
-            <div
-              className="mt-10 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 px-4 py-1 shadow-card sm:px-5 sm:py-0 md:px-6"
-              role="region"
-              aria-label={t("trustedAria")}
-            >
-              <div className="flex flex-col divide-y divide-slate-200 sm:flex-row sm:divide-x sm:divide-y-0 sm:divide-slate-200">
-                <div className="flex justify-center py-4 sm:shrink-0 sm:justify-start sm:py-4 sm:pe-4 md:pe-5">
-                  <div className="flex -space-x-2.5">
-                    {avatars.map((src, i) => (
-                      <span
-                        key={src}
-                        className="relative inline-flex h-10 w-10 overflow-hidden rounded-full ring-2 ring-white"
-                        style={{ zIndex: avatars.length - i }}
-                      >
-                        <Image src={src} alt="" width={40} height={40} className="object-cover" />
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-2.5 py-4 sm:flex-1 sm:justify-center sm:py-4 sm:px-3 md:px-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-brand-primary">
-                    <Users className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0 text-left">
-                    <p className="text-sm font-bold text-brand-ink">{t("statLearners")}</p>
-                    <p className="text-xs text-slate-500">{t("statLearnersLabel")}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-2.5 py-4 sm:flex-1 sm:justify-center sm:py-4 sm:px-3 md:px-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-brand-primary">
-                    <GraduationCap className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
-                  </span>
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-brand-ink">{t("statInstructors")}</p>
-                    <p className="text-xs text-slate-500">{t("statInstructorsLabel")}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-2.5 py-4 sm:flex-1 sm:justify-center sm:py-4 sm:ps-3 sm:pe-1 md:ps-4 md:pe-2">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                    <TrendingUp className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
-                  </span>
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-brand-ink">{t("statRate")}</p>
-                    <p className="text-xs text-slate-500">{t("statRateLabel")}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
-            <div className="relative overflow-hidden rounded-[1.25rem] bg-white shadow-lift ring-1 ring-slate-200/80 sm:rounded-3xl">
-              <div className="relative aspect-[4/3] w-full lg:aspect-[5/4]">
-                <Image
-                  src={HERO_MOCKUP}
-                  alt={t("mockupAlt")}
-                  fill
-                  className="object-contain object-center p-2 sm:p-3"
-                  priority
-                  sizes="(min-width: 1024px) 560px, 100vw"
-                />
-              </div>
-            </div>
+          <div className="animate-fade-up-delay-2 mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <Link href="/register" className="btn-primary-brand sm:min-w-0">
+              {t("ctaPrimary")}
+              <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.25} />
+            </Link>
+            <Link href="#courses" className="btn-outline-light sm:w-auto">
+              {t("ctaSecondary")}
+            </Link>
           </div>
         </div>
       </div>

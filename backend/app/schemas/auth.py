@@ -32,6 +32,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class LoginCodeStartRequest(BaseModel):
+    email: EmailStr
+
+
 class TokenPair(BaseModel):
     access_token: str
     refresh_token: str

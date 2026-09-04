@@ -170,7 +170,7 @@ The frontend ships with **next-intl** and locale-prefixed routes for **English**
 ## Production notes
 
 - Set **`ENVIRONMENT=production`**, a strong **`SECRET_KEY`**, and disable unsafe dev-only behavior as described in `backend/README.md`.
-- **Primary production:** Ubuntu server + Docker Compose + Nginx + SSL — see **`DEPLOYMENT.md`**.
+- **Primary production:** Ubuntu server + Docker Compose + Nginx + SSL - see **`DEPLOYMENT.md`**.
 - Local dev: `docker compose up -d db redis` then run API and frontend separately (see Quick start).
 - Run database migrations with **Alembic** before serving traffic in production; the API container runs `alembic upgrade head` on start.
 

@@ -4,7 +4,11 @@ import { GripVertical, Loader2, Plus, Trash2, Upload as UploadIcon, Video, Link2
 import { Upload } from "@/components/ui/Upload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedVideoPlayer } from "@/components/player/ProtectedVideoPlayer";
-import { formInputClass, formInputCompactClass, formLabelClass } from "@/lib/form-styles";
+import {
+  StudioPanel,
+  studioFieldClass,
+  studioLabelClass,
+} from "@/components/studio/studio-ui";
 
 type Section = { id: string; title: string; position: number };
 type Resource = { id: string; title: string; file_type: string; file_size_bytes: number };
@@ -67,9 +71,7 @@ export function CourseStudioCurriculum({
   slug,
   course,
   busy,
-  uploadPct,
   setBusy,
-  setUploadPct,
   setError,
   loadCourse,
   showToast,
@@ -80,7 +82,6 @@ export function CourseStudioCurriculum({
   const [newLessonSection, setNewLessonSection] = useState<string>("");
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const dragLesson = useRef<string | null>(null);
-
 
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
@@ -161,7 +162,7 @@ export function CourseStudioCurriculum({
       lessons: course.lessons.filter((l) => l.section_id === s.id).sort((a, b) => a.position - b.position),
     }));
     const loose = course.lessons.filter((l) => !l.section_id).sort((a, b) => a.position - b.position);
-    if (loose.length) rows.unshift({ key: "loose", title: "Getting started", lessons: loose });
+    if (loose.length) rows.unshift({ key: "loose", title: "Unsectioned", lessons: loose });
     return rows;
   }, [course]);
 
@@ -212,7 +213,7 @@ export function CourseStudioCurriculum({
       setNewLessonTitle("");
       await loadCourse(slug);
       setSelectedLessonId((data as { id: string }).id);
-      showToast("Lesson added. Now add your video.");
+      showToast("Lesson added");
     } finally {
       setBusy(false);
     }
@@ -264,8 +265,6 @@ export function CourseStudioCurriculum({
     }
   };
 
-
-
   const saveVideoLink = async () => {
     if (!activeLesson) return;
     const link = videoLink.trim();
@@ -301,193 +300,225 @@ export function CourseStudioCurriculum({
 
   const sectionOptions = useMemo(() => {
     const opts = course.sections.map((s) => ({ value: s.id, label: s.title }));
-    return [{ value: "loose", label: "Getting started (no section)" }, ...opts];
+    return [{ value: "loose", label: "Unsectioned" }, ...opts];
   }, [course.sections]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-violet-200/80 bg-violet-50/60 px-4 py-3 text-sm text-slate-700 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-slate-300">
-        Build your course in sections. Each lesson needs a video: upload a file or paste a YouTube, Vimeo, or direct link. Students watch inside the app; videos are not downloadable.
-      </div>
+    <div className="space-y-6">
+      <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
+        Organize the course into sections, then add lessons. Each lesson needs a video - upload a file or paste a
+        YouTube, Vimeo, or direct link. Learners watch inside Multivate; downloads are disabled.
+      </p>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-        <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div>
-            <h3 className="font-bold text-brand-ink">Sections & lessons</h3>
-            <p className="mt-1 text-xs text-slate-500">Drag lessons to reorder. Click a lesson to edit its video.</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <input
-              value={newSectionTitle}
-              onChange={(e) => setNewSectionTitle(e.target.value)}
-              placeholder="Section name, e.g. Introduction"
-              className={`min-w-[200px] flex-1 ${formInputCompactClass}`}
-            />
-            <button
-              type="button"
-              disabled={busy || !newSectionTitle.trim()}
-              onClick={() => void addSection()}
-              className="inline-flex items-center gap-1 rounded-lg bg-brand-accent px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" /> Add section
-            </button>
-          </div>
-
-          <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-            <p className="text-xs font-bold uppercase tracking-wide text-brand-accent">Add a lesson</p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <select
-                value={newLessonSection}
-                onChange={(e) => setNewLessonSection(e.target.value)}
-                className={`sm:w-44 ${formInputCompactClass}`}
-              >
-                <option value="">Pick a section</option>
-                {sectionOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <StudioPanel
+          title="Outline"
+          description="Drag to reorder. Select a lesson to edit."
+          className="xl:col-span-7"
+        >
+          <div className="space-y-5">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
-                value={newLessonTitle}
-                onChange={(e) => setNewLessonTitle(e.target.value)}
-                placeholder="Lesson title"
-                className={`flex-1 ${formInputCompactClass}`}
+                value={newSectionTitle}
+                onChange={(e) => setNewSectionTitle(e.target.value)}
+                placeholder="New section title"
+                className={`min-w-0 flex-1 ${studioFieldClass} !mt-0`}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") void addLesson();
+                  if (e.key === "Enter") void addSection();
                 }}
               />
               <button
                 type="button"
-                disabled={busy || !newLessonTitle.trim()}
-                onClick={() => void addLesson()}
-                className="inline-flex items-center justify-center gap-1 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                disabled={busy || !newSectionTitle.trim()}
+                onClick={() => void addSection()}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 border border-brand-ink bg-brand-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 disabled:opacity-50"
               >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add lesson
+                <Plus className="h-4 w-4" aria-hidden />
+                Section
               </button>
             </div>
-          </div>
 
-          {groupedLessons.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700">
-              <Video className="mx-auto h-10 w-10 text-brand-accent" />
-              <p className="mt-3 text-sm font-semibold text-brand-ink">No lessons yet</p>
-              <p className="mt-1 text-sm text-slate-500">Add a section above, then create your first lesson.</p>
-            </div>
-          ) : (
-            groupedLessons.map((group) => (
-              <div key={group.key} className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="font-bold text-brand-ink">{group.title}</h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewLessonSection(group.key);
-                      document.getElementById("studio-new-lesson-title")?.focus();
-                    }}
-                    className="text-xs font-bold text-brand-primary hover:underline"
-                  >
-                    + Lesson here
-                  </button>
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {group.lessons.map((lesson) => (
-                    <li
-                      key={lesson.id}
-                      draggable
-                      onDragStart={() => {
-                        dragLesson.current = lesson.id;
-                      }}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => {
-                        if (!dragLesson.current) return;
-                        const ids = [...course.lessons].sort((a, b) => a.position - b.position).map((l) => l.id);
-                        const from = ids.indexOf(dragLesson.current);
-                        const to = ids.indexOf(lesson.id);
-                        if (from < 0 || to < 0) return;
-                        ids.splice(from, 1);
-                        ids.splice(to, 0, dragLesson.current);
-                        void reorderLessons(ids);
-                      }}
-                      onClick={() => setSelectedLessonId(lesson.id)}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition ${
-                        (selectedLessonId ?? activeLesson?.id) === lesson.id
-                          ? "border-brand-primary bg-violet-50 ring-1 ring-brand-primary/20 dark:bg-violet-950/30"
-                          : "border-slate-200 bg-white hover:border-brand-accent/40 dark:border-slate-700 dark:bg-slate-900"
-                      }`}
-                    >
-                      <GripVertical className="h-4 w-4 shrink-0 text-slate-400" />
-                      <Video className="h-4 w-4 shrink-0 text-brand-accent" />
-                      <span className="flex-1 font-medium">{lesson.title}</span>
-                      {lesson.video_url ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">Video</span>
-                      ) : (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-900">Needs video</span>
-                      )}
-                    </li>
+            <div className="border border-brand-ink/10 bg-brand-muted/30 p-4">
+              <p className={studioLabelClass}>Add lesson</p>
+              <div className="mt-3 flex flex-col gap-2 lg:flex-row">
+                <select
+                  value={newLessonSection}
+                  onChange={(e) => setNewLessonSection(e.target.value)}
+                  className={`lg:w-48 ${studioFieldClass} !mt-0`}
+                >
+                  <option value="">Section…</option>
+                  {sectionOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
                   ))}
-                </ul>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          {activeLesson ? (
-            <>
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-bold text-brand-ink">Lesson video</h3>
+                </select>
+                <input
+                  id="studio-new-lesson-title"
+                  value={newLessonTitle}
+                  onChange={(e) => setNewLessonTitle(e.target.value)}
+                  placeholder="Lesson title"
+                  className={`min-w-0 flex-1 ${studioFieldClass} !mt-0`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void addLesson();
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={() => void deleteLesson(activeLesson.id)}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                  disabled={busy || !newLessonTitle.trim()}
+                  onClick={() => void addLesson()}
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-accent-dark disabled:opacity-50"
                 >
-                  <Trash2 className="h-3.5 w-3.5" /> Remove
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
+                  Lesson
                 </button>
               </div>
+            </div>
 
-              <label className={formLabelClass}>
-                Lesson title
-                <input id="studio-new-lesson-title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className={formInputClass} />
+            {groupedLessons.length === 0 ? (
+              <div className="border border-dashed border-brand-ink/15 px-6 py-14 text-center">
+                <p className="font-display text-xl font-semibold text-brand-ink">Start the outline</p>
+                <p className="mx-auto mt-2 max-w-sm text-sm text-brand-ink/55">
+                  Add a section, then create your first lesson. You can reorder anytime.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {groupedLessons.map((group) => (
+                  <div key={group.key}>
+                    <div className="flex items-end justify-between gap-3 border-b border-brand-ink/10 pb-2">
+                      <h3 className="font-display text-base font-semibold text-brand-ink">{group.title}</h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewLessonSection(group.key);
+                          document.getElementById("studio-new-lesson-title")?.focus();
+                        }}
+                        className="text-xs font-semibold text-brand-accent hover:text-brand-accent-dark"
+                      >
+                        Add lesson
+                      </button>
+                    </div>
+                    <ul className="mt-2 divide-y divide-brand-ink/10">
+                      {group.lessons.length === 0 ? (
+                        <li className="py-4 text-sm text-brand-ink/45">No lessons in this section yet.</li>
+                      ) : (
+                        group.lessons.map((lesson) => {
+                          const selected = (selectedLessonId ?? activeLesson?.id) === lesson.id;
+                          return (
+                            <li
+                              key={lesson.id}
+                              draggable
+                              onDragStart={() => {
+                                dragLesson.current = lesson.id;
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() => {
+                                if (!dragLesson.current) return;
+                                const ids = [...course.lessons]
+                                  .sort((a, b) => a.position - b.position)
+                                  .map((l) => l.id);
+                                const from = ids.indexOf(dragLesson.current);
+                                const to = ids.indexOf(lesson.id);
+                                if (from < 0 || to < 0) return;
+                                ids.splice(from, 1);
+                                ids.splice(to, 0, dragLesson.current);
+                                void reorderLessons(ids);
+                              }}
+                              onClick={() => setSelectedLessonId(lesson.id)}
+                              className={`flex cursor-pointer items-center gap-3 py-3 transition ${
+                                selected ? "bg-brand-muted/80" : "hover:bg-brand-muted/40"
+                              }`}
+                            >
+                              <GripVertical className="h-4 w-4 shrink-0 text-brand-ink/30" aria-hidden />
+                              <Video className="h-4 w-4 shrink-0 text-brand-ink/45" aria-hidden />
+                              <span className="min-w-0 flex-1 truncate text-sm font-medium text-brand-ink">
+                                {lesson.title}
+                              </span>
+                              <span
+                                className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] ${
+                                  lesson.video_url ? "text-emerald-700" : "text-amber-800"
+                                }`}
+                              >
+                                {lesson.video_url ? "Video" : "Needs video"}
+                              </span>
+                            </li>
+                          );
+                        })
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </StudioPanel>
+
+        <StudioPanel
+          title={activeLesson ? "Lesson editor" : "Lesson editor"}
+          description={activeLesson ? "Video, notes, and preview settings" : "Select a lesson from the outline"}
+          action={
+            activeLesson ? (
+              <button
+                type="button"
+                onClick={() => void deleteLesson(activeLesson.id)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 transition hover:text-red-900"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                Remove
+              </button>
+            ) : undefined
+          }
+          className="xl:col-span-5"
+        >
+          {activeLesson ? (
+            <div className="space-y-5">
+              <label className="block">
+                <span className={studioLabelClass}>Title</span>
+                <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className={studioFieldClass} />
               </label>
 
-              <label className={formLabelClass}>
-                Notes for students (optional)
-                <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} className={formInputClass} />
+              <label className="block">
+                <span className={studioLabelClass}>Learner notes</span>
+                <textarea
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value)}
+                  rows={3}
+                  className={`${studioFieldClass} min-h-[5rem] resize-y`}
+                />
               </label>
 
               <div>
-                <p className="text-sm font-semibold text-slate-800">How do you want to add video?</p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <p className={studioLabelClass}>Video source</p>
+                <div className="mt-2 grid grid-cols-2 gap-1 border border-brand-ink/10 bg-brand-muted/40 p-1 sm:grid-cols-4">
                   {(
                     [
-                      ["upload", "Upload file", Upload],
+                      ["upload", "Upload", UploadIcon],
                       ["youtube", "YouTube", Link2],
                       ["vimeo", "Vimeo", Link2],
-                      ["url", "Video link", Link2],
+                      ["url", "Link", Link2],
                     ] as const
-                  ).map(([value, label, Icon]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => {
-                        setVideoSource(value);
-                        if (activeLesson && activeLesson.video_source !== value) {
-                          void updateLesson(activeLesson.id, { video_source: value, lesson_type: "video" });
-                        }
-                      }}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                        videoSource === value
-                          ? "bg-brand-primary text-white shadow-sm"
-                          : "bg-slate-100 text-slate-600 hover:bg-violet-50 hover:text-brand-primary dark:bg-slate-800 dark:text-slate-300"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {label}
-                    </button>
-                  ))}
+                  ).map(([value, label, Icon]) => {
+                    const active = videoSource === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setVideoSource(value);
+                          if (activeLesson && activeLesson.video_source !== value) {
+                            void updateLesson(activeLesson.id, { video_source: value, lesson_type: "video" });
+                          }
+                        }}
+                        className={`inline-flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold transition ${
+                          active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" aria-hidden />
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -497,10 +528,11 @@ export function CourseStudioCurriculum({
                   subfolder={`${course.id}/${activeLesson.id}`}
                   uploadUrl={`/api/studio/lessons/${activeLesson.id}/video`}
                   accept="video/mp4,video/webm,video/quicktime"
-                  label="Drop or click to upload lesson video"
-                  hint={activeLesson.video_url && activeLesson.video_source === "upload"
-                    ? "Video uploaded. Upload/Drop a new file to replace."
-                    : "MP4, WebM, or MOV, up to 512 MB"
+                  label="Drop or click to upload video"
+                  hint={
+                    activeLesson.video_url && activeLesson.video_source === "upload"
+                      ? "Video on file. Upload again to replace."
+                      : "MP4, WebM, or MOV · up to 512 MB"
                   }
                   onSuccess={async () => {
                     await loadCourse(slug);
@@ -509,8 +541,14 @@ export function CourseStudioCurriculum({
                   onError={(msg) => setError(msg)}
                 />
               ) : (
-                <label className={formLabelClass}>
-                  {videoSource === "youtube" ? "YouTube link" : videoSource === "vimeo" ? "Vimeo link" : "Direct video link (MP4/WebM)"}
+                <label className="block">
+                  <span className={studioLabelClass}>
+                    {videoSource === "youtube"
+                      ? "YouTube URL"
+                      : videoSource === "vimeo"
+                        ? "Vimeo URL"
+                        : "Direct video URL"}
+                  </span>
                   <input
                     value={videoLink}
                     onChange={(e) => setVideoLink(e.target.value)}
@@ -521,68 +559,63 @@ export function CourseStudioCurriculum({
                           ? "https://vimeo.com/…"
                           : "https://…/lesson.mp4"
                     }
-                    className={formInputClass}
+                    className={studioFieldClass}
                   />
                 </label>
               )}
-
-
 
               {videoSource !== "upload" ? (
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => void saveVideoLink()}
-                  className="w-full rounded-xl bg-brand-accent py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                  className="w-full border border-brand-ink bg-brand-ink py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 disabled:opacity-50"
                 >
                   Save video link
                 </button>
               ) : null}
 
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-brand-ink">
                 <input
                   type="checkbox"
                   checked={isPreviewable}
                   onChange={(e) => setIsPreviewable(e.target.checked)}
-                  className="rounded border-slate-300 text-brand-accent"
+                  className="h-4 w-4 border-brand-ink/25 text-brand-accent focus:ring-brand-accent/30"
                 />
-                Allow free preview before enroll
+                Free preview before enrollment
               </label>
 
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void saveLessonDetails()}
-                className="w-full rounded-xl border border-brand-primary/30 bg-violet-50 py-2.5 text-sm font-semibold text-brand-primary transition hover:bg-violet-100 disabled:opacity-50"
+                className="w-full border border-brand-ink/15 bg-white py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-muted/60 disabled:opacity-50"
               >
                 Save lesson details
               </button>
 
               <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">Preview</p>
+                <p className={`${studioLabelClass} mb-2`}>Preview</p>
                 <ProtectedVideoPlayer
                   src={previewStream ?? previewDirect}
                   embedUrl={previewEmbed}
                   title={activeLesson.title}
                 />
               </div>
-            </>
+            </div>
           ) : (
-            <div className="flex min-h-[320px] flex-col items-center justify-center px-4 text-center">
-              <Video className="h-12 w-12 text-brand-accent" />
-              <p className="mt-4 text-sm font-semibold text-brand-ink">Select or create a lesson</p>
-              <p className="mt-2 text-sm text-slate-500">Add a lesson on the left, then upload a video or paste a link here.</p>
+            <div className="flex min-h-[280px] flex-col items-center justify-center px-4 text-center">
+              <p className="font-display text-lg font-semibold text-brand-ink">No lesson selected</p>
+              <p className="mt-2 max-w-xs text-sm text-brand-ink/55">
+                Create a lesson in the outline, then return here to attach video and notes.
+              </p>
             </div>
           )}
-        </div>
+        </StudioPanel>
       </div>
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onContinueToReview}
-          className="rounded-xl border border-brand-primary/30 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-brand-primary transition hover:bg-violet-100"
-        >
+      <div className="flex justify-end border-t border-brand-ink/10 pt-6">
+        <button type="button" onClick={onContinueToReview} className="btn-cta-accent inline-flex items-center gap-2">
           Continue to review
         </button>
       </div>

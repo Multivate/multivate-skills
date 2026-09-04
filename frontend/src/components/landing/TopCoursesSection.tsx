@@ -44,16 +44,17 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
   const useGrid = courses.length <= 4;
 
   return (
-    <section id="courses" className="section-y surface-section">
+    <section id="courses" className="section-y bg-brand-paper">
       <div className="container-page">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="max-w-3xl">
-            <h2 className="heading-section text-2xl sm:text-3xl lg:text-[2rem]">{tTop("heading")}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{tTop("sub")}</p>
+            <div className="marketing-rule mb-5" aria-hidden />
+            <h2 className="heading-section text-3xl sm:text-4xl">{tTop("heading")}</h2>
+            <p className="mt-4 text-base leading-relaxed text-brand-ink/65">{tTop("sub")}</p>
           </div>
           <Link
             href="/courses"
-            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-primary transition hover:text-brand-primary-dark"
+            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark"
           >
             {tCommon("viewAllCourses")}
             <ArrowRight className="h-4 w-4" strokeWidth={2.25} />

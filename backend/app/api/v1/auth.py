@@ -13,6 +13,7 @@ from app.schemas.auth import (
     ForgotPasswordStartRequest,
     ForgotPasswordStartResponse,
     InstructorRegisterRequest,
+    LoginCodeStartRequest,
     LoginMfaRequired,
     LoginRequest,
     MentorRegisterRequest,
@@ -90,8 +91,17 @@ def login_account(
     data: LoginRequest,
     db: Annotated[Session, Depends(get_db)],
 ) -> AuthResponse | LoginMfaRequired:
-    """Returns session tokens, or `{ mfa_required, mfa_token, email_masked }` when 2FA is enabled."""
+    """Password sign-in. Returns tokens, or MFA challenge only if the user enabled email 2FA."""
     return auth_service.login_user(db, data)
+
+
+@router.post("/login/code/start", response_model=LoginMfaRequired)
+def login_code_start(
+    data: LoginCodeStartRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> LoginMfaRequired:
+    """Start passwordless sign-in with an email one-time code."""
+    return auth_service.start_code_login(db, str(data.email))
 
 
 @router.get("/oauth/google/start", response_model=OAuthStartResponse)

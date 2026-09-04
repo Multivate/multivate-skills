@@ -1,28 +1,41 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { PlusCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  StudioPageHeader,
+  StudioQuietLink,
+  StudioStatusPill,
+} from "@/components/studio/studio-ui";
 import { resolveCourseImageUrl } from "@/lib/course-image";
 
 type Row = {
   slug: string;
   title: string;
   status: string;
+  format?: string;
   lessons_count: number;
   image_url: string;
   updated_at: string;
 };
 
-function statusLabel(s: string) {
-  if (s === "published") return "Live";
-  if (s === "pending_review") return "In review";
-  return "Draft";
+function formatUpdated(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
 }
 
 export default function InstructorStudioListPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,73 +55,151 @@ export default function InstructorStudioListPage() {
     };
   }, []);
 
-  return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-extrabold text-brand-ink sm:text-2xl">Course studio</h1>
-          <p className="mt-1 text-sm text-slate-600">Build, organize, and submit courses for review.</p>
-        </div>
-        <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand inline-flex !min-w-0 items-center gap-2 !py-2.5 text-sm">
-          <PlusCircle className="h-4 w-4" />
-          New course
-        </Link>
-      </div>
+  const deleteCourse = async (row: Row) => {
+    const statusLabel =
+      row.status === "published" ? "live" : row.status === "pending_review" ? "in review" : "draft";
+    const ok = window.confirm(
+      `Delete "${row.title}" permanently?\n\nThis ${statusLabel} course and its content will be removed. This cannot be undone.`,
+    );
+    if (!ok) return;
+    setDeletingSlug(row.slug);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/studio/courses/${encodeURIComponent(row.slug)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json().catch(() => null);
+        setErr(typeof data?.detail === "string" ? data.detail : "We couldn't delete that course.");
+        return;
+      }
+      setRows((prev) => (prev ? prev.filter((r) => r.slug !== row.slug) : prev));
+    } finally {
+      setDeletingSlug(null);
+    }
+  };
 
-      {err ? <p className="text-sm text-red-800">{err}</p> : null}
-      {rows === null ? <p className="text-sm text-slate-500">Loading…</p> : null}
+  return (
+    <div className="mx-auto max-w-[90rem] space-y-10">
+      <StudioPageHeader
+        eyebrow="Instructor"
+        title="Course studio"
+        description="Draft, refine, and submit courses for Multivate review."
+        action={
+          <Link
+            href="/dashboard/instructor/studio/new"
+            className="btn-cta-accent inline-flex !min-h-0 items-center gap-2 !px-5 !py-2.5 text-sm"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            New course
+          </Link>
+        }
+      />
+
+      {err ? (
+        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+          {err}
+        </div>
+      ) : null}
+
+      {rows === null ? (
+        <p className="text-sm text-brand-ink/50">Loading your courses…</p>
+      ) : null}
 
       {rows && rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center">
-          <p className="text-sm text-slate-600">You have not created a course yet.</p>
-          <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand mt-4 inline-flex !min-w-0 text-sm">
-            Start your first course
+        <div className="border border-brand-ink/10 bg-white px-6 py-16 text-center sm:px-10">
+          <p className="tag-overline">Empty studio</p>
+          <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl">
+            Build your first course
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-brand-ink/60">
+            Start with the title and outcomes, add a cover, then shape the curriculum lesson by lesson.
+          </p>
+          <Link
+            href="/dashboard/instructor/studio/new"
+            className="btn-cta-accent mt-8 inline-flex !min-h-0 items-center gap-2 !px-5 !py-2.5 text-sm"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Create course
           </Link>
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {rows?.map((row) => {
-          const img = resolveCourseImageUrl(row.image_url);
-          return (
-            <div
-              key={row.slug}
-              className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-brand-primary/30 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-            >
-              <Link href={`/dashboard/instructor/studio/${row.slug}`} className="block">
-                <div className="relative aspect-video bg-slate-100">
-                  {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-slate-400">No cover yet</div>
-                  )}
-                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-bold text-slate-700">
-                    {statusLabel(row.status)}
-                  </span>
-                </div>
-              </Link>
-              <div className="p-4">
-                <Link href={`/dashboard/instructor/studio/${row.slug}`} className="font-bold text-brand-ink group-hover:text-brand-primary">
-                  {row.title}
-                </Link>
-                <p className="mt-1 text-xs text-slate-500">{row.lessons_count} lessons</p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <Link href={`/dashboard/instructor/studio/${row.slug}`} className="text-xs font-bold text-brand-primary hover:underline">
-                    Edit
-                  </Link>
-                  <Link
-                    href={row.status === "published" ? `/learn/${row.slug}` : `/learn/${row.slug}?preview=1`}
-                    className="text-xs font-bold text-brand-accent hover:underline"
-                  >
-                    {row.status === "published" ? "Watch" : "Preview"}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {rows && rows.length > 0 ? (
+        <div className="border border-brand-ink/10 bg-white">
+          <div className="hidden grid-cols-[minmax(0,1.4fr)_7rem_6rem_6rem_8rem_10rem] gap-4 border-b border-brand-ink/10 px-5 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45 sm:grid sm:px-6">
+            <span>Course</span>
+            <span>Status</span>
+            <span>Format</span>
+            <span>Items</span>
+            <span>Updated</span>
+            <span className="text-right">Actions</span>
+          </div>
+          <ul className="divide-y divide-brand-ink/10">
+            {rows.map((row) => {
+              const img = resolveCourseImageUrl(row.image_url);
+              const isAudio = row.format === "audio";
+              const deleting = deletingSlug === row.slug;
+              return (
+                <li
+                  key={row.slug}
+                  className="grid grid-cols-1 gap-4 px-5 py-4 transition hover:bg-brand-muted/40 sm:grid-cols-[minmax(0,1.4fr)_7rem_6rem_6rem_8rem_10rem] sm:items-center sm:gap-4 sm:px-6"
+                >
+                  <div className="flex min-w-0 items-center gap-4">
+                    <Link
+                      href={`/dashboard/instructor/studio/${row.slug}`}
+                      className="relative h-14 w-20 shrink-0 overflow-hidden bg-brand-muted"
+                    >
+                      {img ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={img} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-wide text-brand-ink/35">
+                          No cover
+                        </span>
+                      )}
+                    </Link>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/dashboard/instructor/studio/${row.slug}`}
+                        className="block truncate font-display text-base font-semibold text-brand-ink hover:text-brand-accent"
+                      >
+                        {row.title}
+                      </Link>
+                      <p className="mt-0.5 truncate text-xs text-brand-ink/45">{row.slug}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <StudioStatusPill status={row.status} />
+                  </div>
+                  <p className="text-sm capitalize text-brand-ink/70">{isAudio ? "Audio" : "Video"}</p>
+                  <p className="text-sm tabular-nums text-brand-ink/70">
+                    {row.lessons_count} {isAudio ? "phrases" : "lessons"}
+                  </p>
+                  <p className="text-sm text-brand-ink/55">{formatUpdated(row.updated_at)}</p>
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                    <StudioQuietLink href={`/dashboard/instructor/studio/${row.slug}`}>Edit</StudioQuietLink>
+                    <StudioQuietLink
+                      href={row.status === "published" ? `/learn/${row.slug}` : `/learn/${row.slug}?preview=1`}
+                    >
+                      {row.status === "published" ? "Open" : "Preview"}
+                    </StudioQuietLink>
+                    <button
+                      type="button"
+                      disabled={deleting || deletingSlug !== null}
+                      onClick={() => void deleteCourse(row)}
+                      className="text-sm font-semibold text-red-700 transition hover:text-red-900 disabled:opacity-50"
+                    >
+                      {deleting ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

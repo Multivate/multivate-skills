@@ -3,20 +3,26 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  --brand-ink: #0e1420;
+  --brand-paper: #faf8f5;
+  --brand-muted: #f3f1ec;
+  --brand-accent: #e8790a;
+  --brand-line: rgba(14, 20, 32, 0.1);
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-html.dark {
-  color-scheme: dark;
+body {
+  @apply bg-brand-paper text-brand-ink antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  @apply bg-white text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200;
-  text-rendering: optimizeLegibility;
+::selection {
+  background: color-mix(in srgb, var(--brand-accent) 28%, white);
+  color: var(--brand-ink);
 }
 
 @layer components {
@@ -25,44 +31,69 @@ body {
   }
 
   .heading-display {
-    @apply text-balance font-extrabold tracking-tight text-brand-ink dark:text-slate-100;
+    @apply font-display text-balance font-bold tracking-tight text-brand-ink;
   }
 
   .heading-section {
-    @apply text-balance font-bold tracking-tight text-brand-ink dark:text-slate-100;
+    @apply font-display text-balance font-bold tracking-tight text-brand-ink;
   }
 
   .btn-primary-brand {
-    @apply inline-flex min-h-[3rem] min-w-[10rem] items-center justify-center gap-2 rounded-xl bg-brand-primary px-7 py-3 text-sm font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition hover:bg-brand-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary;
+    @apply inline-flex min-h-[3rem] min-w-[10rem] items-center justify-center gap-2 rounded-md bg-brand-accent px-7 py-3 text-sm font-semibold text-white transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent;
   }
 
   .btn-outline-brand {
-    @apply inline-flex min-h-[3rem] items-center justify-center rounded-xl border-2 border-brand-primary bg-white px-7 py-3 text-sm font-semibold text-brand-primary transition hover:bg-violet-50/80 dark:border-violet-400 dark:bg-slate-900 dark:text-violet-200 dark:hover:bg-slate-800;
+    @apply inline-flex min-h-[3rem] items-center justify-center rounded-md border border-brand-ink/20 bg-transparent px-7 py-3 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white;
   }
 
-  /** Primary CTA — orange accent (auth forms, high-intent actions) */
+  .btn-outline-light {
+    @apply inline-flex min-h-[3rem] items-center justify-center rounded-md border border-white/55 bg-transparent px-7 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-brand-ink;
+  }
+
   .btn-cta-accent {
-    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-xl bg-brand-accent px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-md bg-brand-accent px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-auth-social {
-    @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800;
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50;
   }
 
   .section-y {
-    @apply py-[4.5rem] sm:py-24 lg:py-28;
+    @apply py-20 sm:py-24 lg:py-28;
   }
 
   .tag-overline {
-    @apply text-[11px] font-bold uppercase tracking-[0.22em];
+    @apply font-sans text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-brand-accent;
   }
 
-  /** Crisp floating panel on photos (no heavy blur). */
   .float-widget {
-    @apply rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-widget sm:p-4 dark:border-slate-800/90 dark:bg-slate-900 dark:shadow-none;
+    @apply rounded-md border border-slate-200/90 bg-white p-3.5 shadow-widget sm:p-4;
   }
 
   .surface-section {
-    @apply bg-brand-muted dark:bg-slate-900/80;
+    @apply bg-brand-muted;
+  }
+
+  .marketing-rule {
+    @apply h-px w-12 origin-left bg-brand-accent;
+  }
+
+  .link-quiet {
+    @apply text-sm font-medium text-brand-ink/70 transition hover:text-brand-ink;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-up,
+  .animate-fade-up-delay,
+  .animate-fade-up-delay-2,
+  .animate-fade-in,
+  .animate-hero-zoom,
+  .animate-rule-grow {
+    animation: none !important;
   }
 }

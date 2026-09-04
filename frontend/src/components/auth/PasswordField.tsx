@@ -27,12 +27,12 @@ export function PasswordField({
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-semibold text-slate-800">
+      <label htmlFor={id} className="block text-sm font-semibold text-brand-ink">
         {label}
       </label>
       <div className="relative mt-1.5">
         <Icon
-          className="pointer-events-none absolute left-3.5 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-brand-ink/40"
           strokeWidth={2}
           aria-hidden
         />
@@ -45,12 +45,12 @@ export function PasswordField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/25"
+          className="w-full rounded-md border border-brand-ink/15 bg-white py-3 pl-11 pr-12 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
         />
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+          className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-brand-ink/50 transition hover:bg-brand-muted hover:text-brand-ink"
           aria-label={show ? "Hide password" : "Show password"}
         >
           {show ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}

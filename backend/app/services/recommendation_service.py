@@ -194,7 +194,7 @@ def list_recommendations(db: Session, user_id: UUID, *, limit: int = DEFAULT_LIM
 
     top = scored[:limit]
     if profile and top and top[0][0] <= 0:
-        logger.info("No strong profile matches for user_id=%s — falling back to catalog order", user_id)
+        logger.info("No strong profile matches for user_id=%s - falling back to catalog order", user_id)
         top = [(0.0, c, []) for c in candidates[:limit]]
 
     out: list[RecommendedCourseOut] = []

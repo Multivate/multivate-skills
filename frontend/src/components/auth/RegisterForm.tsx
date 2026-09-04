@@ -3,7 +3,7 @@
 import { Clock, GraduationCap, Mail, MessageSquareText, Target, User, Users } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AUTH_IMAGES } from "@/components/auth/auth-media";
 import { AuthBrandBlock, AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
@@ -14,6 +14,7 @@ import { PasswordField } from "@/components/auth/PasswordField";
 import { SuggestionChipsField } from "@/components/auth/SuggestionChipsField";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "@/i18n/navigation";
+import { hardNavigate } from "@/lib/auth-navigation";
 import type { UserRole } from "@/types/user";
 
 const TOTAL_STEPS = 4;
@@ -25,7 +26,6 @@ export function RegisterForm() {
   const tLearn = useTranslations("dashboard.learningProfile");
   const tTeach = useTranslations("dashboard.teachingProfile");
   const { registerStart, registerVerify, user, loading } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
@@ -52,13 +52,13 @@ export function RegisterForm() {
   const [teachingFormats, setTeachingFormats] = useState("");
 
   const inputClass =
-    "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/25";
-  const labelClass = "block text-sm font-semibold text-slate-800";
+    "mt-1.5 w-full rounded-md border border-brand-ink/15 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+  const labelClass = "block text-sm font-semibold text-brand-ink";
 
   useEffect(() => {
     if (loading || !user || !pathname.includes("/register")) return;
-    router.replace("/dashboard");
-  }, [loading, user, router, pathname]);
+    hardNavigate("/dashboard", locale);
+  }, [loading, user, locale, pathname]);
 
   useEffect(() => {
     const intent = searchParams.get("intent");
@@ -277,7 +277,7 @@ export function RegisterForm() {
       setSignupSession(null);
       setOtpCode("");
       setSuccess(true);
-      router.refresh();
+      hardNavigate("/dashboard", locale);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errGeneric"));
     } finally {
@@ -302,10 +302,10 @@ export function RegisterForm() {
           : t("step4Hint");
 
   const navBtnClass =
-    "inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-brand-ink shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
+    "inline-flex min-h-[2.75rem] items-center justify-center rounded-md border border-brand-ink/15 bg-white px-5 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white";
 
   const questionnaireShell =
-    "grid gap-6 rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 sm:p-6 md:grid-cols-2 md:gap-x-8 md:gap-y-6";
+    "grid gap-6 border border-brand-ink/10 bg-brand-muted/50 p-5 sm:p-6 md:grid-cols-2 md:gap-x-8 md:gap-y-6";
   const qSpan2 = "md:col-span-2";
 
   return (
@@ -317,7 +317,7 @@ export function RegisterForm() {
           title={
             <>
               {t("brandTitle")}{" "}
-              <span className="text-indigo-200">{t("brandTitleHighlight")}</span>.
+              <span className="text-brand-accent">{t("brandTitleHighlight")}</span>.
             </>
           }
           description={t("brandDesc")}
@@ -327,28 +327,29 @@ export function RegisterForm() {
         />
       }
       form={
-        <div className="flex min-h-0 w-full flex-1 flex-col rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-card sm:p-8 lg:p-10">
-          <h2 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">
+        <div className="flex min-h-0 w-full flex-1 flex-col">
+          <p className="tag-overline">{step === 4 ? t("otpTitle") : t("badge")}</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-[2rem]">
             {step === 4 ? t("otpTitle") : t("title")}
           </h2>
-          <p className="mt-1.5 text-sm text-slate-600">
+          <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">
             {step === 4 && signupSession
               ? t("otpSubtitle", { email: signupSession.masked })
               : t("subtitle")}
           </p>
-          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500" aria-live="polite">
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-brand-ink/45" aria-live="polite">
             {t("stepProgress", { current: step, total: TOTAL_STEPS })}
           </p>
-          <p className="mt-1 text-sm text-slate-600">{stepHint}</p>
+          <p className="mt-1 text-sm text-brand-ink/65">{stepHint}</p>
 
           <div className="mt-6 space-y-6">
             {success ? (
-              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+              <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
                 {t("success")}
               </p>
             ) : null}
             {error ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
                 {error}
               </p>
             ) : null}
@@ -360,8 +361,8 @@ export function RegisterForm() {
                     <div className="absolute inset-0 flex items-center" aria-hidden>
                       <div className="w-full border-t border-slate-200 dark:border-slate-700" />
                     </div>
-                    <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      <span className="bg-white px-3 dark:bg-slate-900">{tLogin("divider")}</span>
+                    <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-brand-ink/45">
+                      <span className="bg-brand-paper px-3">{tLogin("divider")}</span>
                     </div>
                   </div>
                   <AuthSocialButtons returnTo="/dashboard" locale={locale} disabled={pending} />
@@ -572,11 +573,21 @@ export function RegisterForm() {
                   />
                   <span className="text-sm leading-snug text-slate-600">
                     {t("termsLead")}{" "}
-                    <Link href="/terms" className="font-semibold text-brand-primary hover:underline">
+                    <Link
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-brand-accent hover:text-brand-accent-dark"
+                    >
                       {t("terms")}
                     </Link>{" "}
                     {t("and")}{" "}
-                    <Link href="/privacy" className="font-semibold text-brand-primary hover:underline">
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-brand-accent hover:text-brand-accent-dark"
+                    >
                       {t("privacy")}
                     </Link>
                     .
@@ -629,7 +640,7 @@ export function RegisterForm() {
 
           <p className="mt-8 text-center text-sm text-slate-600">
             {t("hasAccount")}{" "}
-            <Link href="/login" className="font-semibold text-brand-primary hover:underline">
+            <Link href="/login" className="font-semibold text-brand-accent hover:text-brand-accent-dark">
               {t("signIn")}
             </Link>
           </p>

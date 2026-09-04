@@ -1,11 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 import { useEffect, type ReactNode } from "react";
 import { DashboardTopNav } from "@/components/dashboard/DashboardTopNav";
 import type { DashboardWorkspace } from "@/components/dashboard/dashboard-top-nav-config";
 import { useAuth } from "@/contexts/auth-context";
+import { hardNavigate } from "@/lib/auth-navigation";
 import type { UserRole } from "@/types/user";
 
 function workspaceFor(role: UserRole | string | undefined): DashboardWorkspace {
@@ -41,21 +42,20 @@ function notificationsLabel(workspace: DashboardWorkspace, tDash: (key: string) 
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const { user, loading, logout } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
+  const locale = useLocale();
   const tDash = useTranslations("dashboard");
 
   useEffect(() => {
     if (!loading && !user) {
       const from = pathname.startsWith("/") ? pathname : "/dashboard";
-      router.replace(`/login?from=${encodeURIComponent(from)}`);
+      hardNavigate(`/login?from=${encodeURIComponent(from)}`, locale);
     }
-  }, [loading, user, router, pathname]);
+  }, [loading, user, locale, pathname]);
 
   async function onLogout() {
     await logout();
-    router.replace("/");
-    router.refresh();
+    hardNavigate("/", locale);
   }
 
   if (loading || !user) {
@@ -71,7 +71,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const searchPlaceholder = showSearch ? workspaceSearchPlaceholder(workspace, tDash) : "";
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-brand-paper" key={user.id}>
       <DashboardTopNav
         workspace={workspace}
         userName={user.name}
@@ -82,7 +82,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         notificationsLabel={notificationsLabel(workspace, tDash)}
         onLogout={() => void onLogout()}
       />
-      <main className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-8 xl:px-10">{children}</main>
     </div>
   );
 }

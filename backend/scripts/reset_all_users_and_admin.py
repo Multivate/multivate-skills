@@ -19,7 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-# Running as `python scripts/this.py` puts `scripts/` on sys.path first — add backend root.
+# Running as `python scripts/this.py` puts `scripts/` on sys.path first - add backend root.
 _BACKEND_ROOT = Path(__file__).resolve().parent.parent
 if str(_BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(_BACKEND_ROOT))
@@ -83,7 +83,7 @@ def _ensure_schema() -> None:
     if not settings.auto_create_tables:
         return
     if not inspect(engine).has_table("users"):
-        import app.main  # noqa: F401 — register all models on Base.metadata
+        import app.main  # noqa: F401 - register all models on Base.metadata
 
         Base.metadata.create_all(bind=engine)
 

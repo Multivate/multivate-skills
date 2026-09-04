@@ -1,4 +1,4 @@
-"""Create database multivate (and multivate_test) if missing — local dev helper.
+"""Create database multivate (and multivate_test) if missing - local dev helper.
 
 Uses the same credentials as DATABASE_URL but connects to maintenance DB
 `postgres`. Requires a role with CREATEDB or superuser (often true for the
@@ -58,7 +58,7 @@ def _main() -> None:
     created: list[str] = []
     for dbname in (target_main, target_test):
         if exists(dbname):
-            print(f"Database {dbname!r} already exists — skip.")
+            print(f"Database {dbname!r} already exists - skip.")
             continue
         ident = re.sub(r"[^a-zA-Z0-9_]", "", dbname) or dbname
         if ident != dbname:

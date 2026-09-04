@@ -125,11 +125,11 @@ export function MentorProfileEditor() {
       {msg ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{msg}</p> : null}
 
       <form onSubmit={save} className="space-y-8">
-        <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-700 ">
           <h2 className="text-lg font-bold text-brand-ink dark:text-white">Photo</h2>
           <p className="mt-1 text-sm text-slate-600">A clear, professional headshot helps visitors trust your guidance.</p>
           <div className="mt-4 flex items-center gap-5">
-            <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 ring-2 ring-brand-accent/30">
+            <div className="relative h-24 w-24 overflow-hidden rounded-md bg-slate-100 ring-2 ring-brand-accent/30">
               {photo ? (
                 <Image src={photo} alt="" fill className="object-cover" sizes="96px" />
               ) : (
@@ -153,7 +153,7 @@ export function MentorProfileEditor() {
           </div>
         </section>
 
-        <section className="grid gap-5 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-2">
+        <section className="grid gap-5 rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-700  sm:grid-cols-2">
           <h2 className="sm:col-span-2 text-lg font-bold text-brand-ink dark:text-white">About you</h2>
           <label className={labelClass}>
             Full name
@@ -177,7 +177,7 @@ export function MentorProfileEditor() {
           </label>
         </section>
 
-        <section className="grid gap-5 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-2">
+        <section className="grid gap-5 rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-700  sm:grid-cols-2">
           <h2 className="sm:col-span-2 text-lg font-bold text-brand-ink dark:text-white">Location & background</h2>
           <label className={labelClass}>
             City in Germany
@@ -205,7 +205,7 @@ export function MentorProfileEditor() {
           </label>
         </section>
 
-        <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-700 ">
           <h2 className="text-lg font-bold text-brand-ink dark:text-white">How you help</h2>
           <label className={`${labelClass} mt-4`}>
             Areas you can advise on
@@ -241,7 +241,7 @@ export function MentorProfileEditor() {
 function StatusBanner({ status, reason }: { status: string; reason: string | null }) {
   if (status === "approved") {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+      <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
         <div>
           <p className="font-semibold">Your profile is live</p>
@@ -252,7 +252,7 @@ function StatusBanner({ status, reason }: { status: string; reason: string | nul
   }
   if (status === "pending") {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+      <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
         <Clock className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" />
         <div>
           <p className="font-semibold">Under review</p>
@@ -263,7 +263,7 @@ function StatusBanner({ status, reason }: { status: string; reason: string | nul
   }
   if (status === "rejected") {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+      <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">
         <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
         <div>
           <p className="font-semibold">Updates needed</p>
@@ -273,7 +273,7 @@ function StatusBanner({ status, reason }: { status: string; reason: string | nul
     );
   }
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700  dark:text-slate-300">
       Complete your profile, then submit for review. Only approved profiles appear on the public site.
     </div>
   );

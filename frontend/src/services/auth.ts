@@ -1,4 +1,4 @@
-import type { AuthUser, LoginOutcome } from "@/types/user";
+import type { AuthUser, LoginMfaChallenge, LoginOutcome } from "@/types/user";
 
 export type StudentLearningProfileRegistrationPayload = {
   education_level: string;
@@ -168,6 +168,33 @@ export async function login(email: string, password: string): Promise<LoginOutco
     }
   }
   return data.user as AuthUser;
+}
+
+export async function startCodeLogin(email: string): Promise<LoginMfaChallenge> {
+  const res = await fetch("/api/auth/login/code/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 403 && data && typeof data === "object" && (data as ApiErrorBody).detail === "profile_incomplete") {
+      throw new Error("PROFILE_INCOMPLETE");
+    }
+    throw new Error(formatError(data, "We couldn't send a sign-in code"));
+  }
+  const d = data as { mfa_token?: string; email_masked?: string; dev_otp?: string | null };
+  if (typeof d.mfa_token !== "string") {
+    throw new Error("Invalid response from server");
+  }
+  const devOtp = typeof d.dev_otp === "string" && /^\d{6}$/.test(d.dev_otp) ? d.dev_otp : undefined;
+  return {
+    mfaRequired: true,
+    mfaToken: d.mfa_token,
+    emailMasked: typeof d.email_masked === "string" ? d.email_masked : "",
+    ...(devOtp ? { devOtp } : {}),
+  };
 }
 
 export async function completeMfaLogin(mfaToken: string, code: string): Promise<AuthUser> {

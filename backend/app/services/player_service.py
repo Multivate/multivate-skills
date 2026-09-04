@@ -8,9 +8,10 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.models.audio_phrase import AudioPhrase
 from app.models.course import Course
 from app.models.course_section import CourseSection
-from app.models.course_status import CourseStatus, VideoSource
+from app.models.course_status import AudioSource, CourseFormat, CourseStatus, VideoSource
 from app.models.enrollment import Enrollment
 from app.models.enrollment_status import EnrollmentStatus
 from app.models.lesson import Lesson
@@ -21,6 +22,8 @@ from app.models.video_watch_history import VideoWatchHistory
 from app.schemas.studio import (
     PlayerCurriculumOut,
     PlayerLessonOut,
+    PlayerPhrasebookOut,
+    PlayerPhraseOut,
     PlayerProgressIn,
     PlayerProgressOut,
     PlayerSectionOut,
@@ -53,7 +56,7 @@ def _embed_url(lesson: Lesson) -> str | None:
 
 
 def _direct_video_url(lesson: Lesson) -> str | None:
-    """External MP4/WebM links (not YouTube/Vimeo) — use HTML5 video, not iframe."""
+    """External MP4/WebM links (not YouTube/Vimeo) - use HTML5 video, not iframe."""
     if not lesson.video_url or lesson.video_source != VideoSource.URL:
         return None
     if _YT_RE.search(lesson.video_url) or _VIMEO_RE.search(lesson.video_url):
@@ -165,6 +168,76 @@ def get_player_curriculum(
         progress_pct=enrollment.progress_pct if enrollment else 0,
         sections=[PlayerSectionOut(id=s.id, title=s.title, position=s.position) for s in sections],
         lessons=lesson_rows,
+    )
+
+
+def get_player_phrasebook(
+    db: Session, slug: str, user: User | None, *, preview: bool = False
+) -> PlayerPhrasebookOut:
+    course = course_service.get_course_or_404(db, slug, user=user)
+    fmt = getattr(course, "format", None)
+    is_audio = fmt == CourseFormat.AUDIO or fmt == "audio"
+    if not is_audio:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This is not an audio course")
+
+    if preview:
+        if not user or (user.role != UserRole.ADMIN and course.instructor_id != user.id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Preview not allowed")
+    elif not can_access_course_content(db, user, course) and not (
+        user
+        and (
+            user.role == UserRole.ADMIN
+            or (user.role == UserRole.INSTRUCTOR and course.instructor_id == user.id)
+        )
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Enroll to access this course")
+
+    sections = db.scalars(
+        select(CourseSection).where(CourseSection.course_id == course.id).order_by(CourseSection.position)
+    ).all()
+    phrases = db.scalars(
+        select(AudioPhrase).where(AudioPhrase.course_id == course.id).order_by(AudioPhrase.position, AudioPhrase.created_at)
+    ).all()
+
+    enrollment = None
+    if user:
+        enrollment = db.scalar(
+            select(Enrollment).where(Enrollment.user_id == user.id, Enrollment.course_id == course.id)
+        )
+
+    phrase_rows: list[PlayerPhraseOut] = []
+    for p in phrases:
+        audio_url = None
+        if p.audio_url:
+            if p.audio_source == AudioSource.UPLOAD or (
+                p.audio_url and not p.audio_url.startswith("http")
+            ):
+                audio_url = f"/api/media/public/{p.audio_url}"
+            else:
+                audio_url = p.audio_url
+        phrase_rows.append(
+            PlayerPhraseOut(
+                id=p.id,
+                section_id=p.section_id,
+                position=p.position,
+                source_text=p.source_text,
+                target_text=p.target_text,
+                audio_url=audio_url,
+                stream_token=None,
+                audio_duration_seconds=p.audio_duration_seconds,
+            )
+        )
+
+    return PlayerPhrasebookOut(
+        course_slug=course.slug,
+        course_title=course.title,
+        image_url=course.image_url,
+        format="audio",
+        source_language=getattr(course, "source_language", "en") or "en",
+        target_language=getattr(course, "target_language", "de") or "de",
+        progress_pct=enrollment.progress_pct if enrollment else 0,
+        sections=[PlayerSectionOut(id=s.id, title=s.title, position=s.position) for s in sections],
+        phrases=phrase_rows,
     )
 
 

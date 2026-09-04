@@ -11,12 +11,13 @@ import {
 } from "react";
 import * as authApi from "@/services/auth";
 import type { RegisterPayload, RegisterStartResult } from "@/services/auth";
-import type { AuthUser, LoginOutcome } from "@/types/user";
+import type { AuthUser, LoginMfaChallenge, LoginOutcome } from "@/types/user";
 
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<LoginOutcome>;
+  startCodeLogin: (email: string) => Promise<LoginMfaChallenge>;
   completeMfaLogin: (mfaToken: string, code: string) => Promise<AuthUser>;
   resendMfaLogin: (mfaToken: string) => Promise<{ mfaToken: string; emailMasked: string; devOtp?: string }>;
   registerStart: (payload: RegisterPayload) => Promise<RegisterStartResult>;
@@ -47,12 +48,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return outcome;
     }
     setUser(outcome);
+    setLoading(false);
     return outcome;
+  }, []);
+
+  const startCodeLogin = useCallback(async (email: string) => {
+    return authApi.startCodeLogin(email);
   }, []);
 
   const completeMfaLogin = useCallback(async (mfaToken: string, code: string) => {
     const u = await authApi.completeMfaLogin(mfaToken, code);
     setUser(u);
+    setLoading(false);
     return u;
   }, []);
 
@@ -67,12 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerVerify = useCallback(async (role: "student" | "instructor" | "mentor", signupToken: string, code: string) => {
     const u = await authApi.registerVerify(role, signupToken, code);
     setUser(u);
+    setLoading(false);
     return u;
   }, []);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+      setLoading(false);
+    }
   }, []);
 
   const value = useMemo(
@@ -80,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       login,
+      startCodeLogin,
       completeMfaLogin,
       resendMfaLogin,
       registerStart,
@@ -87,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshUser,
     }),
-    [user, loading, login, completeMfaLogin, resendMfaLogin, registerStart, registerVerify, logout, refreshUser],
+    [user, loading, login, startCodeLogin, completeMfaLogin, resendMfaLogin, registerStart, registerVerify, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

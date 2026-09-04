@@ -80,12 +80,12 @@ nano .env.production
 
 Fill in at minimum:
 
-- `POSTGRES_PASSWORD` — strong random password
-- `SECRET_KEY` — min 32 characters
-- `PLATFORM_ADMIN_PASSWORD` — min 12 characters
-- `RESEND_API_KEY` — from Resend dashboard
-- `CERTBOT_EMAIL` — for Let's Encrypt
-- `CORS_ORIGINS` — `https://www.multivateskills.com,https://multivateskills.com`
+- `POSTGRES_PASSWORD` - strong random password
+- `SECRET_KEY` - min 32 characters
+- `PLATFORM_ADMIN_PASSWORD` - min 12 characters
+- `RESEND_API_KEY` - from Resend dashboard
+- `CERTBOT_EMAIL` - for Let's Encrypt
+- `CORS_ORIGINS` - `https://www.multivateskills.com,https://multivateskills.com`
 
 ### 3. Start the stack (HTTP first)
 
@@ -103,7 +103,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.production ps
 docker compose -f docker-compose.prod.yml --env-file .env.production logs -f api
 ```
 
-Visit `http://www.multivateskills.com` — you should see the app.
+Visit `http://www.multivateskills.com` - you should see the app.
 
 ### 4. Enable HTTPS (Let's Encrypt)
 

@@ -11,14 +11,17 @@ import { AuthSocialButtons } from "@/components/auth/AuthSocialButtons";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { useAuth } from "@/contexts/auth-context";
 import { pathnameWithoutLeadingLocale } from "@/i18n/routing";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
+import { hardNavigate } from "@/lib/auth-navigation";
+
+type SignInMethod = "password" | "code";
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
   const locale = useLocale();
-  const { login, completeMfaLogin, resendMfaLogin, user, loading } = useAuth();
-  const router = useRouter();
+  const { login, startCodeLogin, completeMfaLogin, resendMfaLogin, user, loading } = useAuth();
   const searchParams = useSearchParams();
+  const [method, setMethod] = useState<SignInMethod>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -44,27 +47,52 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(from.startsWith("/") ? from : "/dashboard");
+      hardNavigate(from.startsWith("/") ? from : "/dashboard", locale);
     }
-  }, [loading, user, router, from]);
+  }, [loading, user, locale, from]);
 
-  async function onSubmit(e: React.FormEvent) {
+  function goAfterAuth() {
+    hardNavigate(from.startsWith("/") ? from : "/dashboard", locale);
+  }
+
+  function applyMfaChallenge(outcome: { mfaToken: string; emailMasked: string; devOtp?: string }) {
+    setMfa({
+      token: outcome.mfaToken,
+      masked: outcome.emailMasked,
+    });
+    setMfaCode(outcome.devOtp ?? "");
+    setMfaNotice(outcome.devOtp ? t("mfaDevOtpBanner", { code: outcome.devOtp }) : null);
+  }
+
+  async function onPasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setPending(true);
     try {
       const outcome = await login(email.trim(), password);
-        if ("mfaRequired" in outcome && outcome.mfaRequired) {
-        setMfa({
-          token: outcome.mfaToken,
-          masked: outcome.emailMasked,
-        });
-        setMfaCode("");
-        setMfaNotice(null);
+      if ("mfaRequired" in outcome && outcome.mfaRequired) {
+        applyMfaChallenge(outcome);
         return;
       }
-      router.replace(from.startsWith("/") ? from : "/dashboard");
-      router.refresh();
+      goAfterAuth();
+    } catch (err) {
+      if (err instanceof Error && err.message === "PROFILE_INCOMPLETE") {
+        setError(t("errorProfileIncomplete"));
+      } else {
+        setError(err instanceof Error ? err.message : t("errorGeneric"));
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function onCodeSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+    try {
+      const outcome = await startCodeLogin(email.trim());
+      applyMfaChallenge(outcome);
     } catch (err) {
       if (err instanceof Error && err.message === "PROFILE_INCOMPLETE") {
         setError(t("errorProfileIncomplete"));
@@ -84,8 +112,10 @@ export function LoginForm() {
     try {
       const next = await resendMfaLogin(mfa.token);
       setMfa({ token: next.mfaToken, masked: next.emailMasked || mfa.masked });
-      setMfaCode("");
-      setMfaNotice(t("mfaSentAgain"));
+      setMfaCode(next.devOtp ?? "");
+      setMfaNotice(
+        next.devOtp ? t("mfaDevOtpBanner", { code: next.devOtp }) : t("mfaSentAgain"),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errorGeneric"));
     } finally {
@@ -101,8 +131,7 @@ export function LoginForm() {
     try {
       await completeMfaLogin(mfa.token, mfaCode.trim());
       setMfa(null);
-      router.replace(from.startsWith("/") ? from : "/dashboard");
-      router.refresh();
+      goAfterAuth();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errorGeneric"));
     } finally {
@@ -122,25 +151,30 @@ export function LoginForm() {
         />
       }
       form={
-        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-card sm:p-8">
-          <h2 className="text-xl font-extrabold tracking-tight text-brand-ink dark:text-slate-100 sm:text-2xl">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <p className="tag-overline">{mfa ? t("mfaTitle") : t("badge")}</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-[2rem]">
             {mfa ? t("mfaTitle") : t("title")}
           </h2>
-          <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">
-            {mfa ? t("mfaSubtitle", { email: mfa.masked || email }) : t("subtitle")}
+          <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">
+            {mfa
+              ? t("mfaSubtitle", { email: mfa.masked || email })
+              : method === "code"
+                ? t("subtitleCode")
+                : t("subtitle")}
           </p>
 
           {mfa ? (
             <form onSubmit={onMfaSubmit} className="mt-8 space-y-5">
               {mfaNotice ? (
-                <p className="rounded-lg border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-2 text-sm text-brand-ink dark:text-slate-200" role="status">
+                <p className="rounded-md border border-brand-accent/30 bg-brand-accent/10 px-3 py-2 text-sm text-brand-ink" role="status">
                   {mfaNotice}
                 </p>
               ) : (
-                <p className="text-sm text-slate-600 dark:text-slate-400">{t("mfaSpamHint")}</p>
+                <p className="text-sm text-brand-ink/65">{t("mfaSpamHint")}</p>
               )}
               {error ? (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200" role="alert">
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
                   {error}
                 </p>
               ) : null}
@@ -163,16 +197,17 @@ export function LoginForm() {
                 type="button"
                 disabled={pending}
                 onClick={onMfaResend}
-                className="w-full text-sm font-semibold text-brand-secondary transition hover:text-brand-primary disabled:opacity-60"
+                className="w-full text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark disabled:opacity-60"
               >
                 {pending ? t("mfaSubmitting") : t("mfaSendAgain")}
               </button>
               <button
                 type="button"
-                className="w-full text-center text-sm font-semibold text-brand-primary hover:underline"
+                className="w-full text-center text-sm font-semibold text-brand-ink hover:underline"
                 onClick={() => {
                   setMfa(null);
                   setMfaCode("");
+                  setMfaNotice(null);
                   setError(null);
                 }}
               >
@@ -181,9 +216,51 @@ export function LoginForm() {
             </form>
           ) : (
             <>
-              <form onSubmit={onSubmit} className="mt-8 space-y-5">
+              <div
+                className="mt-6 grid grid-cols-2 gap-1 rounded-lg border border-brand-ink/10 bg-brand-muted/60 p-1"
+                role="tablist"
+                aria-label={t("methodLabel")}
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={method === "password"}
+                  onClick={() => {
+                    setMethod("password");
+                    setError(null);
+                  }}
+                  className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
+                    method === "password"
+                      ? "bg-brand-paper text-brand-ink shadow-sm"
+                      : "text-brand-ink/55 hover:text-brand-ink"
+                  }`}
+                >
+                  {t("methodPassword")}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={method === "code"}
+                  onClick={() => {
+                    setMethod("code");
+                    setError(null);
+                  }}
+                  className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
+                    method === "code"
+                      ? "bg-brand-paper text-brand-ink shadow-sm"
+                      : "text-brand-ink/55 hover:text-brand-ink"
+                  }`}
+                >
+                  {t("methodCode")}
+                </button>
+              </div>
+
+              <form
+                onSubmit={method === "code" ? onCodeSubmit : onPasswordSubmit}
+                className="mt-6 space-y-5"
+              >
                 {error ? (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200" role="alert">
+                  <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
                     {error}
                   </p>
                 ) : null}
@@ -199,41 +276,52 @@ export function LoginForm() {
                   onChange={setEmail}
                   placeholder={t("emailPh")}
                 />
-                <PasswordField
-                  label={t("password")}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={setPassword}
-                  placeholder={t("passwordPh")}
-                />
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-panel focus:ring-brand-panel/30"
+                {method === "password" ? (
+                  <>
+                    <PasswordField
+                      label={t("password")}
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={setPassword}
+                      placeholder={t("passwordPh")}
                     />
-                    {t("remember")}
-                  </label>
-                  <Link href="/forgot-password" className="text-sm font-semibold text-brand-primary hover:underline">
-                    {t("forgot")}
-                  </Link>
-                </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-brand-ink/80">
+                        <input
+                          type="checkbox"
+                          checked={remember}
+                          onChange={(e) => setRemember(e.target.checked)}
+                          className="h-4 w-4 rounded border-brand-ink/25 text-brand-accent focus:ring-brand-accent/30"
+                        />
+                        {t("remember")}
+                      </label>
+                      <Link href="/forgot-password" className="text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
+                        {t("forgot")}
+                      </Link>
+                    </div>
+                  </>
+                ) : null}
 
                 <button type="submit" disabled={pending} className="btn-cta-accent">
-                  {pending ? t("submitting") : t("submit")}
+                  {pending
+                    ? method === "code"
+                      ? t("submittingCode")
+                      : t("submitting")
+                    : method === "code"
+                      ? t("submitCode")
+                      : t("submit")}
                 </button>
               </form>
 
               <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center" aria-hidden>
-                  <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                  <div className="w-full border-t border-brand-ink/10" />
                 </div>
-                <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <span className="bg-white px-3 dark:bg-slate-900">{t("divider")}</span>
+                <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-brand-ink/45">
+                  <span className="bg-brand-paper px-3">{t("divider")}</span>
                 </div>
               </div>
 
@@ -241,9 +329,9 @@ export function LoginForm() {
             </>
           )}
 
-          <p className="mt-8 text-center text-sm text-slate-600">
+          <p className="mt-8 text-center text-sm text-brand-ink/65">
             {t("noAccount")}{" "}
-            <Link href="/register" className="font-semibold text-brand-primary hover:underline">
+            <Link href="/register" className="font-semibold text-brand-accent hover:text-brand-accent-dark">
               {t("signUp")}
             </Link>
           </p>

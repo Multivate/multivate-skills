@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.course_status import CourseLevel, LessonType, VideoSource
+from app.models.course_status import CourseFormat, CourseLevel, LessonType, VideoSource
 
 
 class StudioCourseListItem(BaseModel):
@@ -13,6 +13,7 @@ class StudioCourseListItem(BaseModel):
     slug: str
     title: str
     status: str
+    format: str = "video"
     lessons_count: int
     image_url: str
     updated_at: datetime
@@ -29,6 +30,9 @@ class CourseStudioBasicsIn(BaseModel):
     description: str = Field(default="", max_length=8000)
     learning_objectives: str | None = None
     category: str = Field(default="general", max_length=64)
+    format: CourseFormat = CourseFormat.VIDEO
+    source_language: str = Field(default="en", max_length=8)
+    target_language: str = Field(default="de", max_length=8)
     level: CourseLevel = CourseLevel.BEGINNER
     language: str = Field(default="en", max_length=8)
     duration_minutes: int = Field(default=0, ge=0)
@@ -48,6 +52,9 @@ class CourseStudioBasicsOut(BaseModel):
     description: str
     learning_objectives: str | None = None
     category: str
+    format: str = "video"
+    source_language: str = "en"
+    target_language: str = "de"
     level: str
     language: str
     duration_minutes: int
@@ -144,6 +151,71 @@ class LessonReorderIn(BaseModel):
 class CourseStudioDetailOut(CourseStudioBasicsOut):
     sections: list[SectionOut]
     lessons: list[LessonStudioOut]
+    phrases: list["AudioPhraseOut"] = Field(default_factory=list)
+
+
+class AudioPhraseIn(BaseModel):
+    section_id: UUID | None = None
+    position: int | None = Field(default=None, ge=0)
+    source_text: str = Field(min_length=1, max_length=512)
+    target_text: str = Field(min_length=1, max_length=512)
+    audio_source: str | None = None
+    audio_url: str | None = None
+    audio_duration_seconds: int = Field(default=0, ge=0)
+
+
+class AudioPhraseUpdateIn(BaseModel):
+    section_id: UUID | None = None
+    position: int | None = Field(default=None, ge=0)
+    source_text: str | None = Field(default=None, min_length=1, max_length=512)
+    target_text: str | None = Field(default=None, min_length=1, max_length=512)
+    audio_source: str | None = None
+    audio_url: str | None = None
+    audio_duration_seconds: int | None = Field(default=None, ge=0)
+
+
+class AudioPhraseOut(BaseModel):
+    id: UUID
+    section_id: UUID | None
+    position: int
+    source_text: str
+    target_text: str
+    audio_source: str | None
+    audio_url: str | None
+    audio_duration_seconds: int
+
+
+class AudioPhraseReorderIn(BaseModel):
+    phrase_ids: list[UUID]
+
+
+class PlayerSectionOut(BaseModel):
+    id: UUID
+    title: str
+    position: int
+
+
+class PlayerPhraseOut(BaseModel):
+    id: UUID
+    section_id: UUID | None
+    position: int
+    source_text: str
+    target_text: str
+    audio_url: str | None
+    stream_token: str | None = None
+    audio_duration_seconds: int
+
+
+class PlayerPhrasebookOut(BaseModel):
+    course_slug: str
+    course_title: str
+    image_url: str
+    format: str
+    source_language: str
+    target_language: str
+    progress_pct: int
+    sections: list[PlayerSectionOut]
+    phrases: list[PlayerPhraseOut]
 
 
 class CourseStudioAnalyticsOut(BaseModel):
@@ -159,12 +231,6 @@ class CourseStudioAnalyticsOut(BaseModel):
 
 class AdminCourseRejectIn(BaseModel):
     reason: str = Field(default="Changes needed before we can publish.", max_length=2000)
-
-
-class PlayerSectionOut(BaseModel):
-    id: UUID
-    title: str
-    position: int
 
 
 class PlayerLessonOut(BaseModel):

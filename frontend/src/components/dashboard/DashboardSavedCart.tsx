@@ -17,7 +17,7 @@ export function DashboardSavedCart() {
 
   if (items.length === 0) {
     return (
-      <section id="saved-cart" className="scroll-mt-24 rounded-2xl border border-dashed border-slate-200/90 bg-slate-50/60 px-5 py-8 dark:border-slate-700/90 dark:bg-slate-900/40 sm:px-8">
+      <section id="saved-cart" className="scroll-mt-24 rounded-md border border-dashed border-slate-200/90 bg-slate-50/60 px-5 py-8 dark:border-slate-700/90 dark:bg-slate-900/40 sm:px-8">
         <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">{t("cartTitle")}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{t("cartEmpty")}</p>
         <Link href="/courses" className="btn-outline-brand mt-5 inline-flex text-sm !py-2.5">
@@ -39,7 +39,7 @@ export function DashboardSavedCart() {
   }
 
   return (
-    <section id="saved-cart" className="scroll-mt-24 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
+    <section id="saved-cart" className="scroll-mt-24 rounded-md border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
       <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">{t("cartTitle")}</h2>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{t("cartBody")}</p>
       <ul className="mt-6 space-y-4">

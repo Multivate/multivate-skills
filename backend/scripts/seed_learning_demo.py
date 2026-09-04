@@ -15,7 +15,7 @@ from app.models.user import User
 CATALOG = [
     {
         "slug": "german",
-        "title": "German Language (A1–B2)",
+        "title": "German Language (A1-B2)",
         "description": "Learn German step-by-step from A1 to B2 level.",
         "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80",
         "lessons_count": 42,

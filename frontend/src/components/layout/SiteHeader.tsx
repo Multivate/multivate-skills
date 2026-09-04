@@ -1,79 +1,103 @@
 "use client";
 
-import { ChevronDown, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher";
 import { Link } from "@/i18n/navigation";
 import { LogoMark } from "./LogoMark";
 import { SiteHeaderCart } from "./SiteHeaderCart";
 import { SiteHeaderSearch } from "./SiteHeaderSearch";
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  /** Overlays the first viewport (home hero). */
+  overlay?: boolean;
+};
+
+export function SiteHeader({ overlay = false }: SiteHeaderProps) {
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!overlay) return;
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [overlay]);
 
   const navLinks = [
-    { href: "/#teach", label: t("teach") },
     { href: "/courses", label: t("courses") },
     { href: "/mentors", label: t("mentors") },
-    { href: "#german", label: t("german") },
-    { href: "#organizations", label: t("organizations") },
-    { href: "#about", label: t("about") },
-    { href: "#resources", label: t("resources"), hasChevron: true },
+    { href: "/#teach", label: t("teach") },
+    { href: "/#about", label: t("about") },
   ] as const;
 
+  const floating = overlay && !scrolled && !open;
+  const shell = overlay
+    ? `fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+        floating
+          ? "border-b border-transparent bg-transparent"
+          : "border-b border-brand-ink/10 bg-brand-paper/95 backdrop-blur-md"
+      }`
+    : "sticky top-0 z-50 border-b border-brand-ink/10 bg-brand-paper/95 backdrop-blur-md";
+
+  const linkClass = floating
+    ? "text-sm font-medium text-white/80 transition hover:text-white"
+    : "text-sm font-medium text-brand-ink/70 transition hover:text-brand-ink";
+
+  const signInClass = floating
+    ? "text-sm font-semibold text-white/90 transition hover:text-white"
+    : "text-sm font-semibold text-brand-ink transition hover:text-brand-accent";
+
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/90 bg-white/98 backdrop-blur-md dark:border-slate-800/90 dark:bg-slate-950/95 dark:backdrop-blur-md">
-      <div className="container-page flex h-[4.25rem] items-center gap-2 lg:h-[4.5rem] lg:gap-3">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center py-1"
-          aria-label={t("homeAria")}
-        >
-          <LogoMark className="max-w-[9.5rem] sm:max-w-[11rem]" priority />
+    <header className={shell}>
+      <div className="container-page flex h-[4.25rem] items-center gap-3 lg:h-[4.75rem]">
+        <Link href="/" className="flex shrink-0 items-center py-1" aria-label={t("homeAria")}>
+          <LogoMark
+            variant={floating ? "inverse" : "default"}
+            className="max-w-[9.5rem] sm:max-w-[11rem]"
+            priority
+          />
         </Link>
 
-        <SiteHeaderSearch className="hidden shrink-0 md:block" />
+        <SiteHeaderSearch
+          className={`hidden shrink-0 md:block ${floating ? "[&_input]:border-white/25 [&_input]:bg-white/10 [&_input]:text-white [&_input]:placeholder:text-white/55" : ""}`}
+        />
 
-        <nav className="hidden min-w-0 flex-1 xl:flex xl:justify-center">
-          <div className="flex max-w-full items-center justify-center gap-3 overflow-x-auto 2xl:gap-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {navLinks.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-slate-600 transition hover:text-brand-primary 2xl:text-[0.8125rem] dark:text-slate-300 dark:hover:text-violet-300"
-            >
-              {l.label}
-              {"hasChevron" in l && l.hasChevron ? (
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" aria-hidden />
-              ) : null}
-            </Link>
-          ))}
+        <nav className="hidden min-w-0 flex-1 lg:flex lg:justify-center">
+          <div className="flex items-center gap-7">
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href} className={linkClass}>
+                {l.label}
+              </Link>
+            ))}
           </div>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <SiteHeaderCart />
-          <LocaleSwitcher className="hidden sm:inline-flex" />
-          <div className="hidden items-center gap-5 lg:flex lg:gap-6">
-            <Link
-              href="/login"
-              className="text-[0.8125rem] font-semibold text-slate-700 transition hover:text-brand-primary dark:text-slate-200 dark:hover:text-violet-300"
-            >
+          <LocaleSwitcher className={`hidden sm:inline-flex ${floating ? "text-white" : ""}`} />
+          <div className="hidden items-center gap-4 lg:flex">
+            <Link href="/login" className={signInClass}>
               {tCommon("signIn")}
             </Link>
             <Link
               href="/register"
-              className="rounded-xl bg-brand-primary px-5 py-2.5 text-[0.8125rem] font-semibold text-white shadow-sm transition hover:bg-brand-primary-dark lg:px-6"
+              className="rounded-md bg-brand-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-accent-dark"
             >
               {tCommon("getStarted")}
             </Link>
           </div>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-800 dark:border-slate-700 dark:text-slate-100 xl:hidden"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md border lg:hidden ${
+              floating
+                ? "border-white/30 text-white"
+                : "border-brand-ink/15 text-brand-ink"
+            }`}
             aria-expanded={open}
             aria-label={open ? t("closeMenu") : t("openMenu")}
             onClick={() => setOpen((v) => !v)}
@@ -84,7 +108,7 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-slate-100 bg-white px-4 py-5 dark:border-slate-800 dark:bg-slate-950 xl:hidden">
+        <div className="border-t border-brand-ink/10 bg-brand-paper px-4 py-5 lg:hidden">
           <div className="mb-4 md:hidden">
             <SiteHeaderSearch className="w-full [&_input]:w-full" />
           </div>
@@ -96,25 +120,22 @@ export function SiteHeader() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900"
+                className="rounded-md px-3 py-3 text-sm font-medium text-brand-ink hover:bg-brand-muted"
                 onClick={() => setOpen(false)}
               >
                 {l.label}
-                {"hasChevron" in l && l.hasChevron ? (
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
-                ) : null}
               </Link>
             ))}
             <Link
               href="/login"
-              className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-900"
+              className="rounded-md px-3 py-3 text-sm font-semibold text-brand-ink hover:bg-brand-muted"
               onClick={() => setOpen(false)}
             >
               {tCommon("signIn")}
             </Link>
             <Link
               href="/register"
-              className="btn-primary-brand mt-3 w-full !rounded-xl"
+              className="btn-primary-brand mt-3 w-full"
               onClick={() => setOpen(false)}
             >
               {tCommon("getStarted")}

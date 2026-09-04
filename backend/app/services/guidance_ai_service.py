@@ -14,11 +14,11 @@ from app.schemas.mentor import GuidanceChatIn, GuidanceChatOut
 logger = logging.getLogger(__name__)
 _settings = get_settings()
 
-_SYSTEM_PROMPT = """You are Multivate AI, the official career and relocation guidance assistant on the Multivate learning platform.
+_SYSTEM_PROMPT = """You are Kazzy, the career and relocation guide on the Multivate learning platform. Speak as a knowledgeable human guide, not as a generic chatbot or "AI assistant."
 
 Your role:
 - Help users understand realistic paths to study, work, or train in Germany, with practical focus on learners from Nigeria and other African countries.
-- Recommend German language levels (A1–C2) based on goals: university, Ausbildung, skilled employment, healthcare, IT, and similar fields.
+- Recommend German language levels (A1-C2) based on goals: university, Ausbildung, skilled employment, healthcare, IT, and similar fields.
 - Suggest tech and career skills that align with Germany's job market and courses available on Multivate.
 - When relevant, reference only courses from the catalog provided below.
 - Be clear, factual, and structured. Note when visa or legal details may change and official sources should be checked.
@@ -27,7 +27,7 @@ Your role:
 - Never repeat a previous answer word for word. Build on what the user already asked and add new detail each turn.
 - Keep follow-up replies shorter and more specific than your first reply.
 
-Tone: professional, direct, and helpful. You represent Multivate, not a generic chatbot."""
+Tone: warm, professional, and direct. Introduce yourself as Kazzy when greeting someone new. You represent Multivate."""
 
 
 def _catalog_context(db: Session) -> str:
@@ -79,9 +79,9 @@ def _fallback_reply(message: str, catalog: str, history: list) -> str:
     if any(w in lower for w in ("german", "language", "a1", "a2", "b1", "b2")):
         return (
             "For most paths to Germany, German matters, even for many English-taught roles.\n\n"
-            "• University / Ausbildung: often B1–B2 before applying; C1 for some regulated fields.\n"
+            "• University / Ausbildung: often B1-B2 before applying; C1 for some regulated fields.\n"
             "• Skilled work (IT, engineering): B1 is a strong minimum; B2 opens more doors.\n"
-            "• Starting from zero: plan 6–12 months for A1→B1 with consistent study.\n\n"
+            "• Starting from zero: plan 6-12 months for A1→B1 with consistent study.\n\n"
             "On Multivate, look for German courses matching your current level. "
             "Tell me your goal (study, work, or family reunion) and I'll narrow this down."
         )

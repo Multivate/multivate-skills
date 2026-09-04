@@ -28,10 +28,14 @@ export default async function InstructorSectionPage({ params }: Props) {
   if (!SECTIONS.has(section)) {
     notFound();
   }
+  // Analytics / earnings render their own page headers inside the section content.
+  const ownsHeader = section === "analytics" || section === "earnings";
   const title = TITLES[section] ?? "Instructor";
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{title}</h1>
+    <div className="mx-auto max-w-[90rem] space-y-6">
+      {ownsHeader ? null : (
+        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{title}</h1>
+      )}
       <InstructorSectionContent section={section} />
     </div>
   );

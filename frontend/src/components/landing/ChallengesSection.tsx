@@ -1,126 +1,59 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  Clock,
-  GraduationCap,
-  Lightbulb,
-  Lock,
-  Target,
-  Wrench,
-} from "lucide-react";
 import { getTranslations } from "next-intl/server";
-
-const accent = {
-  challenge: {
-    label: "text-[#E85D4A]",
-    rule: "bg-[#E85D4A]",
-    cardBg: "bg-[#FDF5F4]",
-    cardBorder: "border-rose-200/55",
-    iconRing: "border-[#E85D4A] text-[#E85D4A]",
-  },
-  solution: {
-    label: "text-[#4F46E5]",
-    rule: "bg-[#4F46E5]",
-    cardBg: "bg-[#F3FBF6]",
-    cardBorder: "border-emerald-200/55",
-    iconRing: "border-[#16A34A] text-[#16A34A]",
-  },
-} as const;
-
-const challengeIcons = [Clock, GraduationCap, Lock] as const;
-const solutionIcons = [Target, Wrench, Lightbulb] as const;
-
-function SplitCard({
-  title,
-  body,
-  icon: Icon,
-  tone,
-}: {
-  title: string;
-  body: string;
-  icon: LucideIcon;
-  tone: (typeof accent)["challenge"] | (typeof accent)["solution"];
-}) {
-  return (
-    <div
-      className={`flex h-full flex-col rounded-2xl border px-5 py-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6 sm:py-7 ${tone.cardBg} ${tone.cardBorder}`}
-    >
-      <div
-        className={`mx-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 bg-white ${tone.iconRing}`}
-      >
-        <Icon className="h-6 w-6" strokeWidth={1.65} aria-hidden />
-      </div>
-      <h3 className="mt-5 text-center text-sm font-semibold leading-snug tracking-tight text-brand-ink">{title}</h3>
-      <p className="mt-2.5 flex-1 text-center text-[0.8125rem] leading-relaxed text-slate-600">{body}</p>
-    </div>
-  );
-}
-
-function ColumnHeader({
-  kicker,
-  title,
-  tone,
-}: {
-  kicker: string;
-  title: string;
-  tone: (typeof accent)["challenge"] | (typeof accent)["solution"];
-}) {
-  return (
-    <header className="mx-auto max-w-xl text-center lg:mx-0 lg:max-w-none lg:text-left">
-      <p
-        className={`text-[0.6875rem] font-semibold uppercase leading-none tracking-[0.18em] text-balance sm:text-[11px] ${tone.label}`}
-      >
-        {kicker}
-      </p>
-      <h2 className="mt-3.5 font-sans text-2xl font-extrabold leading-[1.15] tracking-tight text-brand-ink sm:text-[1.65rem] lg:text-[1.75rem] xl:text-[1.875rem]">
-        {title}
-      </h2>
-      <div className={`mx-auto mt-5 h-1.5 w-12 rounded-sm lg:mx-0 ${tone.rule}`} aria-hidden />
-    </header>
-  );
-}
 
 export async function ChallengesSection() {
   const t = await getTranslations("challenges");
 
   const challenges = [
-    { title: t("c1Title"), body: t("c1Body"), icon: challengeIcons[0] },
-    { title: t("c2Title"), body: t("c2Body"), icon: challengeIcons[1] },
-    { title: t("c3Title"), body: t("c3Body"), icon: challengeIcons[2] },
+    { title: t("c1Title"), body: t("c1Body") },
+    { title: t("c2Title"), body: t("c2Body") },
+    { title: t("c3Title"), body: t("c3Body") },
   ];
 
   const solutions = [
-    { title: t("s1Title"), body: t("s1Body"), icon: solutionIcons[0] },
-    { title: t("s2Title"), body: t("s2Body"), icon: solutionIcons[1] },
-    { title: t("s3Title"), body: t("s3Body"), icon: solutionIcons[2] },
+    { title: t("s1Title"), body: t("s1Body") },
+    { title: t("s2Title"), body: t("s2Body") },
+    { title: t("s3Title"), body: t("s3Body") },
   ];
 
   return (
-    <section
-      id="challenges"
-      className="border-y border-slate-200/80 bg-white py-16 sm:py-20 lg:py-24"
-    >
+    <section id="challenges" className="border-b border-brand-ink/10 bg-brand-paper section-y">
       <div className="container-page">
-        <div className="grid grid-cols-1 gap-14 lg:grid-cols-2 lg:items-stretch lg:gap-0">
-          <div className="lg:border-r lg:border-slate-200 lg:pr-10 xl:pr-16">
-            <ColumnHeader
-              kicker={t("challengeKicker")}
-              title={t("challengeTitle")}
-              tone={accent.challenge}
-            />
-            <div className="mt-10 grid auto-rows-fr grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-5">
-              {challenges.map((c) => (
-                <SplitCard key={c.title} {...c} tone={accent.challenge} />
+        <div className="grid gap-16 lg:grid-cols-2 lg:gap-20">
+          <div>
+            <p className="tag-overline">{t("challengeKicker")}</p>
+            <h2 className="heading-section mt-4 text-3xl sm:text-4xl">{t("challengeTitle")}</h2>
+            <div className="marketing-rule mt-5" aria-hidden />
+            <ul className="mt-10 divide-y divide-brand-ink/10">
+              {challenges.map((item, i) => (
+                <li key={item.title} className="grid grid-cols-[3rem_1fr] gap-4 py-6 first:pt-0 last:pb-0">
+                  <span className="font-display text-2xl font-bold tabular-nums text-brand-ink/25">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <h3 className="font-display text-lg font-semibold text-brand-ink">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">{item.body}</p>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          <div className="border-t border-slate-200 pt-14 lg:border-t-0 lg:pt-0 lg:pl-10 xl:pl-16">
-            <ColumnHeader kicker={t("solutionKicker")} title={t("solutionTitle")} tone={accent.solution} />
-            <div className="mt-10 grid auto-rows-fr grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-5">
-              {solutions.map((s) => (
-                <SplitCard key={s.title} {...s} tone={accent.solution} />
+          <div className="lg:border-l lg:border-brand-ink/10 lg:pl-16">
+            <p className="tag-overline">{t("solutionKicker")}</p>
+            <h2 className="heading-section mt-4 text-3xl sm:text-4xl">{t("solutionTitle")}</h2>
+            <div className="marketing-rule mt-5" aria-hidden />
+            <ul className="mt-10 space-y-8">
+              {solutions.map((item) => (
+                <li key={item.title} className="relative pl-5">
+                  <span
+                    className="absolute left-0 top-2 h-8 w-px bg-brand-accent"
+                    aria-hidden
+                  />
+                  <h3 className="font-display text-lg font-semibold text-brand-ink">{item.title}</h3>
+                  <p className="mt-2 max-w-md text-sm leading-relaxed text-brand-ink/65">{item.body}</p>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
       </div>

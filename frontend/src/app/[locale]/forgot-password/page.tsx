@@ -100,18 +100,19 @@ export default function ForgotPasswordPage() {
         />
       }
       form={
-        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200/90 bg-white p-6 shadow-card sm:p-8 dark:border-slate-800/90 dark:bg-slate-900">
-          <h2 className="text-xl font-extrabold tracking-tight text-brand-ink dark:text-slate-100">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <p className="tag-overline">{step === "email" ? t("title") : t("resetTitle")}</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-[2rem]">
             {step === "email" ? t("title") : t("resetTitle")}
           </h2>
-          <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">
             {step === "email" ? t("subtitle") : t("resetSubtitle", { email: masked || email })}
           </p>
 
           {step === "email" ? (
             <form onSubmit={onStart} className="mt-8 space-y-5">
               {error ? (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
                   {error}
                 </p>
               ) : null}
@@ -133,14 +134,14 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={onReset} className="mt-8 space-y-5">
               {notice ? (
-                <p className="rounded-lg border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-2 text-sm text-brand-ink dark:text-slate-200" role="status">
+                <p className="rounded-md border border-brand-accent/30 bg-brand-accent/10 px-3 py-2 text-sm text-brand-ink" role="status">
                   {notice}
                 </p>
               ) : (
-                <p className="text-sm text-slate-600 dark:text-slate-400">{t("spamHint")}</p>
+                <p className="text-sm text-brand-ink/65">{t("spamHint")}</p>
               )}
               {error ? (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
                   {error}
                 </p>
               ) : null}
@@ -170,15 +171,15 @@ export default function ForgotPasswordPage() {
                 type="button"
                 disabled={pending}
                 onClick={onResend}
-                className="w-full text-sm font-semibold text-brand-secondary transition hover:text-brand-primary disabled:opacity-60"
+                className="w-full text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark disabled:opacity-60"
               >
                 {pending ? t("sending") : t("sendAgain")}
               </button>
             </form>
           )}
 
-          <p className="mt-8 text-center text-sm text-slate-600">
-            <Link href="/login" className="font-semibold text-brand-primary hover:underline">
+          <p className="mt-8 text-center text-sm text-brand-ink/65">
+            <Link href="/login" className="font-semibold text-brand-accent hover:text-brand-accent-dark">
               {t("backLogin")}
             </Link>
           </p>

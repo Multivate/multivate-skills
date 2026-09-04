@@ -55,7 +55,7 @@ export function AuthSocialButtons({ returnTo = "/dashboard", locale, disabled = 
         type="button"
         disabled={busy}
         onClick={() => start("google")}
-        className="btn-auth-social transition-transform duration-200 hover:-translate-y-0.5 hover:border-brand-secondary/40 hover:shadow-sm active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+        className="btn-auth-social transition-transform duration-200 hover:-translate-y-0.5 hover:border-brand-accent/40 hover:shadow-sm active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
       >
         <GoogleGlyph />
         {pending === "google" ? t("oauthStarting") : t("google")}
@@ -64,7 +64,7 @@ export function AuthSocialButtons({ returnTo = "/dashboard", locale, disabled = 
         type="button"
         disabled={busy}
         onClick={() => start("apple")}
-        className="btn-auth-social transition-transform duration-200 hover:-translate-y-0.5 hover:border-brand-secondary/40 hover:shadow-sm active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+        className="btn-auth-social transition-transform duration-200 hover:-translate-y-0.5 hover:border-brand-accent/40 hover:shadow-sm active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
       >
         <Apple className="h-[18px] w-[18px] text-slate-900 dark:text-slate-100" strokeWidth={2} aria-hidden />
         {pending === "apple" ? t("oauthStarting") : t("apple")}

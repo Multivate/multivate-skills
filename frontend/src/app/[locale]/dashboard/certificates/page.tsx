@@ -80,7 +80,7 @@ export default function DashboardCertificatesPage() {
 
   if (courses === null || certs === null) {
     return (
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-sm">
+      <div className="mx-auto max-w-3xl rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-none">
         <p className="text-sm font-medium text-slate-600">Loading certificates…</p>
       </div>
     );
@@ -100,7 +100,7 @@ export default function DashboardCertificatesPage() {
       {claimMsg ? <p className="text-sm font-medium text-emerald-900">{claimMsg}</p> : null}
 
       {eligible.length > 0 ? (
-        <section className="rounded-2xl border border-emerald-200/90 bg-emerald-50/60 p-6 shadow-sm sm:p-8">
+        <section className="rounded-md border border-emerald-200/90 bg-emerald-50/60 p-6 shadow-none sm:p-8">
           <h2 className="text-sm font-extrabold uppercase tracking-wide text-emerald-900/90">Ready to claim</h2>
           <p className="mt-2 text-sm text-emerald-950/80">You have finished these courses and can issue a certificate.</p>
           <ul className="mt-4 space-y-3">
@@ -130,7 +130,7 @@ export default function DashboardCertificatesPage() {
       <section>
         <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Your credentials</h2>
         {certs.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
+          <div className="mt-6 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
             <p className="text-sm text-slate-600">
               No certificates yet. Complete a course to 100%, then return here to claim your credential.
             </p>
@@ -139,7 +139,7 @@ export default function DashboardCertificatesPage() {
             </Link>
           </div>
         ) : (
-          <ul className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+          <ul className="mt-4 divide-y divide-slate-100 rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-none">
             {certs.map((c) => (
               <li key={c.id} className="px-5 py-4">
                 <p className="font-semibold text-brand-ink">{c.course_title}</p>

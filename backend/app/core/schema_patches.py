@@ -29,7 +29,14 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
     with engine.begin() as conn:
         _run(
             conn,
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT TRUE",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+        )
+        # Password sign-in is the default; email codes are an optional login method (or opt-in 2FA).
+        # Keep admin accounts on email 2FA. Idempotent for DBs that still have the old DEFAULT TRUE.
+        _run(conn, "ALTER TABLE users ALTER COLUMN two_factor_enabled SET DEFAULT FALSE")
+        _run(
+            conn,
+            "UPDATE users SET two_factor_enabled = FALSE WHERE role <> 'admin' AND two_factor_enabled IS TRUE",
         )
 
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS price_cents INTEGER NOT NULL DEFAULT 990000")
@@ -75,6 +82,98 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS format VARCHAR(16) NOT NULL DEFAULT 'video'")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS source_language VARCHAR(8) NOT NULL DEFAULT 'en'")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS target_language VARCHAR(8) NOT NULL DEFAULT 'de'")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_courses_format ON courses (format)")
+
+        _run(conn, "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS lesson_done INTEGER NOT NULL DEFAULT 0")
+        _run(conn, "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS progress_pct INTEGER NOT NULL DEFAULT 0")
+        _run(conn, "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(
+            conn,
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_enrollment_user_course ON enrollments (user_id, course_id)",
+        )
+
+        _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS course_id UUID")
+        _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS external_ref VARCHAR(255)")
+        _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_payments_course_id ON payments (course_id)")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'payments_course_id_fkey'
+              ) THEN
+                ALTER TABLE payments
+                  ADD CONSTRAINT payments_course_id_fkey
+                  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL;
+              END IF;
+            END $$;
+            """,
+        )
+
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT ''")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS lessons_count INTEGER NOT NULL DEFAULT 0")
+
+        _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS course_id UUID")
+        _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS position INTEGER NOT NULL DEFAULT 0")
+        _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS body TEXT")
+        _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS duration_minutes INTEGER NOT NULL DEFAULT 0")
+        _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_lessons_course_id ON lessons (course_id)")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'lessons_course_id_fkey'
+              ) THEN
+                BEGIN
+                  ALTER TABLE lessons
+                    ADD CONSTRAINT lessons_course_id_fkey
+                    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE;
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+              END IF;
+            END $$;
+            """,
+        )
+
+        # Heal MFA table if an older Alembic revision created plaintext `code` only.
+        _run(conn, "ALTER TABLE mfa_otp_challenges ADD COLUMN IF NOT EXISTS purpose VARCHAR(32) NOT NULL DEFAULT 'login'")
+        _run(conn, "ALTER TABLE mfa_otp_challenges ADD COLUMN IF NOT EXISTS code_hash VARCHAR(255)")
+        _run(conn, "ALTER TABLE mfa_otp_challenges ADD COLUMN IF NOT EXISTS consumed_at TIMESTAMPTZ")
+        _run(conn, "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS code VARCHAR(40)")
+        _run(conn, "CREATE UNIQUE INDEX IF NOT EXISTS ix_certificates_code ON certificates (code)")
+
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(512)")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS student_code VARCHAR(32)")
+        _run(conn, "ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(16) NOT NULL DEFAULT 'password'")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_subject VARCHAR(255)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_users_oauth_subject ON users (oauth_subject)")
+        _run(conn, "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_student_code ON users (student_code)")
+
+
+        # Course Studio: sections must exist before lesson.section_id FK.
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS course_sections (
+                id UUID PRIMARY KEY,
+                course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                position INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_course_sections_course_id ON course_sections (course_id)")
 
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS section_id UUID")
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS lesson_type VARCHAR(32) NOT NULL DEFAULT 'video'")
@@ -86,12 +185,100 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS live_url TEXT")
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS is_previewable BOOLEAN NOT NULL DEFAULT FALSE")
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_lessons_section_id ON lessons (section_id)")
+        # Add FK only when missing (idempotent for older DBs that already have the column).
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'lessons_section_id_fkey'
+              ) THEN
+                ALTER TABLE lessons
+                  ADD CONSTRAINT lessons_section_id_fkey
+                  FOREIGN KEY (section_id) REFERENCES course_sections(id) ON DELETE SET NULL;
+              END IF;
+            END $$;
+            """,
+        )
 
-        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(512)")
-        _run(conn, "ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL")
-        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(16) NOT NULL DEFAULT 'password'")
-        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_subject VARCHAR(255)")
-        _run(conn, "CREATE INDEX IF NOT EXISTS ix_users_oauth_subject ON users (oauth_subject)")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS audio_phrases (
+                id UUID PRIMARY KEY,
+                course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                section_id UUID REFERENCES course_sections(id) ON DELETE SET NULL,
+                position INTEGER NOT NULL DEFAULT 0,
+                source_text VARCHAR(512) NOT NULL,
+                target_text VARCHAR(512) NOT NULL,
+                audio_source VARCHAR(32),
+                audio_url TEXT,
+                audio_duration_seconds INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_audio_phrases_course_id ON audio_phrases (course_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_audio_phrases_section_id ON audio_phrases (section_id)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS lesson_resources (
+                id UUID PRIMARY KEY,
+                lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                file_path TEXT NOT NULL,
+                file_type VARCHAR(64) NOT NULL,
+                file_size_bytes INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_lesson_resources_lesson_id ON lesson_resources (lesson_id)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS video_watch_history (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+                position_seconds INTEGER NOT NULL DEFAULT 0,
+                watch_time_seconds INTEGER NOT NULL DEFAULT 0,
+                completed BOOLEAN NOT NULL DEFAULT FALSE,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_video_watch_history_user_id ON video_watch_history (user_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_video_watch_history_lesson_id ON video_watch_history (lesson_id)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS media_files (
+                id UUID PRIMARY KEY,
+                original_filename VARCHAR(255) NOT NULL,
+                stored_filename VARCHAR(255) NOT NULL UNIQUE,
+                mime_type VARCHAR(127) NOT NULL,
+                extension VARCHAR(16) NOT NULL,
+                size_bytes BIGINT NOT NULL,
+                folder VARCHAR(64) NOT NULL,
+                relative_path VARCHAR(512) NOT NULL,
+                public_url VARCHAR(512) NOT NULL,
+                uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                deleted_at TIMESTAMPTZ
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_media_files_folder ON media_files (folder)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_media_files_uploaded_by ON media_files (uploaded_by)")
 
         _run(
             conn,
@@ -203,6 +390,39 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             """,
         )
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_mentor_messages_conversation_id ON mentor_messages (conversation_id)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS certificates (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                code VARCHAR(40) NOT NULL UNIQUE,
+                issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (user_id, course_id)
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_certificates_user_id ON certificates (user_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_certificates_course_id ON certificates (course_id)")
+        _run(conn, "CREATE UNIQUE INDEX IF NOT EXISTS ix_certificates_code ON certificates (code)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS mfa_otp_challenges (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                purpose VARCHAR(32) NOT NULL,
+                code_hash VARCHAR(255) NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL,
+                consumed_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_mfa_otp_challenges_user_id ON mfa_otp_challenges (user_id)")
 
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")

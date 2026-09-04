@@ -20,10 +20,23 @@ class LessonType(str, enum.Enum):
     DOCUMENT = "document"
     QUIZ = "quiz"
     LIVE = "live"
+    AUDIO = "audio"
+
+
+class CourseFormat(str, enum.Enum):
+    """How the course is authored and consumed in Studio / Learn."""
+
+    VIDEO = "video"
+    AUDIO = "audio"
 
 
 class VideoSource(str, enum.Enum):
     UPLOAD = "upload"
     YOUTUBE = "youtube"
     VIMEO = "vimeo"
+    URL = "url"
+
+
+class AudioSource(str, enum.Enum):
+    UPLOAD = "upload"
     URL = "url"

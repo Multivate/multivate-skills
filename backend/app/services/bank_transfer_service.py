@@ -596,7 +596,7 @@ def _complete_payment(
 
 
 def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> PaymentVerifyOut:
-    """Student confirms they sent money — admin must approve before enrollment."""
+    """Student confirms they sent money - admin must approve before enrollment."""
     _rate_limit_verify(user.id)
     payment = _payment_by_reference(db, payload.payment_reference)
     if payment.user_id != user.id:

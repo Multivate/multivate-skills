@@ -22,7 +22,7 @@ def _admin_password() -> str:
 
 
 def ensure_platform_admin(db: Session, *, sync_password: bool = False) -> str:
-    """Create or repair the platform admin. Idempotent — safe on every API startup."""
+    """Create or repair the platform admin. Idempotent - safe on every API startup."""
     bootstrap_password = _admin_password()
     target = db.execute(select(User).where(User.email == ADMIN_EMAIL)).scalar_one_or_none()
     if target:

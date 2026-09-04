@@ -1,4 +1,4 @@
-"""Two-step registration (Redis OTP) for API tests — avoids real outbound email."""
+"""Two-step registration (Redis OTP) for API tests - avoids real outbound email."""
 
 from __future__ import annotations
 

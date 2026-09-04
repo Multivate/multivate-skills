@@ -56,7 +56,7 @@ export function PaymentsCheckoutPanel() {
 
   if (authLoading) {
     return (
-      <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+      <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
         <p className="text-sm text-slate-600">{t("checkingSession")}</p>
       </section>
     );
@@ -64,7 +64,7 @@ export function PaymentsCheckoutPanel() {
 
   if (!user || user.role !== "student") {
     return (
-      <section className="rounded-2xl border border-amber-200/90 bg-amber-50/80 p-6 dark:border-amber-900/50 dark:bg-amber-950/30">
+      <section className="rounded-md border border-amber-200/90 bg-amber-50/80 p-6 dark:border-amber-900/50 dark:bg-amber-950/30">
         <h2 className="text-lg font-extrabold text-brand-ink">{t("studentOnlyTitle")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-700">{t("studentOnlyBody")}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
@@ -110,7 +110,7 @@ export function PaymentsCheckoutPanel() {
   }
 
   return (
-    <section className="mb-10 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
+    <section className="mb-10 rounded-md border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
       <h2 className="text-lg font-extrabold tracking-tight text-brand-ink">{t("title")}</h2>
       <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("subtitle")}</p>
       {loadErr ? <p className="mt-2 text-xs text-amber-800">{loadErr}</p> : null}

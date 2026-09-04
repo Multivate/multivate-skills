@@ -261,7 +261,7 @@ def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthRe
         password_hash=payload["password_hash"],
         role=UserRole.STUDENT,
         is_active=True,
-        two_factor_enabled=True,
+        two_factor_enabled=False,
     )
     db.add(user)
     db.flush()
@@ -291,7 +291,7 @@ def _create_instructor_from_payload(db: Session, payload: dict[str, Any]) -> Aut
         password_hash=payload["password_hash"],
         role=UserRole.INSTRUCTOR,
         is_active=True,
-        two_factor_enabled=True,
+        two_factor_enabled=False,
     )
     db.add(user)
     db.flush()
@@ -319,7 +319,7 @@ def _create_mentor_from_payload(db: Session, payload: dict[str, Any]) -> AuthRes
         password_hash=payload["password_hash"],
         role=UserRole.MENTOR,
         is_active=True,
-        two_factor_enabled=True,
+        two_factor_enabled=False,
     )
     db.add(user)
     db.commit()

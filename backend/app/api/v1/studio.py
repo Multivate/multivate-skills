@@ -11,6 +11,10 @@ from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.studio import (
     AdminCourseRejectIn,
+    AudioPhraseIn,
+    AudioPhraseOut,
+    AudioPhraseReorderIn,
+    AudioPhraseUpdateIn,
     CourseStudioAnalyticsOut,
     CourseStudioBasicsIn,
     CourseStudioBasicsOut,
@@ -21,6 +25,7 @@ from app.schemas.studio import (
     LessonStudioIn,
     LessonStudioOut,
     PlayerCurriculumOut,
+    PlayerPhrasebookOut,
     PlayerProgressIn,
     PlayerProgressOut,
     ReorderSectionsIn,
@@ -74,6 +79,15 @@ def update_basics(
     user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
 ) -> CourseStudioBasicsOut:
     return course_studio_service.update_studio_basics(db, slug, payload, user)
+
+
+@router.delete("/courses/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_course(
+    slug: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> None:
+    course_studio_service.delete_studio_course(db, slug, user)
 
 
 @router.post("/courses/{slug}/thumbnail", response_model=CourseStudioBasicsOut)
@@ -213,6 +227,55 @@ def course_analytics(
     return course_studio_service.studio_analytics(db, slug, user)
 
 
+@router.post("/courses/{slug}/phrases", response_model=AudioPhraseOut, status_code=status.HTTP_201_CREATED)
+def add_phrase(
+    slug: str,
+    payload: AudioPhraseIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> AudioPhraseOut:
+    return course_studio_service.create_audio_phrase(db, slug, payload, user)
+
+
+@router.patch("/phrases/{phrase_id}", response_model=AudioPhraseOut)
+def patch_phrase(
+    phrase_id: UUID,
+    payload: AudioPhraseUpdateIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> AudioPhraseOut:
+    return course_studio_service.update_audio_phrase(db, phrase_id, payload, user)
+
+
+@router.delete("/phrases/{phrase_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_phrase(
+    phrase_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> None:
+    course_studio_service.delete_audio_phrase(db, phrase_id, user)
+
+
+@router.put("/courses/{slug}/phrases/reorder", response_model=list[AudioPhraseOut])
+def reorder_phrases(
+    slug: str,
+    payload: AudioPhraseReorderIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> list[AudioPhraseOut]:
+    return course_studio_service.reorder_audio_phrases(db, slug, payload, user)
+
+
+@router.post("/phrases/{phrase_id}/audio", response_model=AudioPhraseOut)
+async def upload_phrase_audio(
+    phrase_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+    file: UploadFile = File(...),
+) -> AudioPhraseOut:
+    return await course_studio_service.upload_phrase_audio(db, phrase_id, file, user)
+
+
 @player_router.get("/{slug}/curriculum", response_model=PlayerCurriculumOut)
 def player_curriculum(
     slug: str,
@@ -221,6 +284,16 @@ def player_curriculum(
     preview: bool = Query(False),
 ) -> PlayerCurriculumOut:
     return player_service.get_player_curriculum(db, slug, user, preview=preview)
+
+
+@player_router.get("/{slug}/phrasebook", response_model=PlayerPhrasebookOut)
+def player_phrasebook(
+    slug: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    preview: bool = Query(False),
+) -> PlayerPhrasebookOut:
+    return player_service.get_player_phrasebook(db, slug, user, preview=preview)
 
 
 @player_router.get("/{slug}/lessons/{lesson_id}")
@@ -276,4 +349,16 @@ def public_media(storage_path: str) -> FileResponse:
         media_type = "image/png"
     elif suffix == ".webp":
         media_type = "image/webp"
+    elif suffix == ".mp3":
+        media_type = "audio/mpeg"
+    elif suffix == ".wav":
+        media_type = "audio/wav"
+    elif suffix == ".ogg":
+        media_type = "audio/ogg"
+    elif suffix == ".m4a":
+        media_type = "audio/mp4"
+    elif suffix == ".aac":
+        media_type = "audio/aac"
+    elif suffix == ".webm":
+        media_type = "audio/webm"
     return FileResponse(path, media_type=media_type)

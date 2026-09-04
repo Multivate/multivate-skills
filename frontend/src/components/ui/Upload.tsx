@@ -182,10 +182,10 @@ export function Upload({
         />
         <label
           htmlFor={inputId}
-          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition
+          className={`inline-flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 text-sm font-semibold transition
             ${isUploading
-              ? "cursor-not-allowed border-slate-300 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
-              : "border-violet-500 bg-violet-50 text-violet-700 hover:bg-violet-100 dark:border-violet-600 dark:bg-violet-900/20 dark:text-violet-300 dark:hover:bg-violet-900/40"
+              ? "cursor-not-allowed border-brand-ink/15 bg-brand-muted text-brand-ink/40"
+              : "border-brand-ink/20 bg-white text-brand-ink hover:border-brand-accent hover:text-brand-accent"
             }`}
         >
           {isUploading ? (
@@ -238,51 +238,51 @@ export function Upload({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition
+        className={`relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center gap-3 border border-dashed p-8 text-center transition
           ${isDragOver
-            ? "border-violet-500 bg-violet-50 dark:border-violet-400 dark:bg-violet-900/20"
-            : "border-slate-300 bg-slate-50 hover:border-violet-400 hover:bg-violet-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-violet-600 dark:hover:bg-violet-900/10"
+            ? "border-brand-accent bg-brand-accent/5"
+            : "border-brand-ink/20 bg-brand-muted/40 hover:border-brand-ink/40 hover:bg-brand-muted/70"
           }
           ${isUploading ? "cursor-not-allowed opacity-70" : ""}
         `}
       >
         {isUploading ? (
           <>
-            <Spinner className="h-8 w-8 text-violet-500" />
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              Uploading{progress !== null ? ` — ${progress}%` : "…"}
+            <Spinner className="h-8 w-8 text-brand-accent" />
+            <p className="text-sm font-medium text-brand-ink/70">
+              Uploading{progress !== null ? ` - ${progress}%` : "…"}
             </p>
             {progress !== null && (
-              <div className="h-1.5 w-48 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+              <div className="h-1 w-48 overflow-hidden bg-brand-ink/10">
                 <div
-                  className="h-full rounded-full bg-violet-500 transition-all"
+                  className="h-full bg-brand-accent transition-all"
                   style={{ width: `${progress}%` }}
                 />
               </div>
             )}
           </>
         ) : previewUrl || (uploaded && uploaded.mime_type.startsWith("image/")) ? (
-          <div className="relative h-full w-full min-h-[140px] overflow-hidden rounded-lg">
+          <div className="relative min-h-[160px] w-full overflow-hidden">
             <img
               src={uploaded ? uploaded.public_url : (previewUrl || "")}
               alt="Preview"
-              className="absolute inset-0 h-full w-full object-cover rounded-lg"
+              className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-              <span className="text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-md">
-                Change Image
+            <div className="absolute inset-0 flex items-center justify-center bg-brand-ink/50 opacity-0 transition-opacity hover:opacity-100">
+              <span className="bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink">
+                Change image
               </span>
             </div>
           </div>
         ) : (
           <>
-            <UploadIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+            <UploadIcon className="h-9 w-9 text-brand-ink/35" />
             <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <p className="text-sm font-semibold text-brand-ink">
                 {label}
               </p>
               {hint && (
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+                <p className="mt-1 text-xs text-brand-ink/50">{hint}</p>
               )}
             </div>
           </>
@@ -291,10 +291,10 @@ export function Upload({
 
       {/* Success state */}
       {uploaded && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+        <div className="flex items-center gap-2 border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           <CheckIcon className="h-4 w-4 shrink-0" />
           <span className="truncate font-medium">{uploaded.original_filename}</span>
-          <span className="ml-auto shrink-0 text-xs text-emerald-500">
+          <span className="ml-auto shrink-0 text-xs text-emerald-600">
             {formatBytes(uploaded.size_bytes)}
           </span>
         </div>
@@ -302,7 +302,7 @@ export function Upload({
 
       {/* Error state */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+        <div className="flex items-center gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           <ErrorIcon className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>

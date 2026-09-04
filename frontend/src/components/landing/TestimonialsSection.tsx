@@ -20,7 +20,7 @@ function StarRow({ rating }: { rating: number }) {
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
-          className={`h-3.5 w-3.5 ${i < rating ? "fill-amber-400 text-amber-500" : "text-slate-200"}`}
+          className={`h-3.5 w-3.5 ${i < rating ? "fill-brand-accent text-brand-accent" : "text-brand-ink/15"}`}
           strokeWidth={1.5}
         />
       ))}
@@ -68,57 +68,54 @@ export function TestimonialsSection({ initialReviews = [] }: { initialReviews?: 
   }
 
   return (
-    <section id="success-stories" className="section-y bg-white">
+    <section id="success-stories" className="section-y bg-brand-paper">
       <div className="container-page">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl">
-            <h2 className="heading-section text-pretty text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.65rem] lg:text-[1.85rem]">
-              {t("heading")}
-            </h2>
+            <div className="marketing-rule mb-5" aria-hidden />
+            <h2 className="heading-section text-3xl sm:text-4xl">{t("heading")}</h2>
           </div>
         </div>
 
-        <div className="relative mt-10 lg:mt-12">
+        <div className="relative mt-12">
           <button
             type="button"
             aria-label={t("scrollRight")}
             onClick={() => scrollBy(1)}
-            className="absolute right-0 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-secondary/40 hover:bg-brand-secondary/5 active:scale-95 md:flex"
+            className="absolute right-0 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-brand-ink/15 bg-brand-paper text-brand-ink transition hover:border-brand-accent hover:text-brand-accent md:flex"
           >
             <ChevronRight className="h-5 w-5" strokeWidth={2} />
           </button>
 
           <div
             ref={scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 md:pr-14 [&::-webkit-scrollbar]:hidden"
+            className="flex gap-0 overflow-x-auto pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] md:pr-14 [&::-webkit-scrollbar]:hidden"
           >
-            {reviews.map((review) => (
+            {reviews.map((review, index) => (
               <article
                 key={review.id}
-                className="flex w-[min(100%,320px)] shrink-0 snap-start flex-col rounded-2xl border border-slate-200/95 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-brand-secondary/30 hover:shadow-md sm:w-[300px] lg:w-[min(100%,340px)] lg:p-7"
+                className={`flex w-[min(100%,22rem)] shrink-0 snap-start flex-col border-y border-r border-brand-ink/10 px-6 py-8 first:border-l sm:w-[20rem] lg:w-[22rem] ${
+                  index % 2 === 0 ? "bg-brand-paper" : "bg-brand-muted/60"
+                }`}
               >
-                <span className="font-serif text-[2.75rem] font-bold leading-none text-brand-secondary/40" aria-hidden>
-                  “
-                </span>
-
-                <div className="mt-1 min-h-[5rem] flex-1">
-                  <StarRow rating={review.rating} />
-                  <blockquote className="mt-3 text-sm leading-relaxed text-slate-700">{review.comment}</blockquote>
-                </div>
+                <StarRow rating={review.rating} />
+                <blockquote className="mt-5 flex-1 font-display text-lg font-medium leading-snug tracking-tight text-brand-ink">
+                  “{review.comment}”
+                </blockquote>
 
                 <div className="mt-8 flex items-center gap-3">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-secondary/15 text-sm font-bold text-brand-secondary ring-2 ring-brand-secondary/20">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-ink text-xs font-bold text-white">
                     {initials(review.reviewer_display_name)}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">{review.reviewer_display_name}</p>
-                    <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-500">{review.course_title}</p>
+                    <p className="truncate text-sm font-semibold text-brand-ink">{review.reviewer_display_name}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-brand-ink/55">{review.course_title}</p>
                   </div>
                 </div>
 
                 <Link
                   href={`/courses/${review.course_slug}`}
-                  className="mt-5 inline-flex items-center gap-0.5 text-sm font-semibold text-brand-primary transition hover:text-brand-primary-dark"
+                  className="mt-6 inline-flex items-center gap-0.5 text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark"
                 >
                   {t("viewCourse")}
                   <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -131,7 +128,7 @@ export function TestimonialsSection({ initialReviews = [] }: { initialReviews?: 
         <div className="mt-10">
           <Link
             href="/courses"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-brand-primary transition hover:text-brand-primary-dark"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark"
           >
             {t("viewAllStories")}
             <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />

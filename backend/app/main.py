@@ -24,6 +24,7 @@ from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.models.certificate import Certificate  # noqa: F401
 from app.models.course import Course  # noqa: F401
+from app.models.audio_phrase import AudioPhrase  # noqa: F401
 from app.models.course_audit_log import CourseAuditLog  # noqa: F401
 from app.models.course_section import CourseSection  # noqa: F401
 from app.models.lesson_resource import LessonResource  # noqa: F401

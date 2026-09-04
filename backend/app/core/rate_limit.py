@@ -34,7 +34,7 @@ def check_rate_limit(key: str, *, limit: int, window_sec: int = 60) -> bool:
         count, _ = pipe.execute()
         return int(count) <= limit
     except Exception as exc:
-        _logger.warning("Rate limit Redis unavailable key=%s — memory fallback: %s", key, exc)
+        _logger.warning("Rate limit Redis unavailable key=%s - memory fallback: %s", key, exc)
         return _memory_check(key, limit, window_sec)
 
 

@@ -117,7 +117,7 @@ function InstructorContentUpload() {
   if (!dash) return <p className="text-sm text-slate-600">Loading your courses…</p>;
   if (dash.courses.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
+      <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 /50">
         <p className="text-sm leading-relaxed text-slate-600">
           Create a course first, then add lessons and media here.
         </p>
@@ -136,7 +136,7 @@ function InstructorContentUpload() {
       <p className="text-sm leading-relaxed text-slate-600">
         Add structured lessons to a course you own. Each lesson appears in the public curriculum for that course.
       </p>
-      <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
+      <div className="space-y-4 rounded-md border border-slate-200/90 bg-white  p-6 shadow-none">
         <label className="block text-sm font-semibold text-slate-800">
           Course
           <select
@@ -267,7 +267,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "create-course") {
     return (
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center shadow-sm">
+      <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none">
         <p className="text-sm text-slate-600">Course creation now lives in the full studio experience.</p>
         <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand mt-4 inline-flex !min-w-0 text-sm">
           Open course studio
@@ -278,7 +278,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "content-upload") {
     return (
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none dark:border-slate-800 ">
         <p className="text-sm leading-relaxed text-slate-600">
           Add lessons and videos in Course Studio: upload a file or paste a YouTube, Vimeo, or video link. Students watch inside the app.
         </p>
@@ -294,11 +294,11 @@ export function InstructorSectionContent({ section }: { section: string }) {
     if (students === null) return <p className="text-sm text-slate-600">Loading enrollments…</p>;
     if (students.length === 0) {
       return (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/50">
+        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
           <p className="text-sm leading-relaxed text-slate-600">
             When students enroll in your courses, they will be listed here with enrollment date and contact details.
           </p>
-          <Link href="/courses" className="mt-4 inline-block text-sm font-bold text-instructor-purple hover:underline">
+          <Link href="/courses" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
             View public catalog
           </Link>
         </div>
@@ -308,11 +308,11 @@ export function InstructorSectionContent({ section }: { section: string }) {
       <div className="space-y-4">
         <p className="max-w-3xl text-sm leading-relaxed text-slate-700 dark:text-slate-300">{tRel("instructorRosterBlurb")}</p>
         <p>
-          <Link href="/courses" className="text-sm font-bold text-instructor-purple hover:underline">
+          <Link href="/courses" className="text-sm font-bold text-brand-accent hover:underline">
             {tRel("browseCatalogCta")}
           </Link>
         </p>
-        <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
             <tr>
@@ -332,7 +332,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
                   <p className="text-xs text-slate-500">{s.user_email}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/courses/${s.course_slug}`} className="font-semibold text-instructor-purple hover:underline">
+                  <Link href={`/courses/${s.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                     {s.course_title}
                   </Link>
                 </td>
@@ -349,64 +349,69 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "analytics") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (!dash) return <p className="text-sm text-slate-600">Loading analytics…</p>;
+    if (!dash) return <p className="text-sm text-brand-ink/60">Loading analytics…</p>;
     const { totals, courses } = dash;
     return (
       <div className="space-y-8">
-        <header className="flex flex-wrap items-end justify-between gap-3">
+        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-6">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-brand-ink">Analytics</h1>
-            <p className="mt-1 text-sm text-slate-600">Your teaching stats update automatically.</p>
+            <p className="tag-overline">Instructor</p>
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink">Analytics</h1>
+            <p className="mt-2 text-sm text-brand-ink/60">Enrollment and learner activity across your courses.</p>
           </div>
           <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
         </header>
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Your courses</p>
-            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_courses}</p>
+
+        <section className="grid grid-cols-1 gap-px overflow-hidden border border-brand-ink/10 bg-brand-ink/10 sm:grid-cols-3">
+          <div className="bg-white px-5 py-5">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Courses</p>
+            <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.total_courses}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total enrollments</p>
-            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_enrollments}</p>
+          <div className="bg-white px-5 py-5">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Enrollments</p>
+            <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.total_enrollments}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Unique learners</p>
-            <p className="mt-2 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.unique_learners}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed revenue</p>
-            <p
-              className="mt-2 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink"
-              title={formatMoney(totals.revenue_completed_cents)}
-            >
-              {formatMoneyCompact(totals.revenue_completed_cents)}
-            </p>
+          <div className="bg-white px-5 py-5">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Unique learners</p>
+            <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.unique_learners}</p>
           </div>
         </section>
-        <section className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-5 shadow-sm">
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Per-course enrollments</h2>
-          <div className="mt-4 overflow-x-auto">
+
+        <p className="text-sm text-brand-ink/55">
+          Revenue lives on{" "}
+          <Link href="/dashboard/instructor/earnings" className="font-semibold text-brand-accent hover:text-brand-accent-dark">
+            Earnings
+          </Link>
+          .
+        </p>
+
+        <section className="border border-brand-ink/10 bg-white">
+          <div className="border-b border-brand-ink/10 px-5 py-4 sm:px-6">
+            <h2 className="font-display text-lg font-semibold text-brand-ink">Per-course enrollments</h2>
+            <p className="mt-1 text-sm text-brand-ink/55">How each course is performing</p>
+          </div>
+          <div className="overflow-x-auto px-5 py-2 sm:px-6">
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
-                  <th className="pb-2 pr-4">Course</th>
-                  <th className="pb-2 pr-4">Lessons</th>
-                  <th className="pb-2">Enrollments</th>
+                <tr className="border-b border-brand-ink/10 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-brand-ink/45">
+                  <th className="py-3 pr-4">Course</th>
+                  <th className="py-3 pr-4">Lessons</th>
+                  <th className="py-3">Enrollments</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-brand-ink/10">
                 {courses.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-6 text-center text-slate-600">
+                    <td colSpan={3} className="py-8 text-center text-brand-ink/55">
                       No courses yet.
                     </td>
                   </tr>
                 ) : (
                   courses.map((c) => (
                     <tr key={c.slug}>
-                      <td className="py-3 pr-4 font-semibold text-brand-ink">{c.title}</td>
-                      <td className="py-3 pr-4 tabular-nums text-slate-700">{c.lessons_count}</td>
-                      <td className="py-3 tabular-nums text-slate-700">{c.enrollment_count}</td>
+                      <td className="py-3.5 pr-4 font-semibold text-brand-ink">{c.title}</td>
+                      <td className="py-3.5 pr-4 tabular-nums text-brand-ink/70">{c.lessons_count}</td>
+                      <td className="py-3.5 tabular-nums text-brand-ink/70">{c.enrollment_count}</td>
                     </tr>
                   ))
                 )}
@@ -420,34 +425,41 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "earnings") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (!dash) return <p className="text-sm text-slate-600">Loading earnings…</p>;
+    if (!dash) return <p className="text-sm text-brand-ink/60">Loading earnings…</p>;
     return (
-      <div className="space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-3">
+      <div className="space-y-8">
+        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-6">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-brand-ink">Earnings</h1>
-            <p className="mt-1 text-sm text-slate-600">Revenue from your courses updates automatically.</p>
+            <p className="tag-overline">Instructor</p>
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink">Earnings</h1>
+            <p className="mt-2 text-sm text-brand-ink/60">Completed payment volume from your courses.</p>
           </div>
           <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
         </header>
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed course revenue</p>
+
+        <section className="border border-brand-ink/10 bg-white px-5 py-8 sm:px-8">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">
+            Completed course revenue
+          </p>
           <p
-            className="mt-2 min-w-0 truncate text-2xl font-extrabold tabular-nums text-brand-ink sm:text-3xl"
+            className="mt-4 font-display text-4xl font-bold tabular-nums tracking-tight text-brand-ink"
             title={formatMoney(dash.totals.revenue_completed_cents)}
           >
             {formatMoneyCompact(dash.totals.revenue_completed_cents)}
           </p>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Sum of completed payments tied to your published courses. For your own purchases and receipts, open Billing
-            from the top menu.
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-brand-ink/60">
+            Sum of completed payments tied to courses you instruct. For your personal purchases and receipts, open
+            Billing.
           </p>
-        </div>
-        <Link href="/dashboard/payments" className="inline-flex text-sm font-semibold text-instructor-purple hover:underline">
-          Open billing and payments
-        </Link>
-        </div>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <Link href="/dashboard/payments" className="text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
+              Open billing
+            </Link>
+            <Link href="/dashboard/instructor/analytics" className="text-sm font-semibold text-brand-ink/55 hover:text-brand-ink">
+              View enrollment analytics
+            </Link>
+          </div>
+        </section>
       </div>
     );
   }
@@ -457,18 +469,18 @@ export function InstructorSectionContent({ section }: { section: string }) {
     if (reviews === null) return <p className="text-sm text-slate-600">Loading reviews…</p>;
     if (reviews.length === 0) {
       return (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/50">
+        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
           <p className="text-sm leading-relaxed text-slate-600">
             Learners can leave a rating after they enroll. Share your courses and feedback will show up here.
           </p>
-          <Link href="/dashboard/instructor/analytics" className="mt-4 inline-block text-sm font-bold text-instructor-purple hover:underline">
+          <Link href="/dashboard/instructor/analytics" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
             View analytics
           </Link>
         </div>
       );
     }
     return (
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 shadow-sm">
+      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
             <tr>
@@ -484,7 +496,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
               <tr key={r.id}>
                 <td className="px-4 py-3 text-xs text-slate-600">{new Date(r.created_at).toLocaleString()}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/courses/${r.course_slug}`} className="font-semibold text-instructor-purple hover:underline">
+                  <Link href={`/courses/${r.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                     {r.course_title}
                   </Link>
                 </td>

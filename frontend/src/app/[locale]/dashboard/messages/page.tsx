@@ -80,7 +80,7 @@ export default function DashboardMessagesPage() {
 
   if (rows === null) {
     return (
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-sm">
+      <div className="mx-auto max-w-3xl rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-none">
         <p className="text-sm font-medium text-slate-600">Loading inbox…</p>
       </div>
     );
@@ -96,7 +96,7 @@ export default function DashboardMessagesPage() {
         </p>
       </header>
 
-      <section className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-sm sm:p-8">
+      <section className="rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-none sm:p-8">
         <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Compose</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <label className={`${formLabelClass} sm:col-span-2`}>
@@ -145,7 +145,7 @@ export default function DashboardMessagesPage() {
         <section>
           <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Inbox</h2>
           {rows.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
+            <div className="mt-6 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
               <p className="text-sm text-slate-600">No messages yet. When someone writes to you, it will appear here.</p>
             </div>
           ) : (
@@ -153,7 +153,7 @@ export default function DashboardMessagesPage() {
               {rows.map((m) => (
                 <li
                   key={m.id}
-                  className={`rounded-2xl border px-5 py-4 shadow-sm ${
+                  className={`rounded-md border px-5 py-4 shadow-none ${
                     m.from_me ? "border-slate-200/90 bg-white" : "border-slate-200/90 bg-white"
                   }`}
                 >

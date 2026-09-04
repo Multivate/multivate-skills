@@ -20,7 +20,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader overlay />
       <main>
         <HeroSection />
         <ChallengesSection />

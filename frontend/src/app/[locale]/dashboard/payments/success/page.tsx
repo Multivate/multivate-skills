@@ -52,7 +52,7 @@ export default function PaymentSuccessPage() {
   if (checking) {
     return (
       <div className="mx-auto max-w-lg text-center">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-10 shadow-sm">
+        <div className="rounded-md border border-slate-200/90 bg-white p-10 shadow-none">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-brand-accent" />
           <h1 className="mt-4 text-xl font-extrabold text-brand-ink">{t("checkingTitle")}</h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">{t("checkingBody")}</p>
@@ -64,7 +64,7 @@ export default function PaymentSuccessPage() {
   if (!confirmed && ref && !isFree) {
     return (
       <div className="mx-auto max-w-lg text-center">
-        <div className="rounded-2xl border border-amber-200/90 bg-amber-50/80 p-10 shadow-sm">
+        <div className="rounded-md border border-amber-200/90 bg-amber-50/80 p-10 shadow-none">
           <h1 className="text-xl font-extrabold text-brand-ink">{t("pendingTitle")}</h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-700">{t("pendingBody")}</p>
           <Link href="/dashboard/payments" className="btn-primary-brand mt-6 inline-flex !px-6 !py-2.5 text-sm">
@@ -77,7 +77,7 @@ export default function PaymentSuccessPage() {
 
   return (
     <div className="mx-auto max-w-lg text-center">
-      <div className="rounded-2xl border border-emerald-200/90 bg-emerald-50/80 p-10 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-950/30">
+      <div className="rounded-md border border-emerald-200/90 bg-emerald-50/80 p-10 shadow-none dark:border-emerald-900/40 dark:bg-emerald-950/30">
         <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-600 animate-[pulse_2s_ease-in-out_1]" />
         <h1 className="mt-4 text-2xl font-extrabold text-brand-ink">{t("title")}</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-700">{t("body")}</p>

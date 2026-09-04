@@ -134,11 +134,10 @@ def get_course_for_management(db: Session, slug: str, actor: User) -> Course:
 
 
 def delete_course(db: Session, slug: str, actor: User) -> None:
-    if actor.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins may delete courses")
     c = get_course_by_slug(db, slug)
     if not c:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+    assert_can_manage_course(actor, c)
     db.delete(c)
     db.commit()
     invalidate_catalog_cache()

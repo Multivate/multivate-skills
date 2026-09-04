@@ -4,6 +4,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { readApiError } from "@/lib/api-error";
+import { AudioPhrasebookPlayer } from "@/components/player/AudioPhrasebookPlayer";
 
 export default function LearnCourseRedirect({ slug }: { slug: string }) {
   const router = useRouter();
@@ -11,12 +12,43 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
   const preview = searchParams.get("preview") === "1";
   const previewQs = preview ? "?preview=1" : "";
   const [error, setError] = useState<string | null>(null);
+  const [audioMode, setAudioMode] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setError(null);
-      const res = await fetch(`/api/player/${encodeURIComponent(slug)}/curriculum${previewQs}`, {
+      setChecking(true);
+
+      // Prefer phrasebook for audio courses.
+      const phraseRes = await fetch(`/api/player/${encodeURIComponent(slug)}/phrasebook${preview ? "?preview=true" : ""}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (cancelled) return;
+
+      if (phraseRes.status === 401) {
+        router.replace(`/login?from=${encodeURIComponent(`/learn/${slug}${previewQs}`)}`);
+        return;
+      }
+
+      if (phraseRes.ok) {
+        setAudioMode(true);
+        setChecking(false);
+        return;
+      }
+
+      if (phraseRes.status === 404) {
+        // Not an audio course - open video curriculum.
+      } else {
+        const data = await phraseRes.json().catch(() => null);
+        setError(readApiError(data, "We couldn't open this course right now."));
+        setChecking(false);
+        return;
+      }
+
+      const res = await fetch(`/api/player/${encodeURIComponent(slug)}/curriculum${preview ? "?preview=true" : ""}`, {
         credentials: "include",
         cache: "no-store",
       });
@@ -30,6 +62,7 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
 
       if (!res.ok) {
         setError(readApiError(data, "We couldn't open this course right now."));
+        setChecking(false);
         return;
       }
 
@@ -41,6 +74,7 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
 
       if (!first) {
         setError("This course has no lessons yet. Add lessons in Course Studio, then try again.");
+        setChecking(false);
         return;
       }
 
@@ -51,30 +85,25 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
     };
   }, [slug, previewQs, preview, router]);
 
+  if (audioMode) {
+    return <AudioPhrasebookPlayer slug={slug} preview={preview} />;
+  }
+
   if (error) {
     return (
-      <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-sm leading-relaxed text-slate-700">{error}</p>
+      <div className="mx-auto max-w-lg border border-brand-ink/10 bg-white p-8 text-center">
+        <p className="text-sm leading-relaxed text-brand-ink/70">{error}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           {preview ? (
-            <Link
-              href={`/dashboard/instructor/studio/${slug}`}
-              className="rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            >
+            <Link href={`/dashboard/instructor/studio/${slug}`} className="btn-cta-accent !min-w-0 !px-4 !py-2.5 text-sm">
               Back to Course Studio
             </Link>
           ) : (
-            <Link
-              href="/dashboard/courses"
-              className="rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            >
+            <Link href="/dashboard/courses" className="btn-cta-accent !min-w-0 !px-4 !py-2.5 text-sm">
               My courses
             </Link>
           )}
-          <Link
-            href="/courses"
-            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
+          <Link href="/courses" className="btn-outline-brand !min-w-0 !px-4 !py-2.5 text-sm">
             Browse courses
           </Link>
         </div>
@@ -82,9 +111,13 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
     );
   }
 
-  return (
-    <div className="flex min-h-[40vh] items-center justify-center">
-      <p className="animate-pulse text-sm text-slate-500">Opening your course…</p>
-    </div>
-  );
+  if (checking) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-brand-ink/50">Opening your course…</p>
+      </div>
+    );
+  }
+
+  return null;
 }

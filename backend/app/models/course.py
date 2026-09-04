@@ -8,12 +8,12 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, Uui
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.models.course_status import CourseLevel, CourseStatus
+from app.models.course_status import CourseFormat, CourseLevel, CourseStatus
 from app.models.enum_column import value_string_enum
 
 
 class Course(Base):
-    """Catalog row — instructor-authored via Course Studio."""
+    """Catalog row - instructor-authored via Course Studio."""
 
     __tablename__ = "courses"
 
@@ -29,6 +29,14 @@ class Course(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="NGN")
     is_free: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     category: Mapped[str] = mapped_column(String(64), nullable=False, default="general")
+    format: Mapped[CourseFormat] = mapped_column(
+        value_string_enum(CourseFormat),
+        nullable=False,
+        default=CourseFormat.VIDEO,
+        index=True,
+    )
+    source_language: Mapped[str] = mapped_column(String(8), nullable=False, default="en")
+    target_language: Mapped[str] = mapped_column(String(8), nullable=False, default="de")
     level: Mapped[CourseLevel] = mapped_column(
         value_string_enum(CourseLevel),
         nullable=False,

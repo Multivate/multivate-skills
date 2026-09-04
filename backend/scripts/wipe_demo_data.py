@@ -100,7 +100,7 @@ def main() -> None:
         logger.info("Database wipe committed.")
     except Exception:
         db.rollback()
-        logger.exception("Database wipe failed — rolled back.")
+        logger.exception("Database wipe failed - rolled back.")
         raise
     finally:
         db.close()

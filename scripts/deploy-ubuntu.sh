@@ -9,7 +9,7 @@ cd "$ROOT"
 COMPOSE="docker compose -f docker-compose.prod.yml --env-file .env.production"
 
 if [ ! -f .env.production ]; then
-  echo "Missing .env.production — copy .env.production.example and fill in secrets."
+  echo "Missing .env.production - copy .env.production.example and fill in secrets."
   exit 1
 fi
 

@@ -26,7 +26,6 @@ export const instructorNavGroups: DashboardNavGroup[] = [
     items: [
       { href: "/dashboard/courses", id: "myCourses" },
       { href: "/dashboard/instructor/studio", id: "courseStudio" },
-      { href: "/dashboard/instructor/studio/new", id: "createCourse" },
     ],
   },
   {
@@ -106,27 +105,27 @@ export const dashboardAccent: Record<
   { active: string; focus: string; avatar: string; itemActive: string }
 > = {
   admin: {
-    active: "bg-admin-indigo/10 text-admin-indigo",
-    itemActive: "bg-admin-indigo/8 text-admin-indigo",
-    focus: "focus:border-admin-indigo focus:ring-2 focus:ring-admin-indigo/20",
-    avatar: "bg-admin-indigo/15 text-admin-indigo",
+    active: "bg-brand-ink text-white",
+    itemActive: "bg-brand-muted text-brand-ink",
+    focus: "focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20",
+    avatar: "bg-brand-ink text-white",
   },
   instructor: {
-    active: "bg-instructor-purple/10 text-instructor-purple",
-    itemActive: "bg-instructor-purple/8 text-instructor-purple",
-    focus: "focus:border-instructor-purple focus:ring-2 focus:ring-instructor-purple/20",
-    avatar: "bg-instructor-purple/15 text-instructor-purple-deep",
+    active: "bg-brand-ink text-white",
+    itemActive: "bg-brand-muted text-brand-ink",
+    focus: "focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20",
+    avatar: "bg-brand-ink text-white",
   },
   mentor: {
-    active: "bg-brand-accent/10 text-brand-accent",
-    itemActive: "bg-brand-accent/10 text-brand-accent",
+    active: "bg-brand-accent/15 text-brand-accent-dark",
+    itemActive: "bg-brand-accent/10 text-brand-accent-dark",
     focus: "focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20",
     avatar: "bg-brand-accent/15 text-brand-accent-dark",
   },
   student: {
-    active: "bg-brand-primary/10 text-brand-primary",
-    itemActive: "bg-brand-primary/8 text-brand-primary",
-    focus: "focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20",
-    avatar: "bg-brand-primary/15 text-brand-primary",
+    active: "bg-brand-accent/15 text-brand-accent-dark",
+    itemActive: "bg-brand-accent/10 text-brand-accent-dark",
+    focus: "focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20",
+    avatar: "bg-brand-ink text-white",
   },
 };

@@ -48,6 +48,15 @@ class Settings(BaseSettings):
         description="If true, SQLAlchemy creates missing tables on startup. In production: use alembic migrations. On first deploy: set to true temporarily.",
     )
 
+    schema_patch_data_heals: bool = Field(
+        default=True,
+        description=(
+            "If true, schema patches may UPDATE existing rows (2FA defaults, currency/status cleanup). "
+            "Set SCHEMA_PATCH_DATA_HEALS=false on a carefully upgraded production DB if you only want "
+            "additive ALTER/CREATE IF NOT EXISTS and do not want existing rows rewritten."
+        ),
+    )
+
     resend_api_key: str = Field(
         default="",
         description="Resend API key. Required in staging/production to send OTP mail.",
@@ -116,6 +125,10 @@ class Settings(BaseSettings):
     allowed_video_types: str = Field(
         default="video/mp4,video/webm,video/quicktime",
         description="Comma-separated allowed video MIME types.",
+    )
+    allowed_audio_types: str = Field(
+        default="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,audio/webm,audio/mp4,audio/aac",
+        description="Comma-separated allowed audio MIME types for phrasebook courses.",
     )
 
     google_client_id: str = Field(default="", description="Google OAuth client ID")

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Multivate — PostgreSQL bootstrap (all-in-one or psql orchestration)
+-- Multivate - PostgreSQL bootstrap (all-in-one or psql orchestration)
 -- =============================================================================
 --
 -- pgAdmin (recommended): open and run, in order, as superuser on database postgres:

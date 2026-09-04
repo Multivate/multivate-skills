@@ -186,7 +186,7 @@ export function BankTransferCheckoutPanel() {
 
   if (authLoading || (busy && !data)) {
     return (
-      <section className="flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-8 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+      <section className="flex items-center gap-3 rounded-md border border-slate-200/90 bg-white p-8 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
         <Loader2 className="h-5 w-5 animate-spin text-brand-secondary" aria-hidden />
         <p className="text-sm text-slate-600">{t("loading")}</p>
       </section>
@@ -195,7 +195,7 @@ export function BankTransferCheckoutPanel() {
 
   if (!user || user.role !== "student") {
     return (
-      <section className="rounded-2xl border border-amber-200/90 bg-amber-50/80 p-6 dark:border-amber-900/50 dark:bg-amber-950/30">
+      <section className="rounded-md border border-amber-200/90 bg-amber-50/80 p-6 dark:border-amber-900/50 dark:bg-amber-950/30">
         <h2 className="text-lg font-extrabold text-brand-ink">{t("studentOnlyTitle")}</h2>
         <p className="mt-2 text-sm text-slate-700">{t("studentOnlyBody")}</p>
       </section>
@@ -214,7 +214,7 @@ export function BankTransferCheckoutPanel() {
         </p>
       ) : null}
 
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
+      <div className="rounded-md border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
         <h2 className="text-lg font-extrabold text-brand-ink">{remita ? t("remitaTitle") : t("title")}</h2>
         <p className="mt-2 text-sm text-slate-600">{data?.message ?? t("subtitle")}</p>
 
