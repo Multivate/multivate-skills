@@ -294,8 +294,6 @@ def get_studio_course(db: Session, slug: str, actor: User) -> CourseStudioDetail
 def update_studio_basics(db: Session, slug: str, payload: CourseStudioBasicsIn, actor: User) -> CourseStudioBasicsOut:
     course = course_service.get_course_for_management(db, slug, actor)
     course_service.assert_can_manage_course(actor, course)
-    if course.status == CourseStatus.PUBLISHED:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Unpublish before editing published course")
 
     course.title = payload.title.strip()
     course.subtitle = payload.subtitle.strip() if payload.subtitle else None

@@ -185,21 +185,29 @@ export function AdminDiscountCodes() {
               Discount type
               <select
                 value={discountType}
-                onChange={(e) => setDiscountType(e.target.value as "percent" | "fixed")}
+                onChange={(e) => {
+                  const next = e.target.value as "percent" | "fixed";
+                  setDiscountType(next);
+                  setDiscountValue(next === "fixed" ? 100000 : 10);
+                }}
                 className={formInputClass}
               >
                 <option value="percent">Percent off</option>
-                <option value="fixed">Fixed amount off (kobo)</option>
+                <option value="fixed">Fixed amount off (NGN)</option>
               </select>
             </label>
             <label className={formLabelClass}>
-              {discountType === "percent" ? "Percent (1-100)" : "Amount off in kobo"}
+              {discountType === "percent" ? "Percent (1-100)" : "Amount off (NGN)"}
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={discountType === "percent" ? 100 : undefined}
-                value={discountValue}
-                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+                value={discountType === "fixed" ? Math.round(discountValue / 100) || "" : discountValue || ""}
+                onChange={(e) => {
+                  const n = Number(e.target.value) || 0;
+                  setDiscountValue(discountType === "fixed" ? Math.max(0, Math.round(n) * 100) : n);
+                }}
                 className={formInputClass}
               />
             </label>
@@ -207,6 +215,7 @@ export function AdminDiscountCodes() {
               Max total uses (optional)
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 value={maxUses}
                 onChange={(e) => setMaxUses(e.target.value)}

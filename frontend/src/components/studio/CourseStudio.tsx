@@ -577,11 +577,12 @@ export function CourseStudio({ initialSlug }: Props) {
                 </label>
                 {!isFree ? (
                   <div className="mt-4">
-                    <Field label="Price (NGN)" hint={`Stored as ${priceCents.toLocaleString()} kobo · ${formatMoney(priceCents, "NGN")}`}>
+                    <Field label="Price (NGN)" hint={`Shown as ${formatMoney(priceCents, "NGN")}`}>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min={0}
-                        step={100}
+                        step={1}
                         value={priceNaira}
                         onChange={(e) => setPriceCents(Math.max(0, Math.round(Number(e.target.value) || 0) * 100))}
                         className={studioFieldClass}

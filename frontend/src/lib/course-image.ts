@@ -31,6 +31,8 @@ export function resolveCourseImageUrl(raw: string | null | undefined): string | 
       return url.replace("/api/v1/media/public/", "/api/media/public/");
     }
     if (url.startsWith("/api/media/public/")) return url;
+    // Course covers from studio are stored as /uploads/courses/...
+    if (url.startsWith("/uploads/")) return url;
     return url;
   }
 
@@ -42,6 +44,12 @@ export function resolveCourseImageUrl(raw: string | null | undefined): string | 
     const mediaIdx = parsed.pathname.indexOf(mediaMarker);
     if (mediaIdx >= 0) {
       return `/api/media/public/${parsed.pathname.slice(mediaIdx + mediaMarker.length)}`;
+    }
+
+    const uploadsMarker = "/uploads/";
+    const uploadsIdx = parsed.pathname.indexOf(uploadsMarker);
+    if (uploadsIdx >= 0) {
+      return `/uploads/${parsed.pathname.slice(uploadsIdx + uploadsMarker.length)}`;
     }
 
     if (ALLOWED_HOSTS.has(parsed.hostname)) return url;

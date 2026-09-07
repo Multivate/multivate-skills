@@ -315,6 +315,123 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             )
             """,
         )
+        # Heal Alembic 000 shape (had redeemed_at, no payment_id/created_at).
+        _run(conn, "ALTER TABLE discount_redemptions ADD COLUMN IF NOT EXISTS payment_id UUID")
+        _run(conn, "ALTER TABLE discount_redemptions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'discount_redemptions' AND column_name = 'redeemed_at'
+              ) THEN
+                EXECUTE 'UPDATE discount_redemptions SET created_at = redeemed_at WHERE redeemed_at IS NOT NULL';
+              END IF;
+            END $$;
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_discount_redemptions_discount_code_id ON discount_redemptions (discount_code_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_discount_redemptions_user_id ON discount_redemptions (user_id)")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'discount_redemptions_payment_id_fkey'
+              ) THEN
+                BEGIN
+                  ALTER TABLE discount_redemptions
+                    ADD CONSTRAINT discount_redemptions_payment_id_fkey
+                    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE;
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+              END IF;
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes WHERE indexname = 'discount_redemptions_payment_id_key'
+              ) AND NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'discount_redemptions_payment_id_key'
+              ) THEN
+                BEGIN
+                  CREATE UNIQUE INDEX IF NOT EXISTS ix_discount_redemptions_payment_id
+                    ON discount_redemptions (payment_id);
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+              END IF;
+            END $$;
+            """,
+        )
+
+        # Heal Alembic 000 inbox_messages (user_id/message/read) → sender_id/recipient_id/body/read_at.
+        _run(conn, "ALTER TABLE inbox_messages ADD COLUMN IF NOT EXISTS sender_id UUID")
+        _run(conn, "ALTER TABLE inbox_messages ADD COLUMN IF NOT EXISTS recipient_id UUID")
+        _run(conn, "ALTER TABLE inbox_messages ADD COLUMN IF NOT EXISTS body TEXT")
+        _run(conn, "ALTER TABLE inbox_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'inbox_messages' AND column_name = 'user_id'
+              ) THEN
+                EXECUTE 'UPDATE inbox_messages SET sender_id = user_id WHERE sender_id IS NULL';
+                EXECUTE 'UPDATE inbox_messages SET recipient_id = user_id WHERE recipient_id IS NULL';
+              END IF;
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'inbox_messages' AND column_name = 'message'
+              ) THEN
+                EXECUTE 'UPDATE inbox_messages SET body = message WHERE body IS NULL';
+              END IF;
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'inbox_messages' AND column_name = 'read'
+              ) THEN
+                EXECUTE 'UPDATE inbox_messages SET read_at = created_at WHERE read IS TRUE AND read_at IS NULL';
+              END IF;
+            END $$;
+            """,
+        )
+        _run(conn, "UPDATE inbox_messages SET body = COALESCE(body, '') WHERE body IS NULL")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_inbox_messages_sender_id ON inbox_messages (sender_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_inbox_messages_recipient_id ON inbox_messages (recipient_id)")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'inbox_messages_sender_id_fkey'
+              ) THEN
+                BEGIN
+                  ALTER TABLE inbox_messages
+                    ADD CONSTRAINT inbox_messages_sender_id_fkey
+                    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+              END IF;
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'inbox_messages_recipient_id_fkey'
+              ) THEN
+                BEGIN
+                  ALTER TABLE inbox_messages
+                    ADD CONSTRAINT inbox_messages_recipient_id_fkey
+                    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE;
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+              END IF;
+            END $$;
+            """,
+        )
+
         _run(conn, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(32)")
         _run(
             conn,

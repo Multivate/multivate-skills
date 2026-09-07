@@ -33,6 +33,7 @@ function ThumbnailPlaceholder({ compact }: { compact?: boolean }) {
 
 function preferNativeImageTag(resolved: string): boolean {
   if (resolved.startsWith("/api/media/public/")) return true;
+  if (resolved.startsWith("/uploads/")) return true;
   if (resolved.startsWith("http://") || resolved.startsWith("https://")) {
     try {
       const host = new URL(resolved).hostname;

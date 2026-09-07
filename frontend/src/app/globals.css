@@ -20,6 +20,18 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Hide spinner arrows on number fields - type the value only */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--brand-accent) 28%, white);
   color: var(--brand-ink);
