@@ -234,8 +234,7 @@ export function CourseStudioAudioCurriculum({
   return (
     <div className="space-y-6">
       <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
-        Build a phrasebook: source language on the left, target language in the middle, audio on the right.
-        Learners hear each line inside Multivate.
+        Add phrases and audio. Students practice them in the classroom.
       </p>
 
       <div className="grid gap-6 xl:grid-cols-12">

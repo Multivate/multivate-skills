@@ -93,7 +93,7 @@ export function AdminDashboardHome() {
       <DashboardPageHeader
         eyebrow="Administration"
         title="Platform overview"
-        description="Users, enrollments, revenue, and recent activity across Multivate."
+        description="Users, enrollments, and revenue."
       />
 
       <DashboardMetricStrip

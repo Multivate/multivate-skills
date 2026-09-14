@@ -280,7 +280,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
     return (
       <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none dark:border-slate-800 ">
         <p className="text-sm leading-relaxed text-slate-600">
-          Add lessons and videos in Course Studio: upload a file or paste a YouTube, Vimeo, or video link. Students watch inside the app.
+          Add lessons and videos in Course Studio.
         </p>
         <Link href="/dashboard/instructor/studio" className="btn-primary-brand mt-5 inline-flex !min-w-0 text-sm !no-underline">
           Open course studio
@@ -296,7 +296,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
       return (
         <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
           <p className="text-sm leading-relaxed text-slate-600">
-            When students enroll in your courses, they will be listed here with enrollment date and contact details.
+            Enrolled students will show up here.
           </p>
           <Link href="/courses" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
             View public catalog
@@ -448,8 +448,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
             {formatMoneyCompact(dash.totals.revenue_completed_cents)}
           </p>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-brand-ink/60">
-            Sum of completed payments tied to courses you instruct. For your personal purchases and receipts, open
-            Billing.
+            Paid earnings from your courses. Your own purchases are in Billing.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <Link href="/dashboard/payments" className="text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
@@ -471,7 +470,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
       return (
         <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
           <p className="text-sm leading-relaxed text-slate-600">
-            Learners can leave a rating after they enroll. Share your courses and feedback will show up here.
+            Reviews from your students appear here.
           </p>
           <Link href="/dashboard/instructor/analytics" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
             View analytics

@@ -90,7 +90,7 @@ export function MentorSectionMessages() {
             <Loader2 className="h-6 w-6 animate-spin text-brand-primary" />
           </div>
         ) : conversations.length === 0 ? (
-          <p className="p-4 text-sm text-slate-500">No messages yet. Once your profile is live, visitors can reach you here.</p>
+          <p className="p-4 text-sm text-slate-500">No messages yet.</p>
         ) : (
           <ul className="max-h-[28rem] overflow-y-auto">
             {conversations.map((c) => (

@@ -71,7 +71,7 @@ export function InstructorDashboardHome() {
       <DashboardPageHeader
         eyebrow="Instructor"
         title="Teaching overview"
-        description="Track your courses, learners, and completed revenue."
+        description="Your courses, students, and earnings."
         action={
           <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand !min-h-0 !min-w-0 !px-5 !py-2.5 text-sm">
             Create course

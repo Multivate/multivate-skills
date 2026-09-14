@@ -127,7 +127,7 @@ export function MentorProfileEditor() {
       <form onSubmit={save} className="space-y-8">
         <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-700 ">
           <h2 className="text-lg font-bold text-brand-ink dark:text-white">Photo</h2>
-          <p className="mt-1 text-sm text-slate-600">A clear, professional headshot helps visitors trust your guidance.</p>
+          <p className="mt-1 text-sm text-slate-600">A clear photo helps people trust you.</p>
           <div className="mt-4 flex items-center gap-5">
             <div className="relative h-24 w-24 overflow-hidden rounded-md bg-slate-100 ring-2 ring-brand-accent/30">
               {photo ? (

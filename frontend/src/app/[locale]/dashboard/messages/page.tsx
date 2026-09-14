@@ -91,8 +91,7 @@ export default function DashboardMessagesPage() {
       <header>
         <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">Messages</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-          Send a note to any Multivate member by email, and read messages others have sent you. Mark incoming items as
-          read when you have seen them.
+          Email anyone on Multivate, and read what they send you.
         </p>
       </header>
 
@@ -146,7 +145,7 @@ export default function DashboardMessagesPage() {
           <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Inbox</h2>
           {rows.length === 0 ? (
             <div className="mt-6 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
-              <p className="text-sm text-slate-600">No messages yet. When someone writes to you, it will appear here.</p>
+              <p className="text-sm text-slate-600">No messages yet.</p>
             </div>
           ) : (
             <ul className="mt-4 space-y-3">

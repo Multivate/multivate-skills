@@ -141,8 +141,7 @@ export function AdminPaymentsPanel() {
           <div>
             <h2 className="font-display text-xl font-bold text-brand-ink">Payment review</h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-brand-ink/60">
-              Students cannot open paid courses until you approve. Confirm the bank amount matches the invoice exactly.
-              Wrong amounts must be rejected.
+              Approve only when the bank amount matches the invoice.
             </p>
           </div>
           <div className="flex rounded-xl border border-brand-ink/10 bg-brand-muted/60 p-1">

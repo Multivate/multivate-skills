@@ -85,7 +85,7 @@ export default function InstructorStudioListPage() {
       <StudioPageHeader
         eyebrow="Instructor"
         title="Course studio"
-        description="Draft, refine, and submit courses for Multivate review."
+        description="Create and publish courses."
         action={
           <Link
             href="/dashboard/instructor/studio/new"
@@ -114,7 +114,7 @@ export default function InstructorStudioListPage() {
             Build your first course
           </h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-brand-ink/60">
-            Start with the title and outcomes, add a cover, then shape the curriculum lesson by lesson.
+            Start a course, add a cover, then fill in the lessons.
           </p>
           <Link
             href="/dashboard/instructor/studio/new"

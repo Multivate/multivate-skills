@@ -91,8 +91,7 @@ export default function DashboardCertificatesPage() {
       <header>
         <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">Certificates</h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">
-          When you complete a course (100% progress), you can generate a verifiable credential code here. PDF export
-          can be added later; today your code is the official record in Multivate.
+          Claim a certificate when you finish a course.
         </p>
       </header>
 
@@ -132,7 +131,7 @@ export default function DashboardCertificatesPage() {
         {certs.length === 0 ? (
           <div className="mt-6 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
             <p className="text-sm text-slate-600">
-              No certificates yet. Complete a course to 100%, then return here to claim your credential.
+              No certificates yet. Finish a course to claim one.
             </p>
             <Link href="/courses" className="btn-primary-brand mt-6 inline-flex !no-underline">
               Browse courses

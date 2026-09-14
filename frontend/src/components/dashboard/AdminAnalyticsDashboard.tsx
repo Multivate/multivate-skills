@@ -120,7 +120,7 @@ export function AdminAnalyticsDashboard({
       <DashboardPageHeader
         eyebrow="Administration"
         title="Analytics"
-        description="Growth, revenue, and platform activity over the last 30 days."
+        description="Last 30 days."
         action={live ? <DashboardLiveBadge lastUpdated={lastUpdated} /> : undefined}
       />
 

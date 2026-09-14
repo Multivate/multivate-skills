@@ -414,14 +414,14 @@ export function CourseStudio({ initialSlug }: Props) {
         <div className="grid gap-6 xl:grid-cols-12">
           <StudioPanel
             title="Course identity"
-            description="How the course appears on Multivate"
+            description="Title, summary, and basics"
             className="xl:col-span-7"
           >
             <div className="space-y-5">
               <Field label="Title">
                 <input value={title} onChange={(e) => setTitle(e.target.value)} className={studioFieldClass} required />
               </Field>
-              <Field label="Subtitle" hint="One line under the title on the course page">
+              <Field label="Subtitle" hint="One short line under the title">
                 <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className={studioFieldClass} />
               </Field>
               {!slug ? (
@@ -451,7 +451,7 @@ export function CourseStudio({ initialSlug }: Props) {
                   className={studioTextareaClass}
                 />
               </Field>
-              <Field label="Promo video" hint="Optional YouTube or Vimeo link for the public course page">
+              <Field label="Promo video" hint="Optional YouTube or Vimeo link">
                 <input
                   value={promoVideoUrl}
                   onChange={(e) => setPromoVideoUrl(e.target.value)}
@@ -610,7 +610,7 @@ export function CourseStudio({ initialSlug }: Props) {
       {step === 1 ? (
         <StudioPanel
           title="Cover image"
-          description="Used on the catalog, course page, and studio list. Prefer a wide landscape image."
+          description="Wide image works best"
         >
           {!slug ? (
             <p className="text-sm text-brand-ink/60">Save the basics first so we can attach a cover to this course.</p>
@@ -710,7 +710,7 @@ export function CourseStudio({ initialSlug }: Props) {
               ))}
             </ul>
             <p className="mt-6 text-sm leading-relaxed text-brand-ink/60">
-              Multivate reviews every course before it goes live. You can keep editing while it is in review.
+              We review every course before it goes live. You can keep editing in the meantime.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <button
@@ -763,7 +763,7 @@ export function CourseStudio({ initialSlug }: Props) {
             <div className="mt-8 border-t border-brand-ink/10 pt-6">
               <p className={studioLabelClass}>Danger zone</p>
               <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">
-                Permanently remove this course whether it is draft, in review, or live.
+                Delete this course permanently.
               </p>
               <button
                 type="button"

@@ -125,10 +125,10 @@ export function MentorDashboardHome() {
         title={`Welcome back, ${firstName}`}
         description={
           profile.approval_status === "approved"
-            ? "Your profile is live. Keep an eye on new messages and stay ready to help."
+            ? "Your profile is live."
             : profile.approval_status === "pending"
-              ? "Your profile is being reviewed. You can still prepare replies in your inbox."
-              : "Finish your profile so visitors can find you and start conversations."
+              ? "Your profile is in review."
+              : "Finish your profile to go live."
         }
         action={
           profile.approval_status === "approved" ? (

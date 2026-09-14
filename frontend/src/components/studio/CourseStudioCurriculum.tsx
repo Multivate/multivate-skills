@@ -375,15 +375,13 @@ export function CourseStudioCurriculum({
   return (
     <div className="space-y-6">
       <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
-        Organize the course into sections, then add lessons and assessments. Learners unlock assessments only after
-        they finish every session (non-assessment lesson). Progress is calculated automatically from completed
-        lessons.
+        Add sections, lessons, and quizzes. Quizzes unlock after all lessons are done.
       </p>
 
       <div className="grid gap-6 xl:grid-cols-12">
         <StudioPanel
           title="Outline"
-          description="Drag to reorder. Select a lesson to edit."
+          description="Drag to reorder"
           className="xl:col-span-7"
         >
           <div className="space-y-5">

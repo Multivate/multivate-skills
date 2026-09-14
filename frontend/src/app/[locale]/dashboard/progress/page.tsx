@@ -49,8 +49,7 @@ export default function DashboardProgressPage() {
       <header>
         <h1 className="font-display text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl">Progress</h1>
         <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">
-          Progress updates automatically when you finish lessons and assessments in the player. You cannot type it
-          manually.
+          Updates as you finish lessons and quizzes.
         </p>
       </header>
       {error ? <p className="text-sm font-medium text-red-800">{error}</p> : null}
