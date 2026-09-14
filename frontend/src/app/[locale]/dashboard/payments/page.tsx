@@ -3,8 +3,9 @@
 import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BankTransferCheckoutPanel } from "@/components/dashboard/BankTransferCheckoutPanel";
+import { Clock3, Lock, CheckCircle2, XCircle } from "lucide-react";
 
 type PaymentRow = {
   id: string;
@@ -18,6 +19,13 @@ type PaymentRow = {
   course_id: string | null;
   course_title?: string | null;
 };
+
+function money(cents: number, currency: string) {
+  return new Intl.NumberFormat(currency === "NGN" ? "en-NG" : undefined, {
+    style: "currency",
+    currency,
+  }).format(cents / 100);
+}
 
 function PaymentsHistory() {
   const t = useTranslations("dashboard.studentPayments");
@@ -52,48 +60,111 @@ function PaymentsHistory() {
     };
   }, [t]);
 
+  const outstanding = useMemo(
+    () => (rows ?? []).filter((p) => p.status === "pending" || p.status === "awaiting_review"),
+    [rows],
+  );
+  const history = useMemo(
+    () => (rows ?? []).filter((p) => p.status !== "pending" && p.status !== "awaiting_review"),
+    [rows],
+  );
+
   if (rows === null) {
-    return <p className="text-sm text-slate-600">{t("loading")}</p>;
+    return <p className="text-sm text-brand-ink/55">{t("loading")}</p>;
+  }
+
+  function statusMeta(status: string) {
+    if (status === "awaiting_review") {
+      return {
+        label: t("statusAwaiting"),
+        className: "bg-amber-100 text-amber-950",
+        icon: <Clock3 className="h-3.5 w-3.5" />,
+      };
+    }
+    if (status === "pending") {
+      return {
+        label: t("statusPending"),
+        className: "bg-brand-muted text-brand-ink/70",
+        icon: <Lock className="h-3.5 w-3.5" />,
+      };
+    }
+    if (status === "failed") {
+      return {
+        label: t("statusFailed"),
+        className: "bg-red-100 text-red-800",
+        icon: <XCircle className="h-3.5 w-3.5" />,
+      };
+    }
+    return {
+      label: t("statusPaid"),
+      className: "bg-emerald-100 text-emerald-800",
+      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+    };
+  }
+
+  function PaymentCard({ p, locked }: { p: PaymentRow; locked?: boolean }) {
+    const meta = statusMeta(p.status);
+    return (
+      <li className="rounded-2xl border border-brand-ink/10 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-base font-bold text-brand-ink">{p.course_title ?? "Course"}</p>
+            <p className="mt-1 text-lg font-bold tabular-nums text-brand-ink">{money(p.amount_cents, p.currency)}</p>
+            {p.payment_reference ? (
+              <p className="mt-1 font-mono text-xs text-brand-ink/50">{p.payment_reference}</p>
+            ) : null}
+          </div>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase ${meta.className}`}>
+            {meta.icon}
+            {meta.label}
+          </span>
+        </div>
+        {locked ? (
+          <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+            <Lock className="h-3.5 w-3.5" />
+            {t("accessLocked")}
+          </p>
+        ) : null}
+        <p className="mt-2 text-xs text-brand-ink/45">{new Date(p.created_at).toLocaleString()}</p>
+      </li>
+    );
   }
 
   return (
-    <>
-      {error ? (
-        <p className="text-sm font-medium text-red-800">{error}</p>
-      ) : rows.length === 0 ? (
-        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
-          <p className="text-sm leading-relaxed text-slate-600">{t("empty")}</p>
-        </div>
-      ) : (
-        <ul className="divide-y divide-slate-100 rounded-md border border-slate-200/90 bg-white shadow-none dark:divide-slate-800 dark:border-slate-800/90 dark:bg-slate-900">
-          {rows.map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
-              <div>
-                <span className="font-semibold text-brand-ink">
-                  {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(p.amount_cents / 100)}
-                </span>
-                {p.payment_reference ? (
-                  <p className="mt-1 font-mono text-xs text-brand-secondary">{p.payment_reference}</p>
-                ) : null}
-                {p.course_title ? <p className="mt-1 text-xs text-slate-500">{p.course_title}</p> : null}
-              </div>
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${
-                  p.status === "paid" || p.status === "completed"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : p.status === "failed"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-amber-100 text-amber-900"
-                }`}
-              >
-                {p.status}
-              </span>
-              <span className="text-xs text-slate-500">{new Date(p.created_at).toLocaleString()}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+    <div className="space-y-8">
+      {error ? <p className="text-sm font-medium text-red-800">{error}</p> : null}
+
+      {outstanding.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="font-display text-lg font-bold text-brand-ink">{t("outstandingTitle")}</h2>
+            <p className="mt-1 text-sm text-brand-ink/55">{t("outstandingHint")}</p>
+          </div>
+          <ul className="space-y-3">
+            {outstanding.map((p) => (
+              <PaymentCard key={p.id} p={p} locked />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg font-bold text-brand-ink">{t("historyTitle")}</h2>
+        {rows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-brand-ink/15 bg-brand-muted/40 px-6 py-12 text-center">
+            <p className="text-sm text-brand-ink/55">{t("empty")}</p>
+          </div>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-brand-ink/50">No completed payments yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {history.map((p) => (
+              <PaymentCard key={p.id} p={p} />
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -101,25 +172,25 @@ export default function DashboardPaymentsPage() {
   const t = useTranslations("dashboard.studentPayments");
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-8">
+      <header>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl">{t("title")}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">{t("intro")}</p>
+      </header>
+
       <Suspense
         fallback={
-          <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-800/90 dark:bg-slate-900">
-            <p className="text-sm text-slate-600">{t("loadingCheckout")}</p>
+          <section className="rounded-2xl border border-brand-ink/10 bg-white p-6">
+            <p className="text-sm text-brand-ink/55">{t("loadingCheckout")}</p>
           </section>
         }
       >
         <BankTransferCheckoutPanel />
       </Suspense>
 
-      <header>
-        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{t("title")}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("intro")}</p>
-      </header>
-
       <PaymentsHistory />
 
-      <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-primary hover:underline">
+      <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-accent hover:underline">
         {t("back")}
       </Link>
     </div>

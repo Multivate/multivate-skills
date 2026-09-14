@@ -61,6 +61,9 @@ def _max_lessons_for_course(db: Session, course: Course) -> int:
 
 
 def update_progress(db: Session, user_id: UUID, course_slug: str, payload: ProgressUpdate) -> MyCourseItem:
+    """Progress is automatic from watched lessons. Manual edits are ignored; values are recalculated."""
+    from app.services.player_service import _recalc_enrollment_progress
+
     course = db.execute(select(Course).where(Course.slug == course_slug)).scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
@@ -70,13 +73,7 @@ def update_progress(db: Session, user_id: UUID, course_slug: str, payload: Progr
     if not enr or enr.status != EnrollmentStatus.ENROLLED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not enrolled in this course")
 
-    cap = _max_lessons_for_course(db, course)
-    if payload.lesson_done is not None:
-        enr.lesson_done = min(max(payload.lesson_done, 0), cap)
-    if payload.progress_pct is not None:
-        enr.progress_pct = min(max(payload.progress_pct, 0), 100)
-
-    db.add(enr)
+    _recalc_enrollment_progress(db, user_id, course)
     db.commit()
     db.refresh(enr)
     instr = (

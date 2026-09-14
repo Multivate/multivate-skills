@@ -194,6 +194,29 @@ export function CourseStudioAudioCurriculum({
     }
   };
 
+  const clearVoice = async () => {
+    if (!active) return;
+    if (!window.confirm("Remove this voice only? You can upload a new file after.")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/studio/phrases/${active.id}/audio`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(typeof data?.detail === "string" ? data.detail : "We couldn't remove that voice.");
+        return;
+      }
+      setAudioLink("");
+      await loadCourse(slug);
+      showToast("Voice removed - upload a new file");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const grouped = useMemo(() => {
     const sections = [...course.sections].sort((a, b) => a.position - b.position);
     const rows: { key: string; title: string; items: Phrase[] }[] = sections.map((s) => ({
@@ -357,19 +380,53 @@ export function CourseStudioAudioCurriculum({
                 />
               </label>
 
-              <Upload
-                folder="lessons"
-                subfolder={`${course.id}/${active.id}`}
-                uploadUrl={`/api/studio/phrases/${active.id}/audio`}
-                accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,audio/mp4,audio/aac"
-                label="Drop or click to upload audio"
-                hint="MP3, WAV, OGG, or M4A"
-                onSuccess={async () => {
-                  await loadCourse(slug);
-                  showToast("Audio uploaded");
-                }}
-                onError={(msg) => setError(msg)}
-              />
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className={studioLabelClass}>Voice / audio</span>
+                  {active.audio_url ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void clearVoice()}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 transition hover:text-red-900 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      Remove voice
+                    </button>
+                  ) : null}
+                </div>
+
+                {audioPreviewUrl(active) ? (
+                  <div>
+                    <p className="mb-2 text-xs text-brand-ink/50">Current voice</p>
+                    <audio
+                      key={active.audio_url ?? active.id}
+                      controls
+                      src={audioPreviewUrl(active) ?? undefined}
+                      className="w-full"
+                    />
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-2 text-sm text-brand-ink/50">
+                    <Volume2 className="h-4 w-4" /> No audio yet
+                  </p>
+                )}
+
+                <Upload
+                  key={`${active.id}-${active.audio_url ?? "empty"}`}
+                  folder="lessons"
+                  subfolder={`${course.id}/${active.id}`}
+                  uploadUrl={`/api/studio/phrases/${active.id}/audio`}
+                  accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,audio/mp4,audio/aac"
+                  label={active.audio_url ? "Drop or click to replace audio" : "Drop or click to upload audio"}
+                  hint="MP3, WAV, OGG, or M4A"
+                  onSuccess={async () => {
+                    await loadCourse(slug);
+                    showToast(active.audio_url ? "Voice replaced" : "Audio uploaded");
+                  }}
+                  onError={(msg) => setError(msg)}
+                />
+              </div>
 
               <label className="block">
                 <span className={studioLabelClass}>Or paste audio URL</span>
@@ -380,17 +437,6 @@ export function CourseStudioAudioCurriculum({
                   className={studioFieldClass}
                 />
               </label>
-
-              {audioPreviewUrl(active) ? (
-                <div>
-                  <p className={`${studioLabelClass} mb-2`}>Preview</p>
-                  <audio controls src={audioPreviewUrl(active) ?? undefined} className="w-full" />
-                </div>
-              ) : (
-                <p className="flex items-center gap-2 text-sm text-brand-ink/50">
-                  <Volume2 className="h-4 w-4" /> No audio yet
-                </p>
-              )}
 
               <button
                 type="button"

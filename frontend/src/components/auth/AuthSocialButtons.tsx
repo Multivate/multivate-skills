@@ -31,19 +31,39 @@ type Props = {
   returnTo?: string;
   locale: string;
   disabled?: boolean;
+  /** When set, required before Google/Apple signup (register flow). */
+  role?: "" | "student" | "instructor" | "mentor";
+  requireRole?: boolean;
+  /** Where to send oauth_error (login or register). */
+  errorTo?: string;
+  onNeedRole?: () => void;
 };
 
-export function AuthSocialButtons({ returnTo = "/dashboard", locale, disabled = false }: Props) {
+export function AuthSocialButtons({
+  returnTo = "/dashboard",
+  locale,
+  disabled = false,
+  role = "",
+  requireRole = false,
+  errorTo = "/login",
+  onNeedRole,
+}: Props) {
   const t = useTranslations("auth.login");
   const [pending, setPending] = useState<"google" | "apple" | null>(null);
 
   function start(provider: "google" | "apple") {
     if (disabled || pending) return;
+    if (requireRole && !role) {
+      onNeedRole?.();
+      return;
+    }
     setPending(provider);
     const params = new URLSearchParams({
       return_to: returnTo,
       locale,
+      error_to: errorTo,
     });
+    if (role) params.set("role", role);
     window.location.href = `/api/auth/oauth/${provider}/start?${params.toString()}`;
   }
 

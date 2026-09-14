@@ -67,6 +67,18 @@ export function RegisterForm() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const oauthError = searchParams.get("oauth_error");
+    if (!oauthError) return;
+    if (oauthError === "cancelled") {
+      setError(tLogin("oauthCancelled"));
+    } else if (oauthError === "unavailable") {
+      setError(t("oauthUnavailable"));
+    } else {
+      setError(tLogin("oauthError"));
+    }
+  }, [searchParams, t, tLogin]);
+
   const skillsToLearnSuggestions = useMemo(
     () =>
       [
@@ -356,7 +368,26 @@ export function RegisterForm() {
 
             {step === 1 ? (
               <div className="space-y-6">
+                <AuthSelect
+                  id="role"
+                  label={t("roleLabel")}
+                  icon={Users}
+                  value={role}
+                  onChange={(v) => {
+                    setRole(v as typeof role);
+                    setError(null);
+                  }}
+                >
+                  <option value="" disabled>
+                    {t("rolePlaceholder")}
+                  </option>
+                  <option value="student">{t("roleStudent")}</option>
+                  <option value="instructor">{t("roleInstructor")}</option>
+                  <option value="mentor">Mentor</option>
+                </AuthSelect>
+
                 <div>
+                  <p className="mb-3 text-xs leading-relaxed text-brand-ink/55">{t("oauthRoleHint")}</p>
                   <div className="relative my-2">
                     <div className="absolute inset-0 flex items-center" aria-hidden>
                       <div className="w-full border-t border-slate-200 dark:border-slate-700" />
@@ -365,16 +396,17 @@ export function RegisterForm() {
                       <span className="bg-brand-paper px-3">{tLogin("divider")}</span>
                     </div>
                   </div>
-                  <AuthSocialButtons returnTo="/dashboard" locale={locale} disabled={pending} />
+                  <AuthSocialButtons
+                    returnTo="/dashboard"
+                    locale={locale}
+                    disabled={pending}
+                    role={role}
+                    requireRole
+                    errorTo="/register"
+                    onNeedRole={() => setError(t("oauthPickRole"))}
+                  />
                 </div>
-                <AuthSelect id="role" label={t("roleLabel")} icon={Users} value={role} onChange={(v) => setRole(v as typeof role)}>
-                  <option value="" disabled>
-                    {t("rolePlaceholder")}
-                  </option>
-                  <option value="student">{t("roleStudent")}</option>
-                  <option value="instructor">{t("roleInstructor")}</option>
-                  <option value="mentor">Mentor</option>
-                </AuthSelect>
+
                 <div className="flex justify-end pt-2">
                   <button type="button" onClick={goNextFromStep1} className="btn-cta-accent min-h-[2.75rem] px-8">
                     {t("next")}

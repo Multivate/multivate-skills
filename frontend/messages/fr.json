@@ -226,7 +226,7 @@
       "apple": "Continuer avec Apple",
       "oauthStarting": "Redirection…",
       "oauthError": "Connexion impossible par ce moyen. Réessayez ou utilisez votre e-mail.",
-      "oauthUnavailable": "Cette option n'est pas disponible pour le moment. Utilisez votre e-mail.",
+      "oauthUnavailable": "La connexion Google et Apple n'est pas encore disponible. Utilisez votre e-mail.",
       "oauthCancelled": "Connexion annulée. Vous pouvez réessayer quand vous voulez.",
       "noAccount": "Pas encore de compte ?",
       "signUp": "Créer un compte",
@@ -259,6 +259,9 @@
       "accountSectionTitle": "Identifiants du compte",
       "stepProgress": "Étape {current} sur {total}",
       "step1Hint": "Indiquez si vous rejoignez Multivate en tant qu’apprenant ou formateur.",
+      "oauthRoleHint": "Choisissez d'abord votre rôle si vous continuez avec Google ou Apple.",
+      "oauthPickRole": "Veuillez choisir votre rôle avant de continuer avec Google ou Apple.",
+      "oauthUnavailable": "L'inscription Google et Apple n'est pas encore disponible. Créez votre compte par e-mail.",
       "step2Hint": "Répondez au questionnaire pour votre rôle. Vous pouvez revenir en arrière pour changer de rôle.",
       "step3Hint": "Définissez nom, e-mail et mot de passe. En continuant, nous envoyons un code de vérification à votre boîte mail.",
       "step4Hint": "Saisissez le code à 6 chiffres reçu par e-mail. Il expire au bout de 5 minutes.",
@@ -621,7 +624,7 @@
       "loadError": "Impossible de charger les paiements.",
       "network": "Erreur réseau.",
       "empty": "Aucun paiement pour le moment. Après un checkout réussi, il apparaîtra ici.",
-      "back": "← Retour au tableau de bord"
+      "back": "Retour au tableau de bord"
     },
     "paymentsCheckout": {
       "checkingSession": "Vérification de la session…",
@@ -720,7 +723,7 @@
     "reviews": "avis",
     "lessonsUnit": "leçons",
     "getStarted": "Commencer",
-    "myCoursesDashboard": "Mes cours (tableau de bord)",
+    "myCoursesDashboard": "Mes cours",
     "backToAll": "Retour à tous les cours"
   },
   "courseEnroll": {

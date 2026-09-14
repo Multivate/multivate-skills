@@ -226,7 +226,7 @@
       "apple": "Mit Apple fortfahren",
       "oauthStarting": "Weiterleitung…",
       "oauthError": "Anmeldung auf diesem Weg hat nicht geklappt. Versuche es erneut oder nutze deine E-Mail.",
-      "oauthUnavailable": "Diese Option ist gerade nicht verfügbar. Bitte nutze deine E-Mail.",
+      "oauthUnavailable": "Google- und Apple-Anmeldung sind noch nicht verfügbar. Bitte nutze deine E-Mail.",
       "oauthCancelled": "Anmeldung abgebrochen. Du kannst es jederzeit erneut versuchen.",
       "noAccount": "Noch kein Konto?",
       "signUp": "Registrieren",
@@ -259,6 +259,9 @@
       "accountSectionTitle": "Kontodaten",
       "stepProgress": "Schritt {current} von {total}",
       "step1Hint": "Wählen Sie, ob Sie als Lernende:r oder Dozent:in beitreten.",
+      "oauthRoleHint": "Wähle zuerst deine Rolle, wenn du mit Google oder Apple fortfahren möchtest.",
+      "oauthPickRole": "Bitte wähle zuerst deine Rolle, bevor du mit Google oder Apple fortfährst.",
+      "oauthUnavailable": "Google- und Apple-Registrierung sind noch nicht verfügbar. Bitte nutze E-Mail.",
       "step2Hint": "Beantworten Sie die Fragen zu Ihrer Rolle. Sie können zurückgehen, um die Rolle zu ändern.",
       "step3Hint": "Legen Sie Name, E-Mail und Passwort fest. Beim Fortfahren senden wir einen Bestätigungscode an Ihre E-Mail.",
       "step4Hint": "Geben Sie den 6-stelligen Code aus der E-Mail ein. Er läuft nach 5 Minuten ab.",
@@ -621,7 +624,7 @@
       "loadError": "Zahlungen konnten nicht geladen werden.",
       "network": "Netzwerkfehler.",
       "empty": "Noch keine Zahlungen. Nach erfolgreichem Checkout erscheinen sie hier.",
-      "back": "← Zurück zum Dashboard"
+      "back": "Zurück zum Dashboard"
     },
     "paymentsCheckout": {
       "checkingSession": "Sitzung wird geprüft…",
@@ -719,7 +722,7 @@
     "reviews": "Bewertungen",
     "lessonsUnit": "Lektionen",
     "getStarted": "Loslegen",
-    "myCoursesDashboard": "Meine Kurse (Dashboard)",
+    "myCoursesDashboard": "Meine Kurse",
     "backToAll": "Zurück zu allen Kursen"
   },
   "courseEnroll": {

@@ -16,11 +16,13 @@ from sqlalchemy.orm import Session
 from app.core import redis_client
 from app.core.config import get_settings
 from app.core.security import create_access_token, create_refresh_token
+from app.models.instructor_teaching_profile import InstructorTeachingProfile
 from app.models.role import UserRole
 from app.models.student_learning_profile import StudentLearningProfile
 from app.models.user import User
 from app.schemas.auth import AuthResponse, OAuthCompleteResponse, TokenPair
 from app.schemas.user import user_public_from_orm
+from app.services import mentor_service
 
 _logger = logging.getLogger(__name__)
 
@@ -108,10 +110,27 @@ def _apple_client_secret(client_id: str, team_id: str, key_id: str, private_key:
     return jwt.encode(payload, private_key, algorithm="ES256", headers={"kid": key_id})
 
 
-def google_authorize_url(return_to: str) -> str:
+def _parse_signup_role(raw: str | None) -> UserRole:
+    value = (raw or "").strip().lower()
+    if value == UserRole.INSTRUCTOR.value:
+        return UserRole.INSTRUCTOR
+    if value == UserRole.MENTOR.value:
+        return UserRole.MENTOR
+    return UserRole.STUDENT
+
+
+def google_authorize_url(return_to: str, role: str | None = None) -> str:
     client_id, _ = _require_google_config()
     state = secrets.token_urlsafe(32)
-    _save_state(state, {"provider": "google", "return_to": return_to or "/dashboard"})
+    signup_role = _parse_signup_role(role)
+    _save_state(
+        state,
+        {
+            "provider": "google",
+            "return_to": return_to or "/dashboard",
+            "role": signup_role.value,
+        },
+    )
     params = {
         "client_id": client_id,
         "redirect_uri": _redirect_uri("google"),
@@ -122,14 +141,22 @@ def google_authorize_url(return_to: str) -> str:
         "prompt": "select_account",
     }
     url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
-    _logger.info("Google OAuth authorize URL ready return_to=%s", return_to)
+    _logger.info("Google OAuth authorize URL ready return_to=%s role=%s", return_to, signup_role.value)
     return url
 
 
-def apple_authorize_url(return_to: str) -> str:
+def apple_authorize_url(return_to: str, role: str | None = None) -> str:
     client_id, _, _, _, _ = _require_apple_config()
     state = secrets.token_urlsafe(32)
-    _save_state(state, {"provider": "apple", "return_to": return_to or "/dashboard"})
+    signup_role = _parse_signup_role(role)
+    _save_state(
+        state,
+        {
+            "provider": "apple",
+            "return_to": return_to or "/dashboard",
+            "role": signup_role.value,
+        },
+    )
     params = {
         "client_id": client_id,
         "redirect_uri": _redirect_uri("apple"),
@@ -139,7 +166,7 @@ def apple_authorize_url(return_to: str) -> str:
         "state": state,
     }
     url = f"https://appleid.apple.com/auth/authorize?{urlencode(params)}"
-    _logger.info("Apple OAuth authorize URL ready return_to=%s", return_to)
+    _logger.info("Apple OAuth authorize URL ready return_to=%s role=%s", return_to, signup_role.value)
     return url
 
 
@@ -161,6 +188,34 @@ def _ensure_student_profile(db: Session, user_id: Any) -> None:
     _logger.info("Created default student learning profile user_id=%s", user_id)
 
 
+def _ensure_instructor_profile(db: Session, user_id: Any) -> None:
+    existing = db.execute(
+        select(InstructorTeachingProfile).where(InstructorTeachingProfile.user_id == user_id)
+    ).scalar_one_or_none()
+    if existing:
+        return
+    db.add(
+        InstructorTeachingProfile(
+            user_id=user_id,
+            expertise_areas="General",
+            teaching_bio="",
+            subjects_taught="",
+            years_experience="0to2",
+            teaching_formats="Online",
+        )
+    )
+    _logger.info("Created default instructor teaching profile user_id=%s", user_id)
+
+
+def _ensure_role_profile(db: Session, user: User) -> None:
+    if user.role == UserRole.STUDENT:
+        _ensure_student_profile(db, user.id)
+    elif user.role == UserRole.INSTRUCTOR:
+        _ensure_instructor_profile(db, user.id)
+    elif user.role == UserRole.MENTOR:
+        mentor_service.create_draft_profile_for_user(db, user)
+
+
 def _oauth_key(provider: Provider, subject: str) -> str:
     return f"{provider}:{subject}"
 
@@ -172,6 +227,7 @@ def _upsert_oauth_user(
     subject: str,
     email: str,
     name: str,
+    role: UserRole = UserRole.STUDENT,
 ) -> User:
     email_key = email.lower().strip()
     if not email_key:
@@ -188,12 +244,17 @@ def _upsert_oauth_user(
             if name.strip() and user.name.strip() in ("", "User"):
                 user.name = name.strip()
         else:
-            _logger.info("Creating new student via OAuth %s email=%s", provider, email_key)
+            _logger.info(
+                "Creating new %s via OAuth %s email=%s",
+                role.value,
+                provider,
+                email_key,
+            )
             user = User(
                 name=name.strip() or email_key.split("@")[0],
                 email=email_key,
                 password_hash=None,
-                role=UserRole.STUDENT,
+                role=role,
                 is_active=True,
                 two_factor_enabled=False,
                 auth_provider=provider,
@@ -201,10 +262,9 @@ def _upsert_oauth_user(
             )
             db.add(user)
             db.flush()
-            _ensure_student_profile(db, user.id)
+            _ensure_role_profile(db, user)
 
-    if user.role == UserRole.STUDENT:
-        _ensure_student_profile(db, user.id)
+    _ensure_role_profile(db, user)
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
@@ -259,7 +319,14 @@ async def complete_google(db: Session, *, code: str, state: str) -> OAuthComplet
     if not subject:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google sign-in failed. Please try again.")
 
-    user = _upsert_oauth_user(db, provider="google", subject=subject, email=email, name=name)
+    user = _upsert_oauth_user(
+        db,
+        provider="google",
+        subject=subject,
+        email=email,
+        name=name,
+        role=_parse_signup_role(stored.get("role")),
+    )
     tokens = _tokens_for_user(user)
     return_to = stored.get("return_to") or "/dashboard"
     _logger.info("Google OAuth sign-in complete user_id=%s return_to=%s", user.id, return_to)
@@ -309,7 +376,14 @@ async def complete_apple(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Apple sign-in failed. Please try again.")
 
     display_name = (name_hint or "").strip() or email.split("@")[0] if email else "Apple user"
-    user = _upsert_oauth_user(db, provider="apple", subject=subject, email=email, name=display_name)
+    user = _upsert_oauth_user(
+        db,
+        provider="apple",
+        subject=subject,
+        email=email,
+        name=display_name,
+        role=_parse_signup_role(stored.get("role")),
+    )
     tokens = _tokens_for_user(user)
     return_to = stored.get("return_to") or "/dashboard"
     _logger.info("Apple OAuth sign-in complete user_id=%s return_to=%s", user.id, return_to)

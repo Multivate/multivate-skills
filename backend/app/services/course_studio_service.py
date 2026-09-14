@@ -844,6 +844,26 @@ def delete_audio_phrase(db: Session, phrase_id: UUID, actor: User) -> None:
     db.commit()
 
 
+def clear_phrase_audio(db: Session, phrase_id: UUID, actor: User) -> AudioPhraseOut:
+    """Remove voice only - keep the phrase text so a new file can be uploaded."""
+    phrase = db.get(AudioPhrase, phrase_id)
+    if not phrase:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Phrase not found")
+    course = db.get(Course, phrase.course_id)
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+    course_service.assert_can_manage_course(actor, course)
+    phrase.audio_url = None
+    phrase.audio_source = None
+    phrase.audio_duration_seconds = 0
+    db.add(phrase)
+    _sync_duration_minutes(db, course.id)
+    _audit(db, course.id, actor.id, "phrase_audio_cleared", str(phrase_id))
+    db.commit()
+    db.refresh(phrase)
+    return _phrase_out(phrase)
+
+
 def reorder_audio_phrases(db: Session, slug: str, payload: AudioPhraseReorderIn, actor: User) -> list[AudioPhraseOut]:
     course = course_service.get_course_for_management(db, slug, actor)
     course_service.assert_can_manage_course(actor, course)

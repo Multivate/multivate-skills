@@ -63,6 +63,7 @@ export function BankTransferCheckoutPanel() {
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [txnRef, setTxnRef] = useState("");
+  const [amountSent, setAmountSent] = useState("");
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -142,8 +143,19 @@ export function BankTransferCheckoutPanel() {
 
   async function verifyPayment() {
     const ref = data?.payment?.payment_reference ?? data?.instructions?.payment_reference;
+    const expectedCents = data?.instructions?.amount_cents ?? data?.payment?.amount_cents ?? 0;
     if (!ref || !txnRef.trim()) {
       setErr(t("txnRequired"));
+      return;
+    }
+    const major = Number(amountSent.replace(/,/g, "").trim());
+    if (!Number.isFinite(major) || major < 0) {
+      setErr(t("amountRequired"));
+      return;
+    }
+    const amountSentCents = Math.round(major * 100);
+    if (amountSentCents !== expectedCents) {
+      setErr(t("amountMismatch", { amount: formatMoney(expectedCents, data?.instructions?.currency ?? data?.payment?.currency ?? "NGN") }));
       return;
     }
     setVerifyBusy(true);
@@ -156,6 +168,7 @@ export function BankTransferCheckoutPanel() {
         body: JSON.stringify({
           payment_reference: ref,
           transaction_reference: txnRef.trim(),
+          amount_sent_cents: amountSentCents,
         }),
       });
       const body = await res.json().catch(() => null);
@@ -337,34 +350,47 @@ export function BankTransferCheckoutPanel() {
         ) : null}
 
         {awaitingReview ? (
-          <div className="mt-6 rounded-xl border border-brand-secondary/40 bg-brand-secondary/10 p-5">
-            <p className="text-sm font-bold text-brand-ink">{t("waitingTitle")}</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-700">{t("waitingBody")}</p>
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <p className="text-sm font-bold text-amber-950">{t("waitingTitle")}</p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-950/80">{t("waitingBody")}</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-amber-900/70">{t("accessLocked")}</p>
             <Link
               href="/dashboard/payments"
-              className="mt-4 inline-flex text-sm font-semibold text-brand-primary hover:underline"
+              className="mt-4 inline-flex text-sm font-semibold text-brand-accent hover:underline"
             >
               {t("viewPayments")}
             </Link>
           </div>
         ) : remita ? null : (
-          <div className="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-            <label htmlFor="txn-ref" className="text-sm font-semibold text-brand-ink">
+          <div className="mt-6 space-y-4 rounded-xl border border-brand-ink/10 bg-brand-muted/30 p-4">
+            <label htmlFor="amount-sent" className="block text-sm font-semibold text-brand-ink">
+              {t("amountSentLabel")}
+            </label>
+            <p className="text-xs text-brand-ink/55">{t("amountSentHint")}</p>
+            <input
+              id="amount-sent"
+              inputMode="decimal"
+              value={amountSent}
+              onChange={(e) => setAmountSent(e.target.value)}
+              placeholder={inst ? (inst.amount_cents / 100).toFixed(2) : "0.00"}
+              className="w-full rounded-lg border border-brand-ink/15 bg-white px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
+            />
+            <label htmlFor="txn-ref" className="block text-sm font-semibold text-brand-ink">
               {t("txnLabel")}
             </label>
-            <p className="mt-1 text-xs text-slate-500">{t("txnHint")}</p>
+            <p className="text-xs text-brand-ink/55">{t("txnHint")}</p>
             <input
               id="txn-ref"
               value={txnRef}
               onChange={(e) => setTxnRef(e.target.value)}
               placeholder={t("txnPlaceholder")}
-              className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none ring-brand-secondary/30 transition focus:border-brand-secondary focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="w-full rounded-lg border border-brand-ink/15 bg-white px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
             />
             <button
               type="button"
               disabled={verifyBusy || !ref}
               onClick={() => void verifyPayment()}
-              className="btn-primary-brand mt-4 !px-6 !py-2.5 text-sm disabled:opacity-60"
+              className="btn-primary-brand mt-2 !px-6 !py-2.5 text-sm disabled:opacity-60"
             >
               {verifyBusy ? t("submitting") : t("verifyCta")}
             </button>

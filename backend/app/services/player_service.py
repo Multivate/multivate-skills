@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.audio_phrase import AudioPhrase
 from app.models.course import Course
 from app.models.course_section import CourseSection
-from app.models.course_status import AudioSource, CourseFormat, CourseStatus, VideoSource
+from app.models.course_status import AudioSource, CourseFormat, CourseStatus, LessonType, VideoSource
 from app.models.enrollment import Enrollment
 from app.models.enrollment_status import EnrollmentStatus
 from app.models.lesson import Lesson
@@ -39,6 +39,68 @@ _YT_RE = re.compile(
     re.I,
 )
 _VIMEO_RE = re.compile(r"vimeo\.com/(?:video/)?(\d+)", re.I)
+
+
+def _is_quiz(lesson: Lesson) -> bool:
+    return lesson.lesson_type == LessonType.QUIZ or lesson.lesson_type == "quiz"
+
+
+def _content_lessons(lessons: list[Lesson]) -> list[Lesson]:
+    return [l for l in lessons if not _is_quiz(l)]
+
+
+def _assessment_unlock_state(
+    *,
+    lesson: Lesson,
+    all_lessons: list[Lesson],
+    progress_map: dict[UUID, VideoWatchHistory],
+    preview_mode: bool,
+    is_staff: bool,
+) -> tuple[bool, str | None]:
+    """Assessments unlock only after every non-assessment lesson/session is completed."""
+    if not _is_quiz(lesson):
+        return False, None
+    if preview_mode or is_staff:
+        return False, None
+    required = _content_lessons(all_lessons)
+    if not required:
+        return False, None
+    missing = [l for l in required if not (progress_map.get(l.id) and progress_map[l.id].completed)]
+    if not missing:
+        return False, None
+    return True, f"Complete all {len(required)} lessons first ({len(required) - len(missing)}/{len(required)} done)."
+
+
+def _recalc_enrollment_progress(db: Session, user_id: UUID, course: Course) -> int:
+    enrollment = db.scalar(
+        select(Enrollment).where(
+            Enrollment.user_id == user_id,
+            Enrollment.course_id == course.id,
+            Enrollment.status == EnrollmentStatus.ENROLLED,
+        )
+    )
+    if not enrollment:
+        return 0
+    total_lessons = int(
+        db.scalar(select(func.count()).select_from(Lesson).where(Lesson.course_id == course.id)) or 0
+    )
+    completed_count = int(
+        db.scalar(
+            select(func.count())
+            .select_from(VideoWatchHistory)
+            .join(Lesson, Lesson.id == VideoWatchHistory.lesson_id)
+            .where(
+                VideoWatchHistory.user_id == user_id,
+                Lesson.course_id == course.id,
+                VideoWatchHistory.completed.is_(True),
+            )
+        )
+        or 0
+    )
+    enrollment.lesson_done = completed_count
+    enrollment.progress_pct = min(100, round((completed_count / total_lessons) * 100)) if total_lessons else 0
+    db.add(enrollment)
+    return enrollment.progress_pct
 
 
 def _embed_url(lesson: Lesson) -> str | None:
@@ -145,8 +207,22 @@ def get_player_curriculum(
         )
 
     lesson_rows = []
+    is_staff = bool(
+        user
+        and (
+            user.role == UserRole.ADMIN
+            or (user.role == UserRole.INSTRUCTOR and course.instructor_id == user.id)
+        )
+    )
     for lesson in lessons:
         hist = progress_map.get(lesson.id)
+        locked, unlock_hint = _assessment_unlock_state(
+            lesson=lesson,
+            all_lessons=list(lessons),
+            progress_map=progress_map,
+            preview_mode=preview,
+            is_staff=is_staff,
+        )
         lesson_rows.append(
             PlayerLessonOut(
                 id=lesson.id,
@@ -158,8 +234,15 @@ def get_player_curriculum(
                 is_previewable=lesson.is_previewable,
                 completed=bool(hist.completed) if hist else False,
                 position_seconds=hist.position_seconds if hist else 0,
+                locked=locked,
+                unlock_hint=unlock_hint,
             )
         )
+
+    if user and enrollment:
+        enrollment.progress_pct = _recalc_enrollment_progress(db, user.id, course)
+        db.commit()
+        db.refresh(enrollment)
 
     return PlayerCurriculumOut(
         course_slug=course.slug,
@@ -251,13 +334,40 @@ def get_player_lesson(
     if not can_access_lesson(db, user, course, lesson, preview_mode=preview):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot view this lesson")
 
-    hist = None
-    if user:
-        hist = db.scalar(
+    all_lessons = list(
+        db.scalars(select(Lesson).where(Lesson.course_id == course.id).order_by(Lesson.position)).all()
+    )
+    progress_map: dict[UUID, VideoWatchHistory] = {}
+    if user and all_lessons:
+        for row in db.scalars(
             select(VideoWatchHistory).where(
-                VideoWatchHistory.user_id == user.id, VideoWatchHistory.lesson_id == lesson.id
+                VideoWatchHistory.user_id == user.id,
+                VideoWatchHistory.lesson_id.in_([l.id for l in all_lessons]),
             )
+        ).all():
+            progress_map[row.lesson_id] = row
+
+    is_staff = bool(
+        user
+        and (
+            user.role == UserRole.ADMIN
+            or (user.role == UserRole.INSTRUCTOR and course.instructor_id == user.id)
         )
+    )
+    locked, unlock_hint = _assessment_unlock_state(
+        lesson=lesson,
+        all_lessons=all_lessons,
+        progress_map=progress_map,
+        preview_mode=preview,
+        is_staff=is_staff,
+    )
+    if locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=unlock_hint or "Complete all lessons before this assessment.",
+        )
+
+    hist = progress_map.get(lesson.id)
 
     stream_token = None
     if user and lesson.video_source == VideoSource.UPLOAD and lesson.video_url:
@@ -268,12 +378,34 @@ def get_player_lesson(
         for r in db.scalars(select(LessonResource).where(LessonResource.lesson_id == lesson.id)).all()
     ]
 
-    next_lesson = db.scalar(
-        select(Lesson)
-        .where(Lesson.course_id == course.id, Lesson.position > lesson.position)
-        .order_by(Lesson.position.asc())
-        .limit(1)
-    )
+    # For students taking a quiz, hide correct answers until they submit (graded client-side then verified).
+    quiz_payload = lesson.quiz_json
+    if _is_quiz(lesson) and quiz_payload and not is_staff and not preview:
+        try:
+            import json
+
+            raw = json.loads(quiz_payload)
+            safe_qs = []
+            for q in raw.get("questions") or []:
+                safe_qs.append(
+                    {
+                        "id": q.get("id"),
+                        "prompt": q.get("prompt"),
+                        "options": [{"id": o.get("id"), "text": o.get("text")} for o in (q.get("options") or [])],
+                    }
+                )
+            quiz_payload = json.dumps(
+                {"passing_score_pct": int(raw.get("passing_score_pct") or 70), "questions": safe_qs}
+            )
+        except Exception:
+            pass
+
+    next_lesson = None
+    ordered = sorted(all_lessons, key=lambda l: (l.position, str(l.id)))
+    for idx, cand in enumerate(ordered):
+        if cand.id == lesson.id and idx + 1 < len(ordered):
+            next_lesson = ordered[idx + 1]
+            break
 
     return {
         "course_slug": course.slug,
@@ -288,9 +420,11 @@ def get_player_lesson(
             "direct_video_url": _direct_video_url(lesson),
             "stream_token": stream_token,
             "video_duration_seconds": lesson.video_duration_seconds,
-            "quiz_json": lesson.quiz_json,
+            "quiz_json": quiz_payload,
             "live_url": lesson.live_url,
             "resources": resources,
+            "locked": False,
+            "unlock_hint": None,
         },
         "progress": {
             "position_seconds": hist.position_seconds if hist else 0,
@@ -308,48 +442,54 @@ def save_progress(db: Session, user: User, payload: PlayerProgressIn) -> PlayerP
     if not course or not can_access_lesson(db, user, course, lesson):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot save progress")
 
+    if _is_quiz(lesson) and payload.completed:
+        all_lessons = list(db.scalars(select(Lesson).where(Lesson.course_id == course.id)).all())
+        progress_map: dict[UUID, VideoWatchHistory] = {}
+        for row in db.scalars(
+            select(VideoWatchHistory).where(
+                VideoWatchHistory.user_id == user.id,
+                VideoWatchHistory.lesson_id.in_([l.id for l in all_lessons]),
+            )
+        ).all():
+            progress_map[row.lesson_id] = row
+        locked, unlock_hint = _assessment_unlock_state(
+            lesson=lesson,
+            all_lessons=all_lessons,
+            progress_map=progress_map,
+            preview_mode=False,
+            is_staff=False,
+        )
+        if locked:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=unlock_hint or "Assessment locked")
+        # Verify score against quiz_json when provided
+        if lesson.quiz_json and payload.quiz_score_pct is not None:
+            import json
+
+            try:
+                raw = json.loads(lesson.quiz_json)
+                passing = int(raw.get("passing_score_pct") or 70)
+            except Exception:
+                passing = 70
+            if payload.quiz_score_pct < passing:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Score {payload.quiz_score_pct}% is below the pass mark ({passing}%).",
+                )
+
     row = db.scalar(
         select(VideoWatchHistory).where(
             VideoWatchHistory.user_id == user.id, VideoWatchHistory.lesson_id == lesson.id
         )
     )
-    was_completed = bool(row and row.completed)
     if not row:
         row = VideoWatchHistory(user_id=user.id, lesson_id=lesson.id)
     row.position_seconds = max(0, payload.position_seconds)
     row.watch_time_seconds = max(row.watch_time_seconds, payload.watch_time_seconds)
     row.completed = payload.completed or row.completed
     db.add(row)
+    db.flush()
 
-    enrollment = db.scalar(
-        select(Enrollment).where(
-            Enrollment.user_id == user.id,
-            Enrollment.course_id == course.id,
-            Enrollment.status == EnrollmentStatus.ENROLLED,
-        )
-    )
-    if enrollment and row.completed and not was_completed:
-        total_lessons = max(int(course.lessons_count or 0), 0)
-        if total_lessons == 0:
-            total_lessons = int(
-                db.scalar(select(func.count()).select_from(Lesson).where(Lesson.course_id == course.id)) or 0
-            )
-        completed_count = int(
-            db.scalar(
-                select(func.count())
-                .select_from(VideoWatchHistory)
-                .join(Lesson, Lesson.id == VideoWatchHistory.lesson_id)
-                .where(
-                    VideoWatchHistory.user_id == user.id,
-                    Lesson.course_id == course.id,
-                    VideoWatchHistory.completed.is_(True),
-                )
-            )
-            or 0
-        )
-        enrollment.lesson_done = completed_count
-        enrollment.progress_pct = min(100, round((completed_count / total_lessons) * 100)) if total_lessons else 0
-        db.add(enrollment)
+    progress_pct = _recalc_enrollment_progress(db, user.id, course)
 
     db.commit()
     logger.info(
@@ -364,7 +504,87 @@ def save_progress(db: Session, user: User, payload: PlayerProgressIn) -> PlayerP
         position_seconds=row.position_seconds,
         watch_time_seconds=row.watch_time_seconds,
         completed=row.completed,
+        progress_pct=progress_pct,
     )
+
+
+def submit_quiz(
+    db: Session,
+    user: User,
+    *,
+    lesson_id: UUID,
+    answers: dict[str, str],
+) -> dict:
+    """Grade assessment answers server-side and mark complete when passing."""
+    import json
+
+    lesson = db.get(Lesson, lesson_id)
+    if not lesson or not _is_quiz(lesson):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+    course = db.get(Course, lesson.course_id)
+    if not course or not can_access_lesson(db, user, course, lesson):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot submit assessment")
+
+    all_lessons = list(db.scalars(select(Lesson).where(Lesson.course_id == course.id)).all())
+    progress_map: dict[UUID, VideoWatchHistory] = {}
+    for row in db.scalars(
+        select(VideoWatchHistory).where(
+            VideoWatchHistory.user_id == user.id,
+            VideoWatchHistory.lesson_id.in_([l.id for l in all_lessons]),
+        )
+    ).all():
+        progress_map[row.lesson_id] = row
+    locked, unlock_hint = _assessment_unlock_state(
+        lesson=lesson,
+        all_lessons=all_lessons,
+        progress_map=progress_map,
+        preview_mode=False,
+        is_staff=user.role == UserRole.ADMIN or course.instructor_id == user.id,
+    )
+    if locked:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=unlock_hint or "Assessment locked")
+
+    try:
+        raw = json.loads(lesson.quiz_json or "{}")
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid assessment data") from exc
+
+    questions = raw.get("questions") or []
+    if not questions:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Assessment has no questions")
+    passing = int(raw.get("passing_score_pct") or 70)
+    correct = 0
+    for q in questions:
+        qid = str(q.get("id") or "")
+        expected = str(q.get("correct_option_id") or "")
+        if qid and expected and str(answers.get(qid) or "") == expected:
+            correct += 1
+    score_pct = round((correct / len(questions)) * 100)
+    passed = score_pct >= passing
+
+    if passed:
+        row = progress_map.get(lesson.id)
+        if not row:
+            row = VideoWatchHistory(user_id=user.id, lesson_id=lesson.id)
+        row.completed = True
+        row.position_seconds = max(row.position_seconds, 1)
+        db.add(row)
+        db.flush()
+        progress_pct = _recalc_enrollment_progress(db, user.id, course)
+        db.commit()
+    else:
+        progress_pct = _recalc_enrollment_progress(db, user.id, course)
+        db.commit()
+
+    return {
+        "passed": passed,
+        "score_pct": score_pct,
+        "passing_score_pct": passing,
+        "correct": correct,
+        "total": len(questions),
+        "completed": passed,
+        "progress_pct": progress_pct,
+    }
 
 
 def issue_stream_token(db: Session, lesson_id: UUID, user: User) -> StreamTokenOut:

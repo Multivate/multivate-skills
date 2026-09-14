@@ -150,29 +150,34 @@ export default async function CourseDetailPage({ params }: Props) {
               ) : null}
             </div>
 
-            <aside className="rounded-2xl border border-slate-200/95 bg-white p-6 shadow-card lg:sticky lg:top-24">
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-slate-100">
+            <aside className="overflow-hidden rounded-2xl border border-brand-ink/10 bg-white shadow-sm lg:sticky lg:top-24">
+              <div className="w-full bg-brand-muted">
                 <CourseThumbnail
                   src={course.image_url}
                   alt={course.title}
+                  fit="contain"
                   sizes="(min-width: 1024px) 22rem, 100vw"
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
-              <p className="mt-5 text-2xl font-extrabold text-slate-900">{priceLabel}</p>
-              <CourseEnrollCta courseSlug={course.slug} />
-              <Link
-                href="/dashboard/courses"
-                className="mt-4 block text-center text-sm font-semibold text-brand-primary hover:text-brand-primary-dark"
-              >
-                {tDetail("myCoursesDashboard")}
-              </Link>
-              <Link
-                href="/courses"
-                className="mt-2 block text-center text-sm font-semibold text-brand-primary hover:text-brand-primary-dark"
-              >
-                ← {tDetail("backToAll")}
-              </Link>
+              <div className="space-y-4 p-6">
+                <p className="font-display text-2xl font-bold tracking-tight text-brand-ink">{priceLabel}</p>
+                <CourseEnrollCta courseSlug={course.slug} />
+                <div className="space-y-2 border-t border-brand-ink/10 pt-4">
+                  <Link
+                    href="/dashboard/courses"
+                    className="block text-center text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark"
+                  >
+                    {tDetail("myCoursesDashboard")}
+                  </Link>
+                  <Link
+                    href="/courses"
+                    className="block text-center text-sm font-semibold text-brand-ink/55 transition hover:text-brand-ink"
+                  >
+                    {tDetail("backToAll")}
+                  </Link>
+                </div>
+              </div>
             </aside>
           </div>
         </div>

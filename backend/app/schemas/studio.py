@@ -243,6 +243,8 @@ class PlayerLessonOut(BaseModel):
     is_previewable: bool
     completed: bool
     position_seconds: int
+    locked: bool = False
+    unlock_hint: str | None = None
 
 
 class PlayerCurriculumOut(BaseModel):
@@ -259,6 +261,7 @@ class PlayerProgressIn(BaseModel):
     position_seconds: int = Field(default=0, ge=0)
     watch_time_seconds: int = Field(default=0, ge=0)
     completed: bool = False
+    quiz_score_pct: int | None = Field(default=None, ge=0, le=100)
 
 
 class PlayerProgressOut(BaseModel):
@@ -266,6 +269,12 @@ class PlayerProgressOut(BaseModel):
     position_seconds: int
     watch_time_seconds: int
     completed: bool
+    progress_pct: int | None = None
+
+
+class QuizSubmitIn(BaseModel):
+    lesson_id: UUID
+    answers: dict[str, str] = Field(default_factory=dict)
 
 
 class StreamTokenOut(BaseModel):

@@ -105,15 +105,15 @@ def login_code_start(
 
 
 @router.get("/oauth/google/start", response_model=OAuthStartResponse)
-def oauth_google_start(return_to: str = "/dashboard") -> OAuthStartResponse:
+def oauth_google_start(return_to: str = "/dashboard", role: str | None = None) -> OAuthStartResponse:
     safe_return = return_to if return_to.startswith("/") and not return_to.startswith("//") else "/dashboard"
-    return OAuthStartResponse(authorize_url=oauth_service.google_authorize_url(safe_return))
+    return OAuthStartResponse(authorize_url=oauth_service.google_authorize_url(safe_return, role=role))
 
 
 @router.get("/oauth/apple/start", response_model=OAuthStartResponse)
-def oauth_apple_start(return_to: str = "/dashboard") -> OAuthStartResponse:
+def oauth_apple_start(return_to: str = "/dashboard", role: str | None = None) -> OAuthStartResponse:
     safe_return = return_to if return_to.startswith("/") and not return_to.startswith("//") else "/dashboard"
-    return OAuthStartResponse(authorize_url=oauth_service.apple_authorize_url(safe_return))
+    return OAuthStartResponse(authorize_url=oauth_service.apple_authorize_url(safe_return, role=role))
 
 
 @router.post("/oauth/google/complete", response_model=OAuthCompleteResponse)

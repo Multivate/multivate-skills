@@ -1,6 +1,6 @@
 "use client";
 
-import { GripVertical, Loader2, Plus, Trash2, Upload as UploadIcon, Video, Link2 } from "lucide-react";
+import { ClipboardList, GripVertical, Loader2, Plus, Trash2, Upload as UploadIcon, Video, Link2 } from "lucide-react";
 import { Upload } from "@/components/ui/Upload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedVideoPlayer } from "@/components/player/ProtectedVideoPlayer";
@@ -28,6 +28,10 @@ type Lesson = {
   duration_minutes: number;
   resources: Resource[];
 };
+
+type QuizOption = { id: string; text: string };
+type QuizQuestion = { id: string; prompt: string; options: QuizOption[]; correct_option_id: string };
+type QuizData = { passing_score_pct: number; questions: QuizQuestion[] };
 
 type CourseDetail = {
   id: string;
@@ -67,6 +71,34 @@ function directVideoUrl(source: string | null, url: string | null) {
   return url;
 }
 
+function emptyQuestion(): QuizQuestion {
+  const qid = `q_${Math.random().toString(36).slice(2, 9)}`;
+  const a = `a_${Math.random().toString(36).slice(2, 7)}`;
+  const b = `b_${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    id: qid,
+    prompt: "",
+    options: [
+      { id: a, text: "" },
+      { id: b, text: "" },
+    ],
+    correct_option_id: a,
+  };
+}
+
+function parseQuiz(raw: string | null): QuizData {
+  if (!raw) return { passing_score_pct: 70, questions: [emptyQuestion()] };
+  try {
+    const data = JSON.parse(raw) as QuizData;
+    return {
+      passing_score_pct: Number(data.passing_score_pct) || 70,
+      questions: Array.isArray(data.questions) && data.questions.length ? data.questions : [emptyQuestion()],
+    };
+  } catch {
+    return { passing_score_pct: 70, questions: [emptyQuestion()] };
+  }
+}
+
 export function CourseStudioCurriculum({
   slug,
   course,
@@ -80,6 +112,7 @@ export function CourseStudioCurriculum({
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonSection, setNewLessonSection] = useState<string>("");
+  const [newItemKind, setNewItemKind] = useState<"lesson" | "assessment">("lesson");
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const dragLesson = useRef<string | null>(null);
 
@@ -88,6 +121,7 @@ export function CourseStudioCurriculum({
   const [videoSource, setVideoSource] = useState<VideoSource>("upload");
   const [videoLink, setVideoLink] = useState("");
   const [isPreviewable, setIsPreviewable] = useState(false);
+  const [quizDraft, setQuizDraft] = useState<QuizData>({ passing_score_pct: 70, questions: [emptyQuestion()] });
   const [previewStream, setPreviewStream] = useState<string | null>(null);
   const [previewEmbed, setPreviewEmbed] = useState<string | null>(null);
   const [previewDirect, setPreviewDirect] = useState<string | null>(null);
@@ -104,6 +138,7 @@ export function CourseStudioCurriculum({
     setVideoSource((activeLesson.video_source as VideoSource) || "upload");
     setVideoLink(activeLesson.video_url ?? "");
     setIsPreviewable(activeLesson.is_previewable);
+    setQuizDraft(parseQuiz(activeLesson.quiz_json));
   }, [activeLesson?.id]);
 
   useEffect(() => {
@@ -194,6 +229,7 @@ export function CourseStudioCurriculum({
     setBusy(true);
     try {
       const sectionId = newLessonSection && newLessonSection !== "loose" ? newLessonSection : null;
+      const isAssessment = newItemKind === "assessment";
       const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/lessons`, {
         method: "POST",
         credentials: "include",
@@ -201,19 +237,22 @@ export function CourseStudioCurriculum({
         body: JSON.stringify({
           section_id: sectionId,
           title: newLessonTitle.trim(),
-          lesson_type: "video",
-          video_source: "upload",
+          lesson_type: isAssessment ? "quiz" : "video",
+          video_source: isAssessment ? null : "upload",
+          quiz_json: isAssessment
+            ? JSON.stringify({ passing_score_pct: 70, questions: [emptyQuestion()] })
+            : null,
         }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that lesson.");
+        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that item.");
         return;
       }
       setNewLessonTitle("");
       await loadCourse(slug);
       setSelectedLessonId((data as { id: string }).id);
-      showToast("Lesson added");
+      showToast(isAssessment ? "Assessment added" : "Lesson added");
     } finally {
       setBusy(false);
     }
@@ -245,7 +284,7 @@ export function CourseStudioCurriculum({
   );
 
   const deleteLesson = async (lessonId: string) => {
-    if (!window.confirm("Remove this lesson? This cannot be undone.")) return;
+    if (!window.confirm("Remove this item? This cannot be undone.")) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/studio/lessons/${lessonId}`, {
@@ -281,6 +320,36 @@ export function CourseStudioCurriculum({
 
   const saveLessonDetails = async () => {
     if (!activeLesson) return;
+    const isQuiz = activeLesson.lesson_type === "quiz";
+    if (isQuiz) {
+      const cleaned: QuizData = {
+        passing_score_pct: Math.min(100, Math.max(1, Number(quizDraft.passing_score_pct) || 70)),
+        questions: quizDraft.questions
+          .map((q) => ({
+            ...q,
+            prompt: q.prompt.trim(),
+            options: q.options.map((o) => ({ ...o, text: o.text.trim() })).filter((o) => o.text),
+          }))
+          .filter((q) => q.prompt && q.options.length >= 2),
+      };
+      for (const q of cleaned.questions) {
+        if (!q.options.some((o) => o.id === q.correct_option_id)) {
+          q.correct_option_id = q.options[0]?.id ?? "";
+        }
+      }
+      if (!cleaned.questions.length) {
+        setError("Add at least one question with two answer choices.");
+        return;
+      }
+      await updateLesson(activeLesson.id, {
+        title: editTitle.trim(),
+        body: editBody.trim() || null,
+        lesson_type: "quiz",
+        quiz_json: JSON.stringify(cleaned),
+        is_previewable: false,
+      });
+      return;
+    }
     await updateLesson(activeLesson.id, {
       title: editTitle.trim(),
       body: editBody.trim() || null,
@@ -306,8 +375,9 @@ export function CourseStudioCurriculum({
   return (
     <div className="space-y-6">
       <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
-        Organize the course into sections, then add lessons. Each lesson needs a video - upload a file or paste a
-        YouTube, Vimeo, or direct link. Learners watch inside Multivate; downloads are disabled.
+        Organize the course into sections, then add lessons and assessments. Learners unlock assessments only after
+        they finish every session (non-assessment lesson). Progress is calculated automatically from completed
+        lessons.
       </p>
 
       <div className="grid gap-6 xl:grid-cols-12">
@@ -339,7 +409,26 @@ export function CourseStudioCurriculum({
             </div>
 
             <div className="border border-brand-ink/10 bg-brand-muted/30 p-4">
-              <p className={studioLabelClass}>Add lesson</p>
+              <p className={studioLabelClass}>Add to outline</p>
+              <div className="mt-2 flex gap-1 border border-brand-ink/10 bg-white/70 p-1">
+                {(
+                  [
+                    ["lesson", "Lesson"],
+                    ["assessment", "Assessment"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setNewItemKind(value)}
+                    className={`flex-1 px-3 py-2 text-xs font-semibold transition ${
+                      newItemKind === value ? "bg-brand-ink text-white" : "text-brand-ink/55 hover:text-brand-ink"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className="mt-3 flex flex-col gap-2 lg:flex-row">
                 <select
                   value={newLessonSection}
@@ -357,7 +446,7 @@ export function CourseStudioCurriculum({
                   id="studio-new-lesson-title"
                   value={newLessonTitle}
                   onChange={(e) => setNewLessonTitle(e.target.value)}
-                  placeholder="Lesson title"
+                  placeholder={newItemKind === "assessment" ? "Assessment title" : "Lesson title"}
                   className={`min-w-0 flex-1 ${studioFieldClass} !mt-0`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void addLesson();
@@ -370,9 +459,14 @@ export function CourseStudioCurriculum({
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-accent-dark disabled:opacity-50"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
-                  Lesson
+                  {newItemKind === "assessment" ? "Assessment" : "Lesson"}
                 </button>
               </div>
+              {newItemKind === "assessment" ? (
+                <p className="mt-2 text-xs text-brand-ink/50">
+                  Students see this only after completing all sessions in the course.
+                </p>
+              ) : null}
             </div>
 
             {groupedLessons.length === 0 ? (
@@ -405,6 +499,10 @@ export function CourseStudioCurriculum({
                       ) : (
                         group.lessons.map((lesson) => {
                           const selected = (selectedLessonId ?? activeLesson?.id) === lesson.id;
+                          const isQuiz = lesson.lesson_type === "quiz";
+                          const ready = isQuiz
+                            ? Boolean(lesson.quiz_json && lesson.quiz_json.includes("prompt"))
+                            : Boolean(lesson.video_url);
                           return (
                             <li
                               key={lesson.id}
@@ -431,16 +529,20 @@ export function CourseStudioCurriculum({
                               }`}
                             >
                               <GripVertical className="h-4 w-4 shrink-0 text-brand-ink/30" aria-hidden />
-                              <Video className="h-4 w-4 shrink-0 text-brand-ink/45" aria-hidden />
+                              {isQuiz ? (
+                                <ClipboardList className="h-4 w-4 shrink-0 text-brand-accent" aria-hidden />
+                              ) : (
+                                <Video className="h-4 w-4 shrink-0 text-brand-ink/45" aria-hidden />
+                              )}
                               <span className="min-w-0 flex-1 truncate text-sm font-medium text-brand-ink">
                                 {lesson.title}
                               </span>
                               <span
                                 className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] ${
-                                  lesson.video_url ? "text-emerald-700" : "text-amber-800"
+                                  ready ? "text-emerald-700" : "text-amber-800"
                                 }`}
                               >
-                                {lesson.video_url ? "Video" : "Needs video"}
+                                {isQuiz ? (ready ? "Assessment" : "Needs questions") : ready ? "Video" : "Needs video"}
                               </span>
                             </li>
                           );
@@ -455,8 +557,14 @@ export function CourseStudioCurriculum({
         </StudioPanel>
 
         <StudioPanel
-          title={activeLesson ? "Lesson editor" : "Lesson editor"}
-          description={activeLesson ? "Video, notes, and preview settings" : "Select a lesson from the outline"}
+          title={activeLesson?.lesson_type === "quiz" ? "Assessment editor" : "Lesson editor"}
+          description={
+            activeLesson
+              ? activeLesson.lesson_type === "quiz"
+                ? "Questions unlock after students finish all sessions"
+                : "Video, notes, and preview settings"
+              : "Select an item from the outline"
+          }
           action={
             activeLesson ? (
               <button
@@ -479,7 +587,9 @@ export function CourseStudioCurriculum({
               </label>
 
               <label className="block">
-                <span className={studioLabelClass}>Learner notes</span>
+                <span className={studioLabelClass}>
+                  {activeLesson.lesson_type === "quiz" ? "Instructions" : "Learner notes"}
+                </span>
                 <textarea
                   value={editBody}
                   onChange={(e) => setEditBody(e.target.value)}
@@ -488,126 +598,303 @@ export function CourseStudioCurriculum({
                 />
               </label>
 
-              <div>
-                <p className={studioLabelClass}>Video source</p>
-                <div className="mt-2 grid grid-cols-2 gap-1 border border-brand-ink/10 bg-brand-muted/40 p-1 sm:grid-cols-4">
-                  {(
-                    [
-                      ["upload", "Upload", UploadIcon],
-                      ["youtube", "YouTube", Link2],
-                      ["vimeo", "Vimeo", Link2],
-                      ["url", "Link", Link2],
-                    ] as const
-                  ).map(([value, label, Icon]) => {
-                    const active = videoSource === value;
-                    return (
+              {activeLesson.lesson_type === "quiz" ? (
+                <>
+                  <label className="block">
+                    <span className={studioLabelClass}>Pass mark (%)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={quizDraft.passing_score_pct}
+                      onChange={(e) =>
+                        setQuizDraft((d) => ({
+                          ...d,
+                          passing_score_pct: Number(e.target.value) || 70,
+                        }))
+                      }
+                      className={studioFieldClass}
+                    />
+                  </label>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={studioLabelClass}>Questions</p>
                       <button
-                        key={value}
                         type="button"
-                        onClick={() => {
-                          setVideoSource(value);
-                          if (activeLesson && activeLesson.video_source !== value) {
-                            void updateLesson(activeLesson.id, { video_source: value, lesson_type: "video" });
-                          }
-                        }}
-                        className={`inline-flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold transition ${
-                          active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
-                        }`}
+                        onClick={() =>
+                          setQuizDraft((d) => ({
+                            ...d,
+                            questions: [...d.questions, emptyQuestion()],
+                          }))
+                        }
+                        className="text-xs font-semibold text-brand-accent hover:text-brand-accent-dark"
                       >
-                        <Icon className="h-3.5 w-3.5" aria-hidden />
-                        {label}
+                        + Add question
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
+                    {quizDraft.questions.map((q, qi) => (
+                      <div key={q.id} className="space-y-3 border border-brand-ink/10 bg-brand-muted/20 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <label className="block min-w-0 flex-1">
+                            <span className={studioLabelClass}>Question {qi + 1}</span>
+                            <textarea
+                              value={q.prompt}
+                              onChange={(e) => {
+                                const prompt = e.target.value;
+                                setQuizDraft((d) => ({
+                                  ...d,
+                                  questions: d.questions.map((item, i) =>
+                                    i === qi ? { ...item, prompt } : item,
+                                  ),
+                                }));
+                              }}
+                              rows={2}
+                              className={`${studioFieldClass} min-h-[3.5rem] resize-y`}
+                            />
+                          </label>
+                          {quizDraft.questions.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setQuizDraft((d) => ({
+                                  ...d,
+                                  questions: d.questions.filter((_, i) => i !== qi),
+                                }))
+                              }
+                              className="mt-6 text-xs font-semibold text-red-700"
+                            >
+                              Remove
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className="space-y-2">
+                          {q.options.map((opt, oi) => (
+                            <div key={opt.id} className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name={`correct-${q.id}`}
+                                checked={q.correct_option_id === opt.id}
+                                onChange={() =>
+                                  setQuizDraft((d) => ({
+                                    ...d,
+                                    questions: d.questions.map((item, i) =>
+                                      i === qi ? { ...item, correct_option_id: opt.id } : item,
+                                    ),
+                                  }))
+                                }
+                                title="Mark as correct"
+                                className="h-4 w-4 border-brand-ink/25 text-brand-accent focus:ring-brand-accent/30"
+                              />
+                              <input
+                                value={opt.text}
+                                onChange={(e) => {
+                                  const text = e.target.value;
+                                  setQuizDraft((d) => ({
+                                    ...d,
+                                    questions: d.questions.map((item, i) =>
+                                      i === qi
+                                        ? {
+                                            ...item,
+                                            options: item.options.map((o, j) =>
+                                              j === oi ? { ...o, text } : o,
+                                            ),
+                                          }
+                                        : item,
+                                    ),
+                                  }));
+                                }}
+                                placeholder={`Option ${oi + 1}`}
+                                className={`min-w-0 flex-1 ${studioFieldClass} !mt-0`}
+                              />
+                              {q.options.length > 2 ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setQuizDraft((d) => ({
+                                      ...d,
+                                      questions: d.questions.map((item, i) => {
+                                        if (i !== qi) return item;
+                                        const options = item.options.filter((_, j) => j !== oi);
+                                        const correct =
+                                          item.correct_option_id === opt.id
+                                            ? options[0]?.id ?? ""
+                                            : item.correct_option_id;
+                                        return { ...item, options, correct_option_id: correct };
+                                      }),
+                                    }))
+                                  }
+                                  className="text-xs text-brand-ink/45 hover:text-red-700"
+                                >
+                                  ×
+                                </button>
+                              ) : null}
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setQuizDraft((d) => ({
+                                ...d,
+                                questions: d.questions.map((item, i) =>
+                                  i === qi
+                                    ? {
+                                        ...item,
+                                        options: [
+                                          ...item.options,
+                                          {
+                                            id: `o_${Math.random().toString(36).slice(2, 8)}`,
+                                            text: "",
+                                          },
+                                        ],
+                                      }
+                                    : item,
+                                ),
+                              }))
+                            }
+                            className="text-xs font-semibold text-brand-ink/55 hover:text-brand-ink"
+                          >
+                            + Option
+                          </button>
+                        </div>
+                        <p className="text-[0.7rem] text-brand-ink/45">Select the radio next to the correct answer.</p>
+                      </div>
+                    ))}
+                  </div>
 
-              {videoSource === "upload" ? (
-                <Upload
-                  folder="lessons"
-                  subfolder={`${course.id}/${activeLesson.id}`}
-                  uploadUrl={`/api/studio/lessons/${activeLesson.id}/video`}
-                  accept="video/mp4,video/webm,video/quicktime"
-                  label="Drop or click to upload video"
-                  hint={
-                    activeLesson.video_url && activeLesson.video_source === "upload"
-                      ? "Video on file. Upload again to replace."
-                      : "MP4, WebM, or MOV · up to 512 MB"
-                  }
-                  onSuccess={async () => {
-                    await loadCourse(slug);
-                    showToast("Video uploaded");
-                  }}
-                  onError={(msg) => setError(msg)}
-                />
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void saveLessonDetails()}
+                    className="w-full border border-brand-ink bg-brand-ink py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 disabled:opacity-50"
+                  >
+                    Save assessment
+                  </button>
+                </>
               ) : (
-                <label className="block">
-                  <span className={studioLabelClass}>
-                    {videoSource === "youtube"
-                      ? "YouTube URL"
-                      : videoSource === "vimeo"
-                        ? "Vimeo URL"
-                        : "Direct video URL"}
-                  </span>
-                  <input
-                    value={videoLink}
-                    onChange={(e) => setVideoLink(e.target.value)}
-                    placeholder={
-                      videoSource === "youtube"
-                        ? "https://www.youtube.com/watch?v=…"
-                        : videoSource === "vimeo"
-                          ? "https://vimeo.com/…"
-                          : "https://…/lesson.mp4"
-                    }
-                    className={studioFieldClass}
-                  />
-                </label>
+                <>
+                  <div>
+                    <p className={studioLabelClass}>Video source</p>
+                    <div className="mt-2 grid grid-cols-2 gap-1 border border-brand-ink/10 bg-brand-muted/40 p-1 sm:grid-cols-4">
+                      {(
+                        [
+                          ["upload", "Upload", UploadIcon],
+                          ["youtube", "YouTube", Link2],
+                          ["vimeo", "Vimeo", Link2],
+                          ["url", "Link", Link2],
+                        ] as const
+                      ).map(([value, label, Icon]) => {
+                        const active = videoSource === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => {
+                              setVideoSource(value);
+                              if (activeLesson && activeLesson.video_source !== value) {
+                                void updateLesson(activeLesson.id, { video_source: value, lesson_type: "video" });
+                              }
+                            }}
+                            className={`inline-flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold transition ${
+                              active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" aria-hidden />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {videoSource === "upload" ? (
+                    <Upload
+                      folder="lessons"
+                      subfolder={`${course.id}/${activeLesson.id}`}
+                      uploadUrl={`/api/studio/lessons/${activeLesson.id}/video`}
+                      accept="video/mp4,video/webm,video/quicktime"
+                      label="Drop or click to upload video"
+                      hint={
+                        activeLesson.video_url && activeLesson.video_source === "upload"
+                          ? "Video on file. Upload again to replace."
+                          : "MP4, WebM, or MOV · up to 512 MB"
+                      }
+                      onSuccess={async () => {
+                        await loadCourse(slug);
+                        showToast("Video uploaded");
+                      }}
+                      onError={(msg) => setError(msg)}
+                    />
+                  ) : (
+                    <label className="block">
+                      <span className={studioLabelClass}>
+                        {videoSource === "youtube"
+                          ? "YouTube URL"
+                          : videoSource === "vimeo"
+                            ? "Vimeo URL"
+                            : "Direct video URL"}
+                      </span>
+                      <input
+                        value={videoLink}
+                        onChange={(e) => setVideoLink(e.target.value)}
+                        placeholder={
+                          videoSource === "youtube"
+                            ? "https://www.youtube.com/watch?v=…"
+                            : videoSource === "vimeo"
+                              ? "https://vimeo.com/…"
+                              : "https://…/lesson.mp4"
+                        }
+                        className={studioFieldClass}
+                      />
+                    </label>
+                  )}
+
+                  {videoSource !== "upload" ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void saveVideoLink()}
+                      className="w-full border border-brand-ink bg-brand-ink py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 disabled:opacity-50"
+                    >
+                      Save video link
+                    </button>
+                  ) : null}
+
+                  <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-brand-ink">
+                    <input
+                      type="checkbox"
+                      checked={isPreviewable}
+                      onChange={(e) => setIsPreviewable(e.target.checked)}
+                      className="h-4 w-4 border-brand-ink/25 text-brand-accent focus:ring-brand-accent/30"
+                    />
+                    Free preview before enrollment
+                  </label>
+
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void saveLessonDetails()}
+                    className="w-full border border-brand-ink/15 bg-white py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-muted/60 disabled:opacity-50"
+                  >
+                    Save lesson details
+                  </button>
+
+                  <div>
+                    <p className={`${studioLabelClass} mb-2`}>Preview</p>
+                    <ProtectedVideoPlayer
+                      src={previewStream ?? previewDirect}
+                      embedUrl={previewEmbed}
+                      title={activeLesson.title}
+                    />
+                  </div>
+                </>
               )}
-
-              {videoSource !== "upload" ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void saveVideoLink()}
-                  className="w-full border border-brand-ink bg-brand-ink py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 disabled:opacity-50"
-                >
-                  Save video link
-                </button>
-              ) : null}
-
-              <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-brand-ink">
-                <input
-                  type="checkbox"
-                  checked={isPreviewable}
-                  onChange={(e) => setIsPreviewable(e.target.checked)}
-                  className="h-4 w-4 border-brand-ink/25 text-brand-accent focus:ring-brand-accent/30"
-                />
-                Free preview before enrollment
-              </label>
-
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void saveLessonDetails()}
-                className="w-full border border-brand-ink/15 bg-white py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-muted/60 disabled:opacity-50"
-              >
-                Save lesson details
-              </button>
-
-              <div>
-                <p className={`${studioLabelClass} mb-2`}>Preview</p>
-                <ProtectedVideoPlayer
-                  src={previewStream ?? previewDirect}
-                  embedUrl={previewEmbed}
-                  title={activeLesson.title}
-                />
-              </div>
             </div>
           ) : (
             <div className="flex min-h-[280px] flex-col items-center justify-center px-4 text-center">
-              <p className="font-display text-lg font-semibold text-brand-ink">No lesson selected</p>
+              <p className="font-display text-lg font-semibold text-brand-ink">Nothing selected</p>
               <p className="mt-2 max-w-xs text-sm text-brand-ink/55">
-                Create a lesson in the outline, then return here to attach video and notes.
+                Create a lesson or assessment in the outline, then edit it here.
               </p>
             </div>
           )}

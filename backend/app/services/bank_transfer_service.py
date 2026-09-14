@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -255,6 +256,48 @@ def _attach_discount_to_payment(
     payment.discount_code_id = discount_row.id if discount_row else None
 
 
+def _get_or_create_pending_enrollment(db: Session, user_id: UUID, course_id: UUID) -> Enrollment:
+    """Reuse the unique (user, course) enrollment row; safe under concurrent checkout starts."""
+    existing = db.execute(
+        select(Enrollment).where(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
+    ).scalar_one_or_none()
+    if existing:
+        if existing.status == EnrollmentStatus.ENROLLED:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled in this course")
+        existing.status = EnrollmentStatus.PENDING_PAYMENT
+        db.add(existing)
+        db.flush()
+        return existing
+
+    enrollment = Enrollment(
+        user_id=user_id,
+        course_id=course_id,
+        status=EnrollmentStatus.PENDING_PAYMENT,
+        lesson_done=0,
+        progress_pct=0,
+    )
+    db.add(enrollment)
+    try:
+        with db.begin_nested():
+            db.flush()
+    except IntegrityError:
+        existing = db.execute(
+            select(Enrollment).where(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
+        ).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Could not start enrollment. Please refresh and try again.",
+            ) from None
+        if existing.status == EnrollmentStatus.ENROLLED:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled in this course")
+        existing.status = EnrollmentStatus.PENDING_PAYMENT
+        db.add(existing)
+        db.flush()
+        return existing
+    return enrollment
+
+
 def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str | None = None) -> EnrollmentStartOut:
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only students can enroll in courses")
@@ -380,18 +423,9 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
         )
         if amount_changed and pending_payment.payment_method == "remita":
             pending_payment.transaction_reference = None
-        if not existing_enr:
-            existing_enr = Enrollment(
-                user_id=user.id,
-                course_id=course.id,
-                status=EnrollmentStatus.PENDING_PAYMENT,
-                lesson_done=0,
-                progress_pct=0,
-            )
-            db.add(existing_enr)
-            db.flush()
-            pending_payment.enrollment_id = existing_enr.id
-            db.add(pending_payment)
+        enrollment = existing_enr or _get_or_create_pending_enrollment(db, user.id, course.id)
+        pending_payment.enrollment_id = enrollment.id
+        db.add(pending_payment)
         db.commit()
         db.refresh(pending_payment)
         waiting = pending_payment.status == PaymentStatus.AWAITING_REVIEW
@@ -412,21 +446,7 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
             message=_enrollment_start_message(remita=remita_checkout is not None, awaiting_review=waiting),
         )
 
-    enrollment = existing_enr
-    if enrollment is None:
-        enrollment = Enrollment(
-            user_id=user.id,
-            course_id=course.id,
-            status=EnrollmentStatus.PENDING_PAYMENT,
-            lesson_done=0,
-            progress_pct=0,
-        )
-        db.add(enrollment)
-        db.flush()
-    else:
-        enrollment.status = EnrollmentStatus.PENDING_PAYMENT
-        db.add(enrollment)
-        db.flush()
+    enrollment = _get_or_create_pending_enrollment(db, user.id, course.id)
 
     payment_ref = _new_payment_reference(db)
     use_remita = remita_service.remita_configured()
@@ -488,6 +508,23 @@ def get_payment_status(db: Session, user: User, payment_reference: str) -> Payme
     )
 
 
+def _assert_amount_matches(payment: Payment, amount_cents: int | None, *, label: str = "Amount") -> None:
+    if amount_cents is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{label} is required and must match the invoice exactly.",
+        )
+    if int(amount_cents) != int(payment.amount_cents):
+        expected = payment.amount_cents / 100
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{label} does not match. Expected {payment.currency} {expected:,.2f}. "
+                "Wrong amounts cannot be approved."
+            ),
+        )
+
+
 def _payment_by_reference(db: Session, payment_reference: str) -> Payment:
     ref = payment_reference.strip().upper()
     payment = db.execute(select(Payment).where(Payment.payment_reference == ref)).scalar_one_or_none()
@@ -503,7 +540,8 @@ def _complete_payment(
     transaction_reference: str,
     verification_payload: dict,
     *,
-    skip_amount_check: bool = False,
+    amount_received_cents: int | None = None,
+    require_amount_match: bool = False,
 ) -> PaymentVerifyOut:
     if payment.status in (PaymentStatus.PAID, PaymentStatus.COMPLETED):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Payment already verified")
@@ -511,6 +549,9 @@ def _complete_payment(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Payment was rejected")
     if payment.status not in (PaymentStatus.PENDING, PaymentStatus.AWAITING_REVIEW):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment cannot be approved in this state")
+
+    if require_amount_match:
+        _assert_amount_matches(payment, amount_received_cents, label="Confirmed amount")
 
     dup = db.execute(
         select(Payment.id).where(
@@ -524,21 +565,25 @@ def _complete_payment(
     if dup:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Transaction reference already used")
 
-    course = db.get(Course, payment.course_id) if payment.course_id else None
-    if course and not skip_amount_check:
-        if payment.original_amount_cents is not None:
-            if payment.currency.upper() != get_settings().bank_transfer_currency.upper():
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment amount mismatch")
-        else:
-            expected_amount, expected_currency = _course_price(course)
-            if payment.amount_cents != expected_amount or payment.currency.upper() != expected_currency.upper():
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment amount mismatch")
+    # Free unique constraint if a rejected payment still holds this txn.
+    clash_any = db.execute(
+        select(Payment).where(
+            Payment.transaction_reference == transaction_reference,
+            Payment.id != payment.id,
+        )
+    ).scalar_one_or_none()
+    if clash_any and clash_any.status == PaymentStatus.FAILED:
+        clash_any.transaction_reference = f"REJ-{clash_any.id.hex[:8]}-{(clash_any.transaction_reference or '')}"[:128]
+        db.add(clash_any)
 
     now = _utcnow()
     payment.status = PaymentStatus.PAID
     payment.transaction_reference = transaction_reference
     payment.paid_at = now
-    payment.verification_response = json.dumps(verification_payload)
+    payload = dict(verification_payload)
+    if amount_received_cents is not None:
+        payload["amount_received_cents"] = int(amount_received_cents)
+    payment.verification_response = json.dumps(payload)
     db.add(payment)
 
     enrollment = None
@@ -555,6 +600,18 @@ def _complete_payment(
     if enrollment:
         enrollment.status = EnrollmentStatus.ENROLLED
         db.add(enrollment)
+    elif payment.course_id:
+        enrollment = Enrollment(
+            user_id=payment.user_id,
+            course_id=payment.course_id,
+            status=EnrollmentStatus.ENROLLED,
+            lesson_done=0,
+            progress_pct=0,
+        )
+        db.add(enrollment)
+        db.flush()
+        payment.enrollment_id = enrollment.id
+        db.add(payment)
 
     _audit(
         db,
@@ -564,9 +621,18 @@ def _complete_payment(
         f"txn={transaction_reference}",
     )
     discount_service.record_redemption(db, payment)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        _logger.exception("Payment complete integrity error payment_id=%s txn=%s", payment.id, transaction_reference)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Could not approve this payment (duplicate transaction reference). Try again or use a different bank txn.",
+        ) from None
     db.refresh(payment)
 
+    course = db.get(Course, payment.course_id) if payment.course_id else None
     student = db.get(User, payment.user_id)
     if student and course:
         try:
@@ -587,10 +653,14 @@ def _complete_payment(
             )
 
     if not student:
-        raise HTTPException(status_code=500, detail="Payment owner missing")
+        _logger.error("Payment owner missing after approve payment_id=%s", payment.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Payment was approved but the student account is missing. Contact support.",
+        )
     return PaymentVerifyOut(
         success=True,
-        payment=_payment_out(db, payment, course, student),
+        payment=_payment_out(db, payment, course, student, include_user=True),
         message="Payment verified. You now have access to the course.",
     )
 
@@ -609,10 +679,17 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
         return PaymentVerifyOut(
             success=True,
             payment=_payment_out(db, payment, course, student),
-            message="We already have your payment details and are reviewing them.",
+            message="We already have your payment details and are reviewing them. Course access unlocks after admin approval.",
         )
     if payment.status != PaymentStatus.PENDING:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This payment cannot be updated")
+    if payment.payment_method == "remita":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This checkout uses online payment. Finish payment with Remita instead.",
+        )
+
+    _assert_amount_matches(payment, payload.amount_sent_cents, label="Amount sent")
 
     txn = payload.transaction_reference.strip()
     if len(txn) < 4:
@@ -628,6 +705,13 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
     if dup:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Transaction reference already used")
 
+    # Keep enrollment pending_payment until admin approves.
+    if payment.enrollment_id:
+        enrollment = db.get(Enrollment, payment.enrollment_id)
+        if enrollment and enrollment.status == EnrollmentStatus.ENROLLED:
+            enrollment.status = EnrollmentStatus.PENDING_PAYMENT
+            db.add(enrollment)
+
     payment.status = PaymentStatus.AWAITING_REVIEW
     payment.transaction_reference = txn
     payment.verification_response = json.dumps(
@@ -635,11 +719,19 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
             "method": "student_claim",
             "claimed_at": _utcnow().isoformat(),
             "transaction_reference": txn,
+            "amount_sent_cents": int(payload.amount_sent_cents),
         }
     )
     db.add(payment)
     _audit(db, payment.id, user.id, "payment_claimed", f"txn={txn}")
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Transaction reference already used. Check the bank reference and try again.",
+        ) from None
     db.refresh(payment)
 
     course = db.get(Course, payment.course_id) if payment.course_id else None
@@ -652,6 +744,7 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
                 title="Payment waiting for review",
                 body=(
                     f"{student.name} says they paid for {course.title}. "
+                    f"Amount {payment.currency} {payment.amount_cents / 100:,.2f} · "
                     f"Reference {payment.payment_reference or '-'} · Txn {txn}"
                 ),
                 link_href="/dashboard/admin/payments",
@@ -660,8 +753,8 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
                 db,
                 user_id=student.id,
                 kind="payment_submitted",
-                title="Payment received",
-                body="We got your payment details. We will notify you once access is granted.",
+                title="Payment submitted for review",
+                body="We got your payment details. You will unlock the course after an admin confirms the exact amount.",
                 link_href="/dashboard/payments",
             )
         except Exception:
@@ -672,12 +765,11 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
             )
 
     if not student:
-        student = db.get(User, payment.user_id)
         raise HTTPException(status_code=500, detail="Payment owner missing")
     return PaymentVerifyOut(
         success=True,
         payment=_payment_out(db, payment, course, student),
-        message="Thanks. We will confirm your payment and grant access soon.",
+        message="Thanks. Access stays locked until we confirm the exact amount paid.",
     )
 
 
@@ -703,25 +795,57 @@ def _unique_admin_transaction_reference(db: Session, payment: Payment) -> str:
     raise HTTPException(status_code=500, detail="Could not assign transaction reference")
 
 
-def admin_approve_payment(db: Session, admin: User, payment_id: UUID, transaction_reference: str | None) -> PaymentVerifyOut:
+def admin_approve_payment(
+    db: Session,
+    admin: User,
+    payment_id: UUID,
+    transaction_reference: str | None,
+    amount_received_cents: int,
+) -> PaymentVerifyOut:
     payment = db.get(Payment, payment_id)
     if not payment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+
+    if payment.status == PaymentStatus.PENDING:
+        if payment.payment_method == "remita":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Online payment is still pending with Remita. Wait for confirmation, or reject if abandoned.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Student has not submitted a bank transfer claim yet. Only review claims that are awaiting review.",
+        )
+    if payment.status != PaymentStatus.AWAITING_REVIEW:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only payments awaiting review can be approved.",
+        )
+
+    _assert_amount_matches(payment, amount_received_cents, label="Confirmed amount")
     txn = (transaction_reference or "").strip() or _unique_admin_transaction_reference(db, payment)
     verification_payload = {
         "method": "admin_manual",
         "verified_at": _utcnow().isoformat(),
         "transaction_reference": txn,
         "verifier_admin_id": str(admin.id),
+        "amount_received_cents": int(amount_received_cents),
     }
-    _logger.info("Admin approving payment id=%s admin=%s txn=%s", payment_id, admin.id, txn)
+    _logger.info(
+        "Admin approving payment id=%s admin=%s txn=%s amount=%s",
+        payment_id,
+        admin.id,
+        txn,
+        amount_received_cents,
+    )
     return _complete_payment(
         db,
         payment,
         admin,
         txn,
         verification_payload,
-        skip_amount_check=True,
+        amount_received_cents=amount_received_cents,
+        require_amount_match=True,
     )
 
 
@@ -734,13 +858,18 @@ def admin_reject_payment(db: Session, admin: User, payment_id: UUID, reason: str
     if payment.status == PaymentStatus.FAILED:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Payment already rejected")
 
+    old_txn = (payment.transaction_reference or "").strip()
     payment.status = PaymentStatus.FAILED
+    # Free unique txn so a corrected claim can reuse the bank reference later.
+    if old_txn:
+        payment.transaction_reference = f"REJ-{payment.id.hex[:8]}-{old_txn}"[:128]
     payment.verification_response = json.dumps(
         {
             "method": "admin_reject",
             "rejected_at": _utcnow().isoformat(),
             "reason": (reason or "").strip() or None,
             "admin_id": str(admin.id),
+            "previous_transaction_reference": old_txn or None,
         }
     )
     db.add(payment)
@@ -753,7 +882,8 @@ def admin_reject_payment(db: Session, admin: User, payment_id: UUID, reason: str
                 Enrollment.course_id == payment.course_id,
             )
         ).scalar_one_or_none()
-    if enrollment and enrollment.status == EnrollmentStatus.PENDING_PAYMENT:
+    if enrollment and enrollment.status in (EnrollmentStatus.PENDING_PAYMENT, EnrollmentStatus.ENROLLED):
+        # Never leave access open after a reject.
         enrollment.status = EnrollmentStatus.CANCELLED
         db.add(enrollment)
 
@@ -777,8 +907,8 @@ def admin_reject_payment(db: Session, admin: User, payment_id: UUID, reason: str
         raise HTTPException(status_code=500, detail="Payment owner missing")
     return PaymentVerifyOut(
         success=False,
-        payment=_payment_out(db, payment, course, student),
-        message="Payment rejected.",
+        payment=_payment_out(db, payment, course, student, include_user=True),
+        message="Payment rejected. Course access remains locked.",
     )
 
 

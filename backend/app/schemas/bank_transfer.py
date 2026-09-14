@@ -75,6 +75,7 @@ class EnrollmentStartIn(BaseModel):
 class PaymentVerifyIn(BaseModel):
     payment_reference: str = Field(min_length=6, max_length=32)
     transaction_reference: str = Field(min_length=4, max_length=128)
+    amount_sent_cents: int = Field(ge=0, description="Exact amount the student transferred, in cents")
 
 
 class PaymentVerifyOut(BaseModel):
@@ -91,6 +92,7 @@ class PaymentStatusOut(BaseModel):
 
 class AdminPaymentApproveIn(BaseModel):
     transaction_reference: str | None = Field(default=None, max_length=128)
+    amount_received_cents: int = Field(ge=0, description="Exact amount confirmed in the bank, in cents")
 
 
 class AdminPaymentRejectIn(BaseModel):

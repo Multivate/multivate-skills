@@ -28,6 +28,7 @@ from app.schemas.studio import (
     PlayerPhrasebookOut,
     PlayerProgressIn,
     PlayerProgressOut,
+    QuizSubmitIn,
     ReorderSectionsIn,
     SectionCreateIn,
     SectionOut,
@@ -256,6 +257,15 @@ def remove_phrase(
     course_studio_service.delete_audio_phrase(db, phrase_id, user)
 
 
+@router.delete("/phrases/{phrase_id}/audio", response_model=AudioPhraseOut)
+def clear_phrase_audio(
+    phrase_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> AudioPhraseOut:
+    return course_studio_service.clear_phrase_audio(db, phrase_id, user)
+
+
 @router.put("/courses/{slug}/phrases/reorder", response_model=list[AudioPhraseOut])
 def reorder_phrases(
     slug: str,
@@ -314,6 +324,15 @@ def save_progress(
     user: Annotated[User, Depends(get_current_user)],
 ) -> PlayerProgressOut:
     return player_service.save_progress(db, user, payload)
+
+
+@player_router.post("/quiz/submit")
+def submit_quiz(
+    payload: QuizSubmitIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> dict:
+    return player_service.submit_quiz(db, user, lesson_id=payload.lesson_id, answers=payload.answers)
 
 
 @player_router.get("/stream/{lesson_id}/token", response_model=StreamTokenOut)

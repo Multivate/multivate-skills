@@ -23,7 +23,7 @@ export function CourseEnrollCta({ courseSlug }: Props) {
 
   if (authLoading) {
     return (
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-4 text-center text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/40">
+      <div className="rounded-xl border border-brand-ink/10 bg-brand-muted/40 px-4 py-4 text-center text-sm text-brand-ink/60">
         {t("checkingSession")}
       </div>
     );
@@ -31,13 +31,10 @@ export function CourseEnrollCta({ courseSlug }: Props) {
 
   if (user && user.role !== "student") {
     return (
-      <div className="mt-5 space-y-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60">
-        <p className="text-sm font-semibold text-brand-ink dark:text-slate-100">{t("studentOnlyTitle")}</p>
-        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{t("studentOnlyBody")}</p>
-        <Link
-          href="/dashboard"
-          className="inline-block text-sm font-semibold text-brand-primary hover:text-brand-primary-dark"
-        >
+      <div className="space-y-3 rounded-xl border border-brand-ink/10 bg-brand-muted/40 px-4 py-4">
+        <p className="text-sm font-semibold text-brand-ink">{t("studentOnlyTitle")}</p>
+        <p className="text-sm leading-relaxed text-brand-ink/60">{t("studentOnlyBody")}</p>
+        <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
           {t("studentOnlyDashboard")}
         </Link>
       </div>
@@ -45,14 +42,16 @@ export function CourseEnrollCta({ courseSlug }: Props) {
   }
 
   return (
-    <div className="mt-5 space-y-3">
-      <button type="button" onClick={goToCheckout} className="btn-primary-brand block w-full text-center !py-3">
+    <div className="space-y-3">
+      <button type="button" onClick={goToCheckout} className="btn-cta-accent block w-full text-center !py-3.5">
         {t("enrollCta")}
       </button>
-      <p className="text-center text-xs text-slate-500">{t("paymentNote")}</p>
-      <Link href="/register" className="block text-center text-sm font-semibold text-brand-primary hover:text-brand-primary-dark">
-        {t("needAccount")}
-      </Link>
+      <p className="text-center text-xs leading-relaxed text-brand-ink/50">{t("paymentNote")}</p>
+      {!user ? (
+        <Link href="/register" className="block text-center text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
+          {t("needAccount")}
+        </Link>
+      ) : null}
     </div>
   );
 }

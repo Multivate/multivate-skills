@@ -7,6 +7,7 @@ import { readApiError } from "@/lib/api-error";
 import { useCallback, useEffect, useState } from "react";
 import { AdminDiscountCodes } from "@/components/dashboard/AdminDiscountCodes";
 import { AdminMentorApprovals } from "@/components/dashboard/AdminMentorApprovals";
+import { AdminPaymentsPanel } from "@/components/dashboard/AdminPaymentsPanel";
 import { AdminAnalyticsDashboard, type AdminAnalyticsData } from "@/components/dashboard/AdminAnalyticsDashboard";
 import { DashboardState } from "@/components/dashboard/dashboard-ui";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
@@ -182,15 +183,6 @@ export function AdminSectionContent({ section }: { section: string }) {
           return;
         }
         if (section === "payments") {
-          const res = await fetch("/api/admin/payments?limit=100", { credentials: "include", cache: "no-store" });
-          const data = await res.json().catch(() => null);
-          if (cancelled) return;
-          if (!res.ok) {
-            setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load payments.");
-            setPayments([]);
-            return;
-          }
-          setPayments(Array.isArray(data) ? data : []);
           return;
         }
         if (section === "enrollments") {
@@ -631,145 +623,7 @@ export function AdminSectionContent({ section }: { section: string }) {
   }
 
   if (section === "payments") {
-    if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (payments === null) return <p className="text-sm text-slate-600">Loading payments…</p>;
-
-    async function reloadPayments() {
-      const res = await fetch("/api/admin/payments?limit=100", { credentials: "include", cache: "no-store" });
-      const data = await res.json().catch(() => null);
-      if (res.ok && Array.isArray(data)) {
-        setPayments(data as PaymentRow[]);
-      }
-    }
-
-    async function approvePayment(id: string) {
-      setPaymentMsg(null);
-      setPaymentBusyId(id);
-      try {
-        const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/approve`, {
-          method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-          setPaymentMsg(readApiError(data, "We couldn't approve that payment. Please try again."));
-          return;
-        }
-        setPaymentMsg("Payment approved. The student is now enrolled.");
-        await reloadPayments();
-      } catch {
-        setPaymentMsg("Connection problem. Please try again.");
-      } finally {
-        setPaymentBusyId(null);
-      }
-    }
-
-    async function rejectPayment(id: string) {
-      setPaymentMsg(null);
-      setPaymentBusyId(id);
-      try {
-        const res = await fetch(`/api/admin/payments/${encodeURIComponent(id)}/reject`, {
-          method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reason: "We could not match this payment to a transfer." }),
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-          setPaymentMsg(readApiError(data, "We couldn't reject that payment. Please try again."));
-          return;
-        }
-        setPaymentMsg("Payment rejected.");
-        await reloadPayments();
-      } catch {
-        setPaymentMsg("Connection problem. Please try again.");
-      } finally {
-        setPaymentBusyId(null);
-      }
-    }
-
-    const needsReview = (status: string) => status === "pending" || status === "awaiting_review";
-
-    return (
-      <div className="space-y-4">
-        <p className="rounded-xl border border-brand-secondary/30 bg-brand-secondary/5 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-          Confirm a payment only after you verify the bank transfer. Students are enrolled after you approve.
-        </p>
-        {paymentMsg ? (
-          <p
-            className={`rounded-xl px-4 py-3 text-sm font-medium ${
-              paymentMsg.startsWith("Payment approved") || paymentMsg.startsWith("Payment rejected")
-                ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
-                : "border border-red-200 bg-red-50 text-red-900"
-            }`}
-          >
-            {paymentMsg}
-          </p>
-        ) : null}
-        <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
-          <table className="w-full min-w-[960px] text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
-              <tr>
-                <th className="px-4 py-3">When</th>
-                <th className="px-4 py-3">Student</th>
-                <th className="px-4 py-3">Reference</th>
-                <th className="px-4 py-3">Bank txn</th>
-                <th className="px-4 py-3">Course</th>
-                <th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {payments.map((p) => (
-                <tr key={p.id}>
-                  <td className="px-4 py-3 text-xs text-slate-600">{new Date(p.created_at).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-xs">
-                    <p className="font-semibold">{p.user_email ?? "-"}</p>
-                    {p.student_code ? <p className="font-mono text-slate-500">{p.student_code}</p> : null}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs">{p.payment_reference ?? "-"}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{p.transaction_reference ?? "-"}</td>
-                  <td className="px-4 py-3 text-xs">{p.course_title ?? "-"}</td>
-                  <td className="px-4 py-3 font-semibold">
-                    {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency }).format(
-                      p.amount_cents / 100,
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-bold uppercase">{p.status.replace(/_/g, " ")}</td>
-                  <td className="px-4 py-3">
-                    {needsReview(p.status) ? (
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={paymentBusyId === p.id}
-                          onClick={() => void approvePayment(p.id)}
-                          className="rounded-lg bg-brand-ink px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90 active:scale-95 disabled:opacity-50"
-                        >
-                          {paymentBusyId === p.id ? "Saving…" : "Approve"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={paymentBusyId === p.id}
-                          onClick={() => void rejectPayment(p.id)}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-800 transition hover:bg-red-100 active:scale-95 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
+    return <AdminPaymentsPanel />;
   }
 
   if (section === "enrollments") {

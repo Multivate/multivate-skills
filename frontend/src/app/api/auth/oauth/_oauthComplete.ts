@@ -1,31 +1,18 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
+import {
+  appPathRedirect,
+  oauthErrorRedirect,
+  resolveLocale,
+  safeAppPath,
+} from "@/app/api/auth/oauth/_oauthRedirect";
 import { fetchInternal } from "@/lib/internal-api";
-import { routing, type AppLocale } from "@/i18n/routing";
+import type { AppLocale } from "@/i18n/routing";
 
 const secure = process.env.NODE_ENV === "production";
 
 type OAuthProvider = "google" | "apple";
-
-function isLocale(value: string): value is AppLocale {
-  return (routing.locales as readonly string[]).includes(value);
-}
-
-function loginRedirect(request: Request, locale: AppLocale, reason?: string) {
-  const login = new URL(`/${locale}/login`, request.url);
-  if (reason) login.searchParams.set("oauth_error", reason);
-  const res = NextResponse.redirect(login);
-  res.cookies.set("oauth_locale", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
-  return res;
-}
-
-function dashboardRedirect(request: Request, locale: AppLocale, returnTo: string) {
-  const safe = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/dashboard";
-  const hasLocale = routing.locales.some((loc) => safe === `/${loc}` || safe.startsWith(`/${loc}/`));
-  const path = hasLocale ? safe : `/${locale}${safe === "/" ? "" : safe}`;
-  return NextResponse.redirect(new URL(path, request.url));
-}
 
 export async function completeOAuthSignIn(
   provider: OAuthProvider,
@@ -33,8 +20,8 @@ export async function completeOAuthSignIn(
   request: Request,
 ): Promise<NextResponse> {
   const jar = await cookies();
-  const localeRaw = jar.get("oauth_locale")?.value || routing.defaultLocale;
-  const locale: AppLocale = isLocale(localeRaw) ? localeRaw : routing.defaultLocale;
+  const locale: AppLocale = resolveLocale(jar.get("oauth_locale")?.value);
+  const errorPath = safeAppPath(jar.get("oauth_error_path")?.value || "/login", "/login");
 
   console.log(`[oauth/${provider}/callback] exchanging code with backend locale=${locale}`);
 
@@ -53,7 +40,7 @@ export async function completeOAuthSignIn(
           : "";
       console.error(`[oauth/${provider}/callback] backend rejected sign-in status=${upstream.status}`, detail);
       const reason = upstream.status === 503 ? "unavailable" : "failed";
-      return loginRedirect(request, locale, reason);
+      return oauthErrorRedirect(request, locale, reason, errorPath);
     }
 
     const access = data.access_token as string | undefined;
@@ -62,17 +49,18 @@ export async function completeOAuthSignIn(
 
     if (!access || !refresh) {
       console.error(`[oauth/${provider}/callback] missing tokens in upstream response`);
-      return loginRedirect(request, locale, "failed");
+      return oauthErrorRedirect(request, locale, "failed", errorPath);
     }
 
     console.log(`[oauth/${provider}/callback] sign-in ok redirect=${returnTo}`);
-    const res = dashboardRedirect(request, locale, returnTo);
+    const res = appPathRedirect(request, locale, returnTo);
     setAuthCookies(res, access, refresh, secure);
     res.cookies.set("oauth_locale", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+    res.cookies.set("oauth_error_path", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
     return res;
   } catch (err) {
     console.error(`[oauth/${provider}/callback] upstream error`, err);
-    const res = loginRedirect(request, locale, "failed");
+    const res = oauthErrorRedirect(request, locale, "failed", errorPath);
     clearAuthCookies(res, secure);
     return res;
   }

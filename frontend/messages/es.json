@@ -226,7 +226,7 @@
       "apple": "Continuar con Apple",
       "oauthStarting": "Redirigiendo…",
       "oauthError": "No pudimos iniciar sesión así. Inténtalo de nuevo o usa tu correo.",
-      "oauthUnavailable": "Esa opción no está disponible ahora. Usa tu correo.",
+      "oauthUnavailable": "El acceso con Google y Apple aún no está disponible. Usa tu correo.",
       "oauthCancelled": "Inicio de sesión cancelado. Puedes intentarlo cuando quieras.",
       "noAccount": "¿No tienes cuenta?",
       "signUp": "Regístrate",
@@ -259,6 +259,9 @@
       "accountSectionTitle": "Datos de la cuenta",
       "stepProgress": "Paso {current} de {total}",
       "step1Hint": "Indica si te unes como estudiante o instructor.",
+      "oauthRoleHint": "Elige primero tu rol si continúas con Google o Apple.",
+      "oauthPickRole": "Elige tu rol antes de continuar con Google o Apple.",
+      "oauthUnavailable": "El registro con Google y Apple aún no está disponible. Crea tu cuenta con correo.",
       "step2Hint": "Completa el cuestionario para tu rol. Puedes volver atrás para cambiar el rol.",
       "step3Hint": "Configura nombre, correo y contraseña. Al continuar enviamos un código de verificación a tu correo.",
       "step4Hint": "Introduce el código de 6 dígitos del correo. Caduca a los 5 minutos.",
@@ -621,7 +624,7 @@
       "loadError": "No se pudieron cargar los pagos.",
       "network": "Error de red.",
       "empty": "Aún no hay pagos. Tras completar el checkout aparecerán aquí.",
-      "back": "← Volver al panel"
+      "back": "Volver al panel"
     },
     "paymentsCheckout": {
       "checkingSession": "Comprobando la sesión…",
@@ -720,7 +723,7 @@
     "reviews": "reseñas",
     "lessonsUnit": "lecciones",
     "getStarted": "Empezar",
-    "myCoursesDashboard": "Mis cursos (panel)",
+    "myCoursesDashboard": "Mis cursos",
     "backToAll": "Volver a todos los cursos"
   },
   "courseEnroll": {

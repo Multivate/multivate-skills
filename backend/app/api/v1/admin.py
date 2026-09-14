@@ -63,7 +63,7 @@ def approve_payment(
     admin: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
 ) -> PaymentVerifyOut:
     return bank_transfer_service.admin_approve_payment(
-        db, admin, payment_id, body.transaction_reference
+        db, admin, payment_id, body.transaction_reference, body.amount_received_cents
     )
 
 
