@@ -301,10 +301,10 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
         const idx = list.findIndex((p) => p.id === phrase.id);
         if (autoPlay || chain) {
           const next = list[idx + 1];
-          if (next) window.setTimeout(() => playTrack(next, lang, true), 350);
+          if (next) setTimeout(() => playTrack(next, lang, true), 350);
           return;
         }
-        if (repeat) window.setTimeout(() => playTrack(phrase, lang), 250);
+        if (repeat) setTimeout(() => playTrack(phrase, lang), 250);
       };
 
       if (lang === "de" && phrase.audio_url) {
@@ -327,7 +327,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
         return;
       }
 
-      window.setTimeout(finish, 1500);
+      setTimeout(finish, 1500);
     },
     [autoPlay, flashHighlight, markLearned, repeat, speed, stopPlayback],
   );
