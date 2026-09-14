@@ -723,7 +723,7 @@ export function CourseStudio({ initialSlug }: Props) {
                 {course.status === "pending_review" ? "Already in review" : "Submit for review"}
               </button>
               <Link
-                href={course.status === "published" ? `/learn/${course.slug}` : `/learn/${course.slug}?preview=1`}
+                href={`/learn/${course.slug}?preview=1`}
                 className="btn-outline-brand !min-w-0"
               >
                 {course.status === "published" ? "Open live course" : "Preview as learner"}

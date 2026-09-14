@@ -11,7 +11,11 @@ from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.studio import (
     AdminCourseRejectIn,
+    AudioModuleAssessmentIn,
+    AudioModuleAssessmentSubmitOut,
     AudioPhraseIn,
+    AudioPhraseLearnedIn,
+    AudioPhraseLearnedOut,
     AudioPhraseOut,
     AudioPhraseReorderIn,
     AudioPhraseUpdateIn,
@@ -304,6 +308,24 @@ def player_phrasebook(
     preview: bool = Query(False),
 ) -> PlayerPhrasebookOut:
     return player_service.get_player_phrasebook(db, slug, user, preview=preview)
+
+
+@player_router.post("/audio/learned", response_model=AudioPhraseLearnedOut)
+def mark_audio_phrase_learned(
+    payload: AudioPhraseLearnedIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> AudioPhraseLearnedOut:
+    return player_service.mark_audio_phrase_learned(db, user, payload)
+
+
+@player_router.post("/audio/assessment", response_model=AudioModuleAssessmentSubmitOut)
+def submit_audio_module_assessment(
+    payload: AudioModuleAssessmentIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> AudioModuleAssessmentSubmitOut:
+    return player_service.submit_audio_module_assessment(db, user, payload)
 
 
 @player_router.get("/{slug}/lessons/{lesson_id}")

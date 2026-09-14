@@ -261,6 +261,56 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(
             conn,
             """
+            CREATE TABLE IF NOT EXISTS audio_phrase_progress (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                phrase_id UUID NOT NULL REFERENCES audio_phrases(id) ON DELETE CASCADE,
+                learned BOOLEAN NOT NULL DEFAULT TRUE,
+                learned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_audio_phrase_progress_user_phrase UNIQUE (user_id, phrase_id)
+            )
+            """,
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_audio_phrase_progress_user_id ON audio_phrase_progress (user_id)",
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_audio_phrase_progress_phrase_id ON audio_phrase_progress (phrase_id)",
+        )
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS audio_module_assessments (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                module_key VARCHAR(64) NOT NULL,
+                score_pct INTEGER NOT NULL DEFAULT 0,
+                passed BOOLEAN NOT NULL DEFAULT FALSE,
+                attempt_count INTEGER NOT NULL DEFAULT 1,
+                attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_audio_module_assessment_user_course_module
+                    UNIQUE (user_id, course_id, module_key)
+            )
+            """,
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_audio_module_assessments_user_id ON audio_module_assessments (user_id)",
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_audio_module_assessments_course_id ON audio_module_assessments (course_id)",
+        )
+
+        _run(
+            conn,
+            """
             CREATE TABLE IF NOT EXISTS media_files (
                 id UUID PRIMARY KEY,
                 original_filename VARCHAR(255) NOT NULL,

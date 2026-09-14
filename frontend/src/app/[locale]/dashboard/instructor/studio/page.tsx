@@ -181,7 +181,7 @@ export default function InstructorStudioListPage() {
                   <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                     <StudioQuietLink href={`/dashboard/instructor/studio/${row.slug}`}>Edit</StudioQuietLink>
                     <StudioQuietLink
-                      href={row.status === "published" ? `/learn/${row.slug}` : `/learn/${row.slug}?preview=1`}
+                      href={`/learn/${row.slug}?preview=1`}
                     >
                       {row.status === "published" ? "Open" : "Preview"}
                     </StudioQuietLink>

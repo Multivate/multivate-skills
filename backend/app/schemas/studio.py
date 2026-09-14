@@ -206,6 +206,13 @@ class PlayerPhraseOut(BaseModel):
     audio_duration_seconds: int
 
 
+class AudioModuleAssessmentOut(BaseModel):
+    module_key: str
+    score_pct: int
+    passed: bool
+    at: str
+
+
 class PlayerPhrasebookOut(BaseModel):
     course_slug: str
     course_title: str
@@ -216,6 +223,32 @@ class PlayerPhrasebookOut(BaseModel):
     progress_pct: int
     sections: list[PlayerSectionOut]
     phrases: list[PlayerPhraseOut]
+    learned_phrase_ids: list[UUID] = Field(default_factory=list)
+    module_assessments: list[AudioModuleAssessmentOut] = Field(default_factory=list)
+
+
+class AudioPhraseLearnedIn(BaseModel):
+    course_slug: str = Field(..., min_length=1, max_length=160)
+    phrase_id: UUID
+
+
+class AudioPhraseLearnedOut(BaseModel):
+    phrase_id: UUID
+    learned: bool
+    progress_pct: int
+
+
+class AudioModuleAssessmentIn(BaseModel):
+    course_slug: str = Field(..., min_length=1, max_length=160)
+    module_key: str = Field(..., min_length=1, max_length=64)
+    score_pct: int = Field(..., ge=0, le=100)
+
+
+class AudioModuleAssessmentSubmitOut(BaseModel):
+    module_key: str
+    score_pct: int
+    passed: bool
+    progress_pct: int
 
 
 class CourseStudioAnalyticsOut(BaseModel):

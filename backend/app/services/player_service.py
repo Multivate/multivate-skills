@@ -9,6 +9,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.audio_phrase import AudioPhrase
+from app.models.audio_phrase_progress import AudioPhraseProgress
+from app.models.audio_module_assessment import AudioModuleAssessment
 from app.models.course import Course
 from app.models.course_section import CourseSection
 from app.models.course_status import AudioSource, CourseFormat, CourseStatus, LessonType, VideoSource
@@ -20,6 +22,11 @@ from app.models.role import UserRole
 from app.models.user import User
 from app.models.video_watch_history import VideoWatchHistory
 from app.schemas.studio import (
+    AudioModuleAssessmentIn,
+    AudioModuleAssessmentOut,
+    AudioModuleAssessmentSubmitOut,
+    AudioPhraseLearnedIn,
+    AudioPhraseLearnedOut,
     PlayerCurriculumOut,
     PlayerLessonOut,
     PlayerPhrasebookOut,
@@ -81,6 +88,36 @@ def _recalc_enrollment_progress(db: Session, user_id: UUID, course: Course) -> i
     )
     if not enrollment:
         return 0
+
+    fmt = getattr(course, "format", None)
+    is_audio = fmt == CourseFormat.AUDIO or fmt == "audio"
+    if is_audio:
+        total_phrases = int(
+            db.scalar(
+                select(func.count()).select_from(AudioPhrase).where(AudioPhrase.course_id == course.id)
+            )
+            or 0
+        )
+        learned_count = int(
+            db.scalar(
+                select(func.count())
+                .select_from(AudioPhraseProgress)
+                .join(AudioPhrase, AudioPhrase.id == AudioPhraseProgress.phrase_id)
+                .where(
+                    AudioPhraseProgress.user_id == user_id,
+                    AudioPhrase.course_id == course.id,
+                    AudioPhraseProgress.learned.is_(True),
+                )
+            )
+            or 0
+        )
+        enrollment.lesson_done = learned_count
+        enrollment.progress_pct = (
+            min(100, round((learned_count / total_phrases) * 100)) if total_phrases else 0
+        )
+        db.add(enrollment)
+        return enrollment.progress_pct
+
     total_lessons = int(
         db.scalar(select(func.count()).select_from(Lesson).where(Lesson.course_id == course.id)) or 0
     )
@@ -101,6 +138,23 @@ def _recalc_enrollment_progress(db: Session, user_id: UUID, course: Course) -> i
     enrollment.progress_pct = min(100, round((completed_count / total_lessons) * 100)) if total_lessons else 0
     db.add(enrollment)
     return enrollment.progress_pct
+
+
+def _require_audio_course_access(db: Session, slug: str, user: User) -> Course:
+    course = course_service.get_course_or_404(db, slug, user=user)
+    fmt = getattr(course, "format", None)
+    is_audio = fmt == CourseFormat.AUDIO or fmt == "audio"
+    if not is_audio:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This is not an audio course")
+    if not can_access_course_content(db, user, course) and not (
+        user.role == UserRole.ADMIN
+        or (user.role == UserRole.INSTRUCTOR and course.instructor_id == user.id)
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Enroll to access this course")
+    return course
+
+
+AUDIO_PASS_MARK = 70
 
 
 def _embed_url(lesson: Lesson) -> str | None:
@@ -283,7 +337,38 @@ def get_player_phrasebook(
     ).all()
 
     enrollment = None
-    if user:
+    learned_ids: list[UUID] = []
+    module_assessments: list[AudioModuleAssessmentOut] = []
+    if user and not preview:
+        enrollment = db.scalar(
+            select(Enrollment).where(Enrollment.user_id == user.id, Enrollment.course_id == course.id)
+        )
+        phrase_ids = [p.id for p in phrases]
+        if phrase_ids:
+            learned_ids = list(
+                db.scalars(
+                    select(AudioPhraseProgress.phrase_id).where(
+                        AudioPhraseProgress.user_id == user.id,
+                        AudioPhraseProgress.phrase_id.in_(phrase_ids),
+                        AudioPhraseProgress.learned.is_(True),
+                    )
+                ).all()
+            )
+        for row in db.scalars(
+            select(AudioModuleAssessment).where(
+                AudioModuleAssessment.user_id == user.id,
+                AudioModuleAssessment.course_id == course.id,
+            )
+        ).all():
+            module_assessments.append(
+                AudioModuleAssessmentOut(
+                    module_key=row.module_key,
+                    score_pct=row.score_pct,
+                    passed=row.passed,
+                    at=row.attempted_at.isoformat() if row.attempted_at else "",
+                )
+            )
+    elif user:
         enrollment = db.scalar(
             select(Enrollment).where(Enrollment.user_id == user.id, Enrollment.course_id == course.id)
         )
@@ -321,6 +406,80 @@ def get_player_phrasebook(
         progress_pct=enrollment.progress_pct if enrollment else 0,
         sections=[PlayerSectionOut(id=s.id, title=s.title, position=s.position) for s in sections],
         phrases=phrase_rows,
+        learned_phrase_ids=learned_ids,
+        module_assessments=module_assessments,
+    )
+
+
+def mark_audio_phrase_learned(
+    db: Session, user: User, payload: AudioPhraseLearnedIn
+) -> AudioPhraseLearnedOut:
+    course = _require_audio_course_access(db, payload.course_slug, user)
+    phrase = db.get(AudioPhrase, payload.phrase_id)
+    if not phrase or phrase.course_id != course.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Phrase not found")
+
+    row = db.scalar(
+        select(AudioPhraseProgress).where(
+            AudioPhraseProgress.user_id == user.id,
+            AudioPhraseProgress.phrase_id == phrase.id,
+        )
+    )
+    if not row:
+        row = AudioPhraseProgress(user_id=user.id, phrase_id=phrase.id, learned=True)
+    else:
+        row.learned = True
+    db.add(row)
+    db.flush()
+    progress_pct = _recalc_enrollment_progress(db, user.id, course)
+    db.commit()
+    return AudioPhraseLearnedOut(phrase_id=phrase.id, learned=True, progress_pct=progress_pct)
+
+
+def submit_audio_module_assessment(
+    db: Session, user: User, payload: AudioModuleAssessmentIn
+) -> AudioModuleAssessmentSubmitOut:
+    course = _require_audio_course_access(db, payload.course_slug, user)
+    module_key = payload.module_key.strip()
+    if not module_key:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="module_key required")
+
+    passed = payload.score_pct >= AUDIO_PASS_MARK
+    row = db.scalar(
+        select(AudioModuleAssessment).where(
+            AudioModuleAssessment.user_id == user.id,
+            AudioModuleAssessment.course_id == course.id,
+            AudioModuleAssessment.module_key == module_key,
+        )
+    )
+    if not row:
+        row = AudioModuleAssessment(
+            user_id=user.id,
+            course_id=course.id,
+            module_key=module_key,
+            score_pct=payload.score_pct,
+            passed=passed,
+            attempt_count=1,
+        )
+    else:
+        row.attempt_count = int(row.attempt_count or 0) + 1
+        # Keep best score / pass if already passed
+        if payload.score_pct >= row.score_pct:
+            row.score_pct = payload.score_pct
+        if passed:
+            row.passed = True
+        from datetime import datetime, timezone
+
+        row.attempted_at = datetime.now(timezone.utc)
+    db.add(row)
+    db.flush()
+    progress_pct = _recalc_enrollment_progress(db, user.id, course)
+    db.commit()
+    return AudioModuleAssessmentSubmitOut(
+        module_key=module_key,
+        score_pct=row.score_pct,
+        passed=row.passed,
+        progress_pct=progress_pct,
     )
 
 

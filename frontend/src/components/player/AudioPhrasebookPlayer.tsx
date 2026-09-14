@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { LogoMark } from "@/components/layout/LogoMark";
 import {
   BookOpen,
   CheckCircle2,
@@ -10,18 +11,21 @@ import {
   Headphones,
   Lock,
   Menu,
+  Moon,
   Pause,
   Play,
   Repeat,
   SkipBack,
   SkipForward,
   Star,
+  Sun,
   Trophy,
   Volume2,
   X,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 type Phrase = {
   id: string;
@@ -45,6 +49,8 @@ type Phrasebook = {
   progress_pct: number;
   sections: Section[];
   phrases: Phrase[];
+  learned_phrase_ids?: string[];
+  module_assessments?: { module_key: string; score_pct: number; passed: boolean; at: string }[];
 };
 
 type Props = { slug: string; preview?: boolean };
@@ -54,18 +60,35 @@ type LangTrack = "en" | "de";
 
 type QuizQuestion = {
   id: string;
+  kind: "mcq" | "listen";
   prompt: string;
   options: { id: string; text: string }[];
   correct_option_id: string;
+  speak_text?: string;
+  speak_lang?: LangTrack;
+  audio_url?: string | null;
 };
 
 type AssessmentRecord = { scorePct: number; passed: boolean; at: string };
 
 const PASS_MARK = 70;
 const SPEEDS = [1, 0.8] as const;
+const QUIZ_SIZE = 20;
+const LISTEN_COUNT = 5;
 
-function storageKey(slug: string, part: string) {
-  return `multivate:audio:${slug}:${part}`;
+const CLASSROOM_THEME_KEY = "multivate:classroom-theme";
+
+function loadClassroomTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  try {
+    return localStorage.getItem(CLASSROOM_THEME_KEY) === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function streakKey(userId: string) {
+  return `multivate:learning-streak:${userId}`;
 }
 
 function loadJson<T>(key: string, fallback: T): T {
@@ -91,8 +114,8 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function loadStreak(): number {
-  const data = loadJson<{ count: number; last: string }>("multivate:learning-streak", {
+function loadStreak(userId: string): number {
+  const data = loadJson<{ count: number; last: string }>(streakKey(userId), {
     count: 0,
     last: "",
   });
@@ -104,8 +127,8 @@ function loadStreak(): number {
   return 0;
 }
 
-function bumpStreak() {
-  const data = loadJson<{ count: number; last: string }>("multivate:learning-streak", {
+function bumpStreak(userId: string) {
+  const data = loadJson<{ count: number; last: string }>(streakKey(userId), {
     count: 0,
     last: "",
   });
@@ -114,8 +137,23 @@ function bumpStreak() {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const next = data.last === yesterday.toISOString().slice(0, 10) ? data.count + 1 : 1;
-  saveJson("multivate:learning-streak", { count: next, last: today });
+  saveJson(streakKey(userId), { count: next, last: today });
   return next;
+}
+
+function cancelSpeech() {
+  if (typeof window === "undefined") return;
+  try {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      // Some browsers keep speaking after a single cancel; nudge the queue again.
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+      window.speechSynthesis.cancel();
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -127,35 +165,91 @@ function shuffle<T>(items: T[]): T[] {
   return arr;
 }
 
+function pickDistractors(correct: string, pool: string[], count: number) {
+  const distractors = shuffle(pool.filter((t) => t !== correct)).slice(0, count);
+  while (distractors.length < count) distractors.push(`Option ${distractors.length + 1}`);
+  return distractors;
+}
+
+function buildMcqEnToDe(p: Phrase, allTargets: string[], targetLang: string, key: string): QuizQuestion {
+  const options = shuffle([
+    { id: `c_${key}`, text: p.target_text },
+    ...pickDistractors(p.target_text, allTargets, 3).map((text, i) => ({ id: `d_${key}_${i}`, text })),
+  ]);
+  return {
+    id: key,
+    kind: "mcq",
+    prompt: `How do you say “${p.source_text}” in ${targetLang.toUpperCase()}?`,
+    options,
+    correct_option_id: `c_${key}`,
+  };
+}
+
+function buildMcqDeToEn(p: Phrase, allSources: string[], key: string): QuizQuestion {
+  const options = shuffle([
+    { id: `c_${key}`, text: p.source_text },
+    ...pickDistractors(p.source_text, allSources, 3).map((text, i) => ({ id: `d_${key}_${i}`, text })),
+  ]);
+  return {
+    id: key,
+    kind: "mcq",
+    prompt: `What does “${p.target_text}” mean in English?`,
+    options,
+    correct_option_id: `c_${key}`,
+  };
+}
+
+function buildListenQuestion(p: Phrase, allSources: string[], key: string): QuizQuestion {
+  const options = shuffle([
+    { id: `c_${key}`, text: p.source_text },
+    ...pickDistractors(p.source_text, allSources, 3).map((text, i) => ({ id: `d_${key}_${i}`, text })),
+  ]);
+  return {
+    id: key,
+    kind: "listen",
+    prompt: "Listen to the German audio, then choose the English meaning.",
+    options,
+    correct_option_id: `c_${key}`,
+    speak_text: p.target_text,
+    speak_lang: "de",
+    audio_url: p.audio_url,
+  };
+}
+
 function buildQuiz(phrases: Phrase[], targetLang: string): QuizQuestion[] {
   const pool = phrases.filter((p) => p.source_text.trim() && p.target_text.trim());
   if (pool.length === 0) return [];
-  const take = Math.min(5, pool.length);
-  const picked = shuffle(pool).slice(0, take);
+
   const allTargets = pool.map((p) => p.target_text);
+  const allSources = pool.map((p) => p.source_text);
+  const mcqCount = QUIZ_SIZE - LISTEN_COUNT;
+  const questions: QuizQuestion[] = [];
 
-  return picked.map((p) => {
-    const distractors = shuffle(allTargets.filter((t) => t !== p.target_text)).slice(0, 3);
-    while (distractors.length < 3) distractors.push(`Option ${distractors.length + 1}`);
-    const options = shuffle([
-      { id: `c_${p.id}`, text: p.target_text },
-      ...distractors.map((text, i) => ({ id: `d_${p.id}_${i}`, text })),
-    ]);
-    return {
-      id: p.id,
-      prompt: `How do you say “${p.source_text}” in ${targetLang.toUpperCase()}?`,
-      options,
-      correct_option_id: `c_${p.id}`,
-    };
-  });
-}
+  const listenOrder = shuffle(pool);
+  for (let i = 0; i < LISTEN_COUNT; i += 1) {
+    const p = listenOrder[i % listenOrder.length];
+    questions.push(buildListenQuestion(p, allSources, `listen_${i}_${p.id}`));
+  }
 
-function levelBadge(title: string) {
-  const m = title.match(/\b(A1|A2|B1|B2|C1|C2)\b/i);
-  return m ? m[1].toUpperCase() : "A1";
+  const mcqOrder = shuffle(pool);
+  for (let i = 0; i < mcqCount; i += 1) {
+    const p = mcqOrder[i % mcqOrder.length];
+    const key = `mcq_${i}_${p.id}`;
+    questions.push(
+      i % 2 === 0
+        ? buildMcqEnToDe(p, allTargets, targetLang, key)
+        : buildMcqDeToEn(p, allSources, key),
+    );
+  }
+
+  return shuffle(questions);
 }
 
 export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const persist = Boolean(userId) && !preview;
+
   const [data, setData] = useState<Phrasebook | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -171,7 +265,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
   const [repeat, setRepeat] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(true);
 
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [qIndex, setQIndex] = useState(0);
@@ -180,10 +274,39 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
   const [scoreCorrect, setScoreCorrect] = useState(0);
   const [quizDone, setQuizDone] = useState(false);
   const [finalScorePct, setFinalScorePct] = useState(0);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    setTheme(loadClassroomTheme());
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem(CLASSROOM_THEME_KEY, next);
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const highlightTimer = useRef<number | null>(null);
+  const chainTimer = useRef<number | null>(null);
+  const playSession = useRef(0);
+  const mountedRef = useRef(true);
   const phrasesRef = useRef<Phrase[]>([]);
+  const phraseElsRef = useRef<Map<string, HTMLLIElement>>(new Map());
+  const listScrollRef = useRef<HTMLDivElement | null>(null);
+  const autoPlayRef = useRef(autoPlay);
+  const repeatRef = useRef(repeat);
+  const speedRef = useRef(speed);
+  autoPlayRef.current = autoPlay;
+  repeatRef.current = repeat;
+  speedRef.current = speed;
+
   const qs = preview ? "?preview=true" : "";
 
   const load = useCallback(async () => {
@@ -197,26 +320,81 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
       setError(typeof body?.detail === "string" ? body.detail : "We couldn't open this phrasebook.");
       return;
     }
-    setData(body as Phrasebook);
-  }, [slug, qs]);
+    const book = body as Phrasebook;
+    setData(book);
+    if (!preview) {
+      setLearned(new Set((book.learned_phrase_ids ?? []).map(String)));
+      const map: Record<string, AssessmentRecord> = {};
+      for (const row of book.module_assessments ?? []) {
+        map[row.module_key] = {
+          scorePct: row.score_pct,
+          passed: row.passed,
+          at: row.at || new Date().toISOString(),
+        };
+      }
+      setAssessments(map);
+    } else {
+      setLearned(new Set());
+      setAssessments({});
+    }
+  }, [slug, qs, preview]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   useEffect(() => {
-    setLearned(new Set(loadJson<string[]>(storageKey(slug, "learned"), [])));
-    setAssessments(loadJson<Record<string, AssessmentRecord>>(storageKey(slug, "assessments"), {}));
-    setStreak(loadStreak());
-  }, [slug]);
+    if (preview || !userId) {
+      setStreak(0);
+      return;
+    }
+    setStreak(loadStreak(userId));
+  }, [slug, userId, preview]);
+
+  const stopPlayback = useCallback(() => {
+    playSession.current += 1;
+    if (chainTimer.current) {
+      window.clearTimeout(chainTimer.current);
+      chainTimer.current = null;
+    }
+    if (highlightTimer.current) {
+      window.clearTimeout(highlightTimer.current);
+      highlightTimer.current = null;
+    }
+    const el = audioRef.current;
+    if (el) {
+      el.onended = null;
+      el.onerror = null;
+      try {
+        el.pause();
+        el.removeAttribute("src");
+        el.load();
+      } catch {
+        /* ignore */
+      }
+    }
+    cancelSpeech();
+    setPlaying(false);
+    setCardLit(false);
+  }, []);
 
   useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-      if (highlightTimer.current) window.clearTimeout(highlightTimer.current);
-      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    mountedRef.current = true;
+    const hardStop = () => stopPlayback();
+    window.addEventListener("pagehide", hardStop);
+    window.addEventListener("beforeunload", hardStop);
+    const onVis = () => {
+      if (document.visibilityState === "hidden") hardStop();
     };
-  }, []);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      mountedRef.current = false;
+      hardStop();
+      window.removeEventListener("pagehide", hardStop);
+      window.removeEventListener("beforeunload", hardStop);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [stopPlayback]);
 
   const modules = useMemo(() => {
     if (!data) return [];
@@ -266,12 +444,18 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
         if (prev.has(phraseId)) return prev;
         const next = new Set(prev);
         next.add(phraseId);
-        saveJson(storageKey(slug, "learned"), [...next]);
         return next;
       });
-      setStreak(bumpStreak());
+      if (persist && userId) setStreak(bumpStreak(userId));
+      if (!persist) return;
+      void fetch("/api/player/audio/learned", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ course_slug: slug, phrase_id: phraseId }),
+      }).catch(() => undefined);
     },
-    [slug],
+    [slug, persist, userId],
   );
 
   const flashHighlight = useCallback((phraseId: string, lang: LangTrack) => {
@@ -282,54 +466,123 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
     highlightTimer.current = window.setTimeout(() => setCardLit(false), 1500);
   }, []);
 
-  const stopPlayback = useCallback(() => {
-    audioRef.current?.pause();
-    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
-    setPlaying(false);
+  useEffect(() => {
+    if (!activePhraseId || view !== "phrasebook") return;
+    const el = phraseElsRef.current.get(activePhraseId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+  }, [activePhraseId, playing, view]);
+
+  const scheduleChain = useCallback((fn: () => void, ms: number) => {
+    if (chainTimer.current) window.clearTimeout(chainTimer.current);
+    chainTimer.current = window.setTimeout(fn, ms);
   }, []);
+
+  const playQuizClip = useCallback(
+    (q: QuizQuestion) => {
+      if (!q.speak_text && !q.audio_url) return;
+      cancelSpeech();
+      const existing = audioRef.current;
+      if (existing) {
+        try {
+          existing.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+      if (q.speak_lang === "de" && q.audio_url) {
+        if (!audioRef.current) audioRef.current = new Audio();
+        const el = audioRef.current;
+        el.src = q.audio_url;
+        el.playbackRate = speedRef.current;
+        void el.play().catch(() => undefined);
+        return;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window && q.speak_text) {
+        const utter = new SpeechSynthesisUtterance(q.speak_text);
+        utter.lang = q.speak_lang === "en" ? "en-US" : "de-DE";
+        utter.rate = speedRef.current;
+        window.speechSynthesis.speak(utter);
+      }
+    },
+    [],
+  );
 
   const playTrack = useCallback(
     (phrase: Phrase, lang: LangTrack, chain = false) => {
-      stopPlayback();
+      if (!mountedRef.current) return;
+      const session = playSession.current + 1;
+      playSession.current = session;
+
+      if (chainTimer.current) {
+        window.clearTimeout(chainTimer.current);
+        chainTimer.current = null;
+      }
+      cancelSpeech();
+      const existing = audioRef.current;
+      if (existing) {
+        existing.onended = null;
+        existing.onerror = null;
+        try {
+          existing.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+
       flashHighlight(phrase.id, lang);
       markLearned(phrase.id);
       setPlaying(true);
 
+      const stillActive = () => mountedRef.current && playSession.current === session;
+
       const finish = () => {
+        if (!stillActive()) return;
         setPlaying(false);
         const list = phrasesRef.current;
         const idx = list.findIndex((p) => p.id === phrase.id);
-        if (autoPlay || chain) {
+        if (autoPlayRef.current || chain) {
           const next = list[idx + 1];
-          if (next) setTimeout(() => playTrack(next, lang, true), 350);
+          if (next) scheduleChain(() => playTrack(next, lang, true), 350);
           return;
         }
-        if (repeat) setTimeout(() => playTrack(phrase, lang), 250);
+        if (repeatRef.current) scheduleChain(() => playTrack(phrase, lang), 250);
       };
 
       if (lang === "de" && phrase.audio_url) {
         if (!audioRef.current) audioRef.current = new Audio();
         const el = audioRef.current;
-        el.onended = () => finish();
+        el.onended = () => {
+          if (stillActive()) finish();
+        };
+        el.onerror = () => {
+          if (stillActive()) setPlaying(false);
+        };
         el.src = phrase.audio_url;
-        el.playbackRate = speed;
-        void el.play().catch(() => setPlaying(false));
+        el.playbackRate = speedRef.current;
+        void el.play().catch(() => {
+          if (stillActive()) setPlaying(false);
+        });
         return;
       }
 
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         const utter = new SpeechSynthesisUtterance(lang === "en" ? phrase.source_text : phrase.target_text);
         utter.lang = lang === "en" ? "en-US" : "de-DE";
-        utter.rate = speed;
-        utter.onend = () => finish();
-        utter.onerror = () => setPlaying(false);
+        utter.rate = speedRef.current;
+        utter.onend = () => {
+          if (stillActive()) finish();
+        };
+        utter.onerror = () => {
+          if (stillActive()) setPlaying(false);
+        };
         window.speechSynthesis.speak(utter);
         return;
       }
 
-      setTimeout(finish, 1500);
+      scheduleChain(finish, 1500);
     },
-    [autoPlay, flashHighlight, markLearned, repeat, speed, stopPlayback],
+    [flashHighlight, markLearned, scheduleChain],
   );
 
   const startAssessment = useCallback(() => {
@@ -345,6 +598,14 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
     setView("assessment");
     stopPlayback();
   }, [activeModule, data, stopPlayback]);
+
+  useEffect(() => {
+    if (view !== "assessment" || quizDone || checked) return;
+    const q = quiz[qIndex];
+    if (!q || q.kind !== "listen") return;
+    const t = window.setTimeout(() => playQuizClip(q), 450);
+    return () => window.clearTimeout(t);
+  }, [view, quiz, qIndex, quizDone, checked, playQuizClip]);
 
   const checkAnswer = () => {
     if (!selected || checked || !quiz[qIndex]) return;
@@ -363,9 +624,20 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           [activeModule.id]: { scorePct: pct, passed: pct >= PASS_MARK, at: new Date().toISOString() },
         };
         setAssessments(next);
-        saveJson(storageKey(slug, "assessments"), next);
+        if (persist) {
+          void fetch("/api/player/audio/assessment", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              course_slug: slug,
+              module_key: activeModule.id,
+              score_pct: pct,
+            }),
+          }).catch(() => undefined);
+        }
       }
-      setStreak(bumpStreak());
+      if (persist && userId) setStreak(bumpStreak(userId));
       setQuizDone(true);
       return;
     }
@@ -392,48 +664,58 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
     return <p className="py-16 text-center text-sm text-brand-ink/50">Opening your class…</p>;
   }
 
-  const badge = levelBadge(data.course_title);
   const currentQ = quiz[qIndex];
   const quizProgress = quiz.length ? ((qIndex + (checked ? 1 : 0)) / quiz.length) * 100 : 0;
 
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-brand-paper text-brand-ink antialiased">
+    <div
+      className="classroom-room flex h-[100dvh] max-h-[100dvh] overflow-hidden antialiased"
+      data-theme={theme}
+    >
       {sidebarOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-brand-ink/40 backdrop-blur-sm lg:hidden"
+          className="cr-overlay fixed inset-0 z-40 backdrop-blur-sm lg:hidden"
           aria-label="Close menu"
           onClick={() => setSidebarOpen(false)}
         />
       ) : null}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col border-r border-brand-ink/10 bg-white transition-transform duration-300 lg:static lg:translate-x-0 ${
+        className={`cr-surface fixed inset-y-0 left-0 z-50 flex w-56 max-w-[78vw] flex-col border-r transition-transform duration-300 lg:static lg:w-56 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-start gap-3 border-b border-brand-ink/10 px-5 py-5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-accent font-display text-sm font-bold text-white">
-            {badge}
+        <div className="cr-border border-b px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="cr-logo-light">
+              <LogoMark className="max-h-7 max-w-[7.5rem]" priority />
+            </div>
+            <div className="cr-logo-dark">
+              <LogoMark variant="inverse" className="max-h-7 max-w-[7.5rem]" priority />
+            </div>
+            <button
+              type="button"
+              className="cr-muted rounded-lg p-1 hover:opacity-80 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-base font-bold text-brand-ink">{data.course_title}</p>
-            <p className="mt-0.5 text-xs text-brand-ink/50">Audio-First Phrasebook</p>
-          </div>
-          <button
-            type="button"
-            className="rounded-lg p-1.5 text-brand-ink/45 hover:bg-brand-muted lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <p className="cr-text mt-1.5 truncate text-xs font-semibold">{data.course_title}</p>
+          <p className="cr-faint text-[0.65rem]">Audio classroom</p>
         </div>
 
-        <div className="hide-scrollbar flex-1 space-y-2 overflow-y-auto px-3 py-4">
-          <p className="px-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/40">Modules</p>
+        <div className="hide-scrollbar flex-1 space-y-1 overflow-y-auto px-2 py-3">
+          <p className="cr-faint px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em]">
+            Modules
+          </p>
           {moduleMeta.map((mod, i) => {
             const selectedMod = mod.id === activeModule.id;
+            const pct = mod.phrases.length
+              ? Math.round((mod.learnedCount / mod.phrases.length) * 100)
+              : 0;
             return (
               <button
                 key={mod.id}
@@ -446,68 +728,65 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                   setSidebarOpen(false);
                   stopPlayback();
                 }}
-                className={`relative w-full rounded-2xl border px-4 py-3.5 text-left transition-all duration-300 ${
+                className={`relative w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
                   mod.locked
                     ? "cursor-not-allowed border-transparent opacity-45"
                     : selectedMod
-                      ? "border-brand-accent/30 bg-brand-accent/10 shadow-sm"
-                      : "border-transparent bg-brand-muted/50 hover:border-brand-ink/10 hover:bg-brand-muted"
+                      ? "cr-accent-soft border"
+                      : "cr-hover border-transparent"
                 }`}
               >
                 {selectedMod && !mod.locked ? (
-                  <span className="absolute inset-y-3 left-0 w-1 rounded-full bg-brand-accent" />
+                  <span className="cr-accent-bg absolute inset-y-1.5 left-0 w-0.5 rounded-full" />
                 ) : null}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-brand-ink/40">
-                      Module {i + 1}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-brand-ink">{mod.title}</p>
-                  </div>
-                  {mod.locked ? (
-                    <Lock className="mt-1 h-4 w-4 shrink-0 text-brand-ink/35" />
-                  ) : selectedMod ? (
-                    <span className="rounded-full bg-brand-accent px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-white">
-                      Active
-                    </span>
-                  ) : mod.result?.passed ? (
-                    <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-600" />
-                  ) : null}
-                </div>
-                {!mod.locked ? (
-                  <div className="mt-3">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-brand-ink/10">
-                      <div
-                        className="h-full rounded-full bg-brand-accent transition-all duration-300"
-                        style={{
-                          width: `${mod.phrases.length ? Math.round((mod.learnedCount / mod.phrases.length) * 100) : 0}%`,
-                        }}
-                      />
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[0.65rem] font-bold ${
+                      selectedMod ? "cr-accent-bg" : "cr-surface-soft cr-muted"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="cr-text truncate text-[0.8rem] font-semibold leading-tight">
+                        {mod.title}
+                      </p>
+                      {mod.locked ? (
+                        <Lock className="cr-faint h-3 w-3 shrink-0" />
+                      ) : mod.result?.passed ? (
+                        <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" />
+                      ) : null}
                     </div>
-                    <p className="mt-1.5 text-[0.7rem] text-brand-ink/50">
-                      {mod.learnedCount} / {mod.phrases.length} items learned
-                      {mod.result ? ` · Assessment ${mod.result.scorePct}%` : ""}
-                    </p>
+                    {!mod.locked ? (
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="cr-surface-soft h-1 flex-1 overflow-hidden rounded-full opacity-40">
+                          <div className="cr-accent-bg h-full rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="cr-faint shrink-0 text-[0.65rem] tabular-nums">
+                          {mod.learnedCount}/{mod.phrases.length}
+                          {mod.result ? ` · ${mod.result.scorePct}%` : ""}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="cr-faint mt-0.5 text-[0.65rem]">Locked</p>
+                    )}
                   </div>
-                ) : (
-                  <p className="mt-2 text-[0.7rem] text-brand-ink/40">Complete Module {i} assessment to unlock</p>
-                )}
+                </div>
               </button>
             );
           })}
         </div>
 
-        <div className="m-3 rounded-2xl border border-brand-accent/20 bg-brand-accent/10 px-4 py-3.5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-accent text-white">
-              <Flame className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-brand-ink">
-                {streak > 0 ? `${streak} Day Streak!` : "Start a streak"}
+        <div className="cr-accent-soft m-2 rounded-xl border px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <Flame className="cr-accent h-4 w-4 shrink-0" />
+            <div className="min-w-0">
+              <p className="cr-text text-xs font-bold">
+                {streak > 0 ? `${streak} day streak` : "Start a streak"}
               </p>
-              <p className="text-xs text-brand-ink/55">
-                {streak > 0 ? "Excellent progress." : "Practice today to begin."}
+              <p className="cr-muted text-[0.65rem]">
+                {streak > 0 ? "Keep it going." : "Practice today."}
               </p>
             </div>
           </div>
@@ -515,10 +794,11 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-brand-ink/10 bg-white/80 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <div className="cr-accent-bg h-1 w-full" />
+        <header className="cr-surface cr-border sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-xl sm:px-6">
           <button
             type="button"
-            className="rounded-xl border border-brand-ink/10 p-2 text-brand-ink lg:hidden"
+            className="cr-border cr-text rounded-xl border p-2 lg:hidden"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open modules"
           >
@@ -527,17 +807,28 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           <div className="min-w-0 flex-1">
             <Link
               href={preview ? `/dashboard/instructor/studio/${slug}` : "/dashboard/courses"}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-accent hover:underline"
+              onClick={() => stopPlayback()}
+              className="cr-accent inline-flex items-center gap-1 text-xs font-semibold hover:underline"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               {preview ? "Studio" : "My courses"}
             </Link>
-            <h1 className="truncate font-display text-lg font-bold text-brand-ink sm:text-xl">
+            <h1 className="cr-text truncate font-display text-lg font-bold sm:text-xl">
               M{activeModule.index + 1}: {activeModule.title}
             </h1>
           </div>
 
-          <div className="flex rounded-2xl border border-brand-ink/10 bg-brand-muted/70 p-1">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="cr-border cr-text rounded-xl border p-2 transition hover:opacity-90"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? <Sun className="cr-yellow h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
+          <div className="cr-accent-soft flex rounded-2xl border p-1">
             <button
               type="button"
               onClick={() => {
@@ -545,7 +836,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                 stopPlayback();
               }}
               className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-300 sm:px-4 ${
-                view === "phrasebook" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/50 hover:text-brand-ink"
+                view === "phrasebook" ? "cr-accent-bg shadow-sm" : "cr-muted"
               }`}
             >
               <BookOpen className="h-3.5 w-3.5" />
@@ -558,7 +849,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
               }}
               disabled={activeModule.locked}
               className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-300 sm:px-4 disabled:opacity-40 ${
-                view === "assessment" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/50 hover:text-brand-ink"
+                view === "assessment" ? "cr-accent-bg shadow-sm" : "cr-muted"
               }`}
             >
               <GraduationCap className="h-3.5 w-3.5" />
@@ -569,45 +860,55 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
 
         {view === "phrasebook" ? (
           <>
-            <div className="hide-scrollbar flex-1 overflow-y-auto px-4 pb-36 pt-5 sm:px-6">
+            <div ref={listScrollRef} className="hide-scrollbar flex-1 overflow-y-auto px-4 pb-36 pt-5 sm:px-6">
               <ul className="mx-auto max-w-3xl space-y-3">
                 {phrases.map((phrase, idx) => {
                   const litNow = activePhraseId === phrase.id && (playing || cardLit);
                   return (
                     <li
                       key={phrase.id}
-                      className={`flex items-center gap-4 rounded-2xl border bg-white px-4 py-4 transition-all duration-300 sm:px-5 ${
-                        litNow
-                          ? "border-brand-accent/40 border-l-4 border-l-brand-accent shadow-md"
-                          : "border-brand-ink/10 hover:border-brand-ink/25"
+                      ref={(node) => {
+                        if (node) phraseElsRef.current.set(phrase.id, node);
+                        else phraseElsRef.current.delete(phrase.id);
+                      }}
+                      className={`cr-surface flex scroll-mt-28 items-center gap-4 rounded-2xl border px-4 py-4 transition-all duration-300 sm:px-5 ${
+                        litNow ? "cr-card-active border-l-4 shadow-md" : "hover:opacity-95"
                       }`}
                     >
                       <div className="flex min-w-0 flex-1 items-start gap-3">
-                        <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-muted text-xs font-bold text-brand-ink/55">
+                        <span
+                          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                            litNow ? "cr-accent-bg" : "cr-surface-soft cr-muted"
+                          }`}
+                        >
                           {idx + 1}
                         </span>
-                        <div className="min-w-0">
-                          <p
-                            className={`text-[0.7rem] font-semibold uppercase tracking-[0.14em] transition-colors duration-300 ${
-                              litNow && activeLang === "en" ? "text-brand-accent" : "text-brand-ink/45"
-                            }`}
-                          >
-                            {phrase.source_text}
-                          </p>
-                          <p
-                            className={`mt-1 font-display text-xl font-bold tracking-tight transition-colors duration-300 sm:text-2xl ${
-                              litNow && activeLang === "de" ? "text-brand-accent" : "text-brand-ink"
-                            }`}
-                          >
-                            {phrase.target_text}
-                          </p>
+                        <div className="min-w-0 space-y-1.5">
+                          <div>
+                            <p className="cr-yellow text-[0.65rem] font-bold uppercase tracking-[0.14em]">
+                              English
+                            </p>
+                            <p className="cr-yellow mt-0.5 text-base font-semibold leading-snug sm:text-lg">
+                              {phrase.source_text}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="cr-blue text-[0.65rem] font-bold uppercase tracking-[0.14em]">
+                              German
+                            </p>
+                            <p className="cr-blue mt-0.5 font-display text-xl font-bold tracking-tight sm:text-2xl">
+                              {phrase.target_text}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                         <button
                           type="button"
                           onClick={() => playTrack(phrase, "en")}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-brand-ink/10 bg-brand-muted px-3 py-2 text-xs font-bold text-brand-ink/70 transition-all duration-300 hover:border-brand-ink/25"
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 ${
+                            litNow && activeLang === "en" ? "cr-en-btn-active" : "cr-en-btn"
+                          }`}
                           aria-label="Play English"
                         >
                           <Volume2 className="h-3.5 w-3.5" />
@@ -616,7 +917,9 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         <button
                           type="button"
                           onClick={() => playTrack(phrase, "de")}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-brand-accent/25 bg-brand-accent/15 px-3 py-2 text-xs font-bold text-brand-accent transition-all duration-300 hover:bg-brand-accent/25"
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 ${
+                            litNow && activeLang === "de" ? "cr-de-btn-active" : "cr-de-btn"
+                          }`}
                           aria-label="Play German"
                         >
                           <Headphones className="h-3.5 w-3.5" />
@@ -628,11 +931,11 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                 })}
               </ul>
               {phrases.length === 0 ? (
-                <p className="py-16 text-center text-sm text-brand-ink/50">No phrases in this module yet.</p>
+                <p className="cr-muted py-16 text-center text-sm">No phrases in this module yet.</p>
               ) : null}
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 z-20 border-t border-brand-ink/10 bg-white/85 px-4 py-3 backdrop-blur-xl sm:px-6">
+            <div className="cr-surface cr-border absolute inset-x-0 bottom-0 z-20 border-t px-4 py-3 backdrop-blur-xl sm:px-6">
               <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 sm:gap-4">
                 <button
                   type="button"
@@ -641,22 +944,28 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                     if (playing) stopPlayback();
                     else playTrack(activePhrase, activeLang, true);
                   }}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-accent text-white shadow-lg shadow-brand-accent/25 transition-transform duration-300 hover:scale-105"
+                  className="cr-accent-bg flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
                   aria-label={playing ? "Pause" : "Play"}
                 >
                   {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 translate-x-0.5" />}
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/40">
+                  <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${activeLang === "en" ? "cr-yellow" : "cr-blue"}`}>
                     {autoPlay ? "Auto-play next" : "Now playing"}
+                    {activePhrase ? ` · ${activeLang === "en" ? "English" : "German"}` : ""}
                   </p>
-                  <p className="truncate text-sm font-semibold text-brand-ink">
+                  <p className={`truncate text-sm font-semibold ${activeLang === "en" ? "cr-yellow" : "cr-blue"}`}>
                     {activePhrase
                       ? activeLang === "en"
                         ? activePhrase.source_text
                         : activePhrase.target_text
                       : "Ready to start"}
                   </p>
+                  {activePhrase ? (
+                    <p className={`truncate text-xs ${activeLang === "en" ? "cr-blue" : "cr-yellow"}`}>
+                      {activeLang === "en" ? activePhrase.target_text : activePhrase.source_text}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <button
@@ -666,7 +975,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                       const prev = phrases[activeIndex - 1];
                       if (prev) playTrack(prev, activeLang, true);
                     }}
-                    className="rounded-xl p-2 text-brand-ink/55 transition hover:bg-brand-muted hover:text-brand-ink disabled:opacity-30"
+                    className="cr-muted cr-hover rounded-xl p-2 transition disabled:opacity-30"
                     aria-label="Previous"
                   >
                     <SkipBack className="h-4 w-4" />
@@ -678,7 +987,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                       const next = phrases[activeIndex + 1];
                       if (next) playTrack(next, activeLang, true);
                     }}
-                    className="rounded-xl p-2 text-brand-ink/55 transition hover:bg-brand-muted hover:text-brand-ink disabled:opacity-30"
+                    className="cr-muted cr-hover rounded-xl p-2 transition disabled:opacity-30"
                     aria-label="Next"
                   >
                     <SkipForward className="h-4 w-4" />
@@ -692,7 +1001,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         if (audioRef.current) audioRef.current.playbackRate = s;
                       }}
                       className={`rounded-lg px-2 py-1 text-[0.7rem] font-bold transition-all duration-300 ${
-                        speed === s ? "bg-brand-ink text-white" : "bg-brand-muted text-brand-ink/55"
+                        speed === s ? "cr-accent-bg" : "cr-surface-soft cr-muted"
                       }`}
                     >
                       {s}x
@@ -702,7 +1011,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                     type="button"
                     onClick={() => setRepeat((v) => !v)}
                     className={`rounded-xl p-2 transition-all duration-300 ${
-                      repeat ? "bg-brand-accent/15 text-brand-accent" : "text-brand-ink/45 hover:bg-brand-muted"
+                      repeat ? "cr-accent-soft" : "cr-muted cr-hover"
                     }`}
                     aria-label="Repeat"
                   >
@@ -711,8 +1020,8 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                   <button
                     type="button"
                     onClick={() => setAutoPlay((v) => !v)}
-                    className={`hidden rounded-xl px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide transition-all duration-300 sm:inline ${
-                      autoPlay ? "bg-brand-accent text-white" : "bg-brand-muted text-brand-ink/50"
+                    className={`rounded-xl px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide transition-all duration-300 ${
+                      autoPlay ? "cr-accent-bg" : "cr-surface-soft cr-muted"
                     }`}
                   >
                     Auto
@@ -723,43 +1032,53 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           </>
         ) : (
           <div className="hide-scrollbar flex flex-1 items-start justify-center overflow-y-auto px-4 py-8 sm:px-6">
-            <div className="w-full max-w-2xl rounded-3xl border border-brand-ink/10 bg-white p-6 shadow-xl shadow-brand-ink/5 sm:p-8">
+            <div className="cr-surface cr-border w-full max-w-2xl rounded-3xl border p-6 shadow-xl sm:p-8">
               {quiz.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-sm text-brand-ink/60">Add more phrases to this module to unlock an assessment.</p>
-                  <button type="button" onClick={() => setView("phrasebook")} className="mt-4 text-sm font-semibold text-brand-accent">
+                  <p className="cr-muted text-sm">Add more phrases to this module to unlock an assessment.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setView("phrasebook");
+                      stopPlayback();
+                    }}
+                    className="cr-accent mt-4 text-sm font-semibold"
+                  >
                     Back to phrasebook
                   </button>
                 </div>
               ) : quizDone ? (
                 <div className="flex flex-col items-center py-6 text-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-accent/15 text-brand-accent">
-                    <Trophy className="h-10 w-10" />
+                  <div className="cr-accent-soft flex h-20 w-20 items-center justify-center rounded-full">
+                    <Trophy className="cr-accent h-10 w-10" />
                   </div>
-                  <h2 className="mt-6 font-display text-3xl font-bold text-brand-ink">
+                  <h2 className="cr-text mt-6 font-display text-3xl font-bold">
                     {finalScorePct >= PASS_MARK ? "Module Complete!" : "Keep practicing"}
                   </h2>
-                  <p className="mt-2 text-sm text-brand-ink/60">
-                    You scored <span className="font-bold text-brand-ink">{finalScorePct}%</span>
+                  <p className="cr-muted mt-2 text-sm">
+                    You scored <span className="cr-text font-bold">{finalScorePct}%</span>
                     {finalScorePct >= PASS_MARK
                       ? " - next module unlocked."
                       : ` - need ${PASS_MARK}% to unlock the next module.`}
                   </p>
-                  <p className="mt-1 text-xs text-brand-ink/40">
-                    {scoreCorrect} of {quiz.length} correct · Detailed explanations coming soon
+                  <p className="cr-faint mt-1 text-xs">
+                    {scoreCorrect} of {quiz.length} correct · 15 text + 5 listening
                   </p>
                   <div className="mt-8 flex flex-wrap justify-center gap-3">
                     <button
                       type="button"
                       onClick={() => startAssessment()}
-                      className="rounded-2xl bg-brand-accent px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-accent-dark"
+                      className="cr-accent-bg rounded-2xl px-6 py-3 text-sm font-bold transition hover:opacity-90"
                     >
                       Retake Assessment
                     </button>
                     <button
                       type="button"
-                      onClick={() => setView("phrasebook")}
-                      className="rounded-2xl border border-brand-ink/15 bg-white px-6 py-3 text-sm font-bold text-brand-ink transition hover:bg-brand-muted"
+                      onClick={() => {
+                        setView("phrasebook");
+                        stopPlayback();
+                      }}
+                      className="cr-border cr-text cr-hover rounded-2xl border px-6 py-3 text-sm font-bold transition"
                     >
                       Back to Phrasebook
                     </button>
@@ -768,24 +1087,44 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
               ) : currentQ ? (
                 <>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">
+                    <p className="cr-faint text-[0.7rem] font-semibold uppercase tracking-[0.16em]">
                       Question {qIndex + 1} of {quiz.length}
                     </p>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-muted px-2.5 py-1 text-xs font-bold text-brand-ink">
-                      <Star className="h-3.5 w-3.5 text-brand-accent" />
+                    <span className="cr-surface-soft cr-text inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold">
+                      <Star className="cr-accent h-3.5 w-3.5" />
                       {Math.round((scoreCorrect / Math.max(quiz.length, 1)) * 100)}%
                     </span>
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-brand-ink/10">
+                  <div className="cr-surface-soft mt-3 h-2 overflow-hidden rounded-full opacity-40">
                     <div
-                      className="h-full rounded-full bg-brand-accent transition-all duration-300"
+                      className="cr-accent-bg h-full rounded-full transition-all duration-300"
                       style={{ width: `${quizProgress}%` }}
                     />
                   </div>
 
-                  <h2 className="mt-8 font-display text-2xl font-bold leading-snug text-brand-ink sm:text-3xl">
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    {currentQ.kind === "listen" ? (
+                      <span className="cr-de-btn inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide">
+                        <Headphones className="h-3.5 w-3.5" />
+                        Listening
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <h2 className="cr-text mt-4 font-display text-2xl font-bold leading-snug sm:text-3xl">
                     {currentQ.prompt}
                   </h2>
+
+                  {currentQ.kind === "listen" ? (
+                    <button
+                      type="button"
+                      onClick={() => playQuizClip(currentQ)}
+                      className="cr-de-btn-active mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold transition hover:opacity-90"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                      Play audio again
+                    </button>
+                  ) : null}
 
                   <div className="mt-8 grid gap-3 sm:grid-cols-2">
                     {currentQ.options.map((opt) => {
@@ -800,36 +1139,38 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                           onClick={() => setSelected(opt.id)}
                           className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition-all duration-300 ${
                             showCorrect
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                              ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
                               : showWrong
-                                ? "border-red-400 bg-red-50 text-red-900"
+                                ? "border-red-400 bg-red-500/15 text-red-400"
                                 : isSel
-                                  ? "border-brand-accent bg-brand-accent/10 text-brand-ink"
-                                  : "border-brand-ink/10 bg-brand-muted/60 text-brand-ink hover:border-brand-ink/25"
+                                  ? "cr-accent-soft"
+                                  : "cr-border cr-surface-soft cr-text"
                           }`}
                         >
                           <span>{opt.text}</span>
                           <span
                             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                              isSel || showCorrect ? "border-brand-accent bg-brand-accent" : "border-brand-ink/20 bg-white"
+                              isSel || showCorrect ? "cr-accent-bg border-transparent" : "cr-border"
                             }`}
                           >
-                            {(isSel || showCorrect) && <span className="h-2 w-2 rounded-full bg-white" />}
+                            {(isSel || showCorrect) && (
+                              <span className="h-2 w-2 rounded-full bg-current opacity-80" />
+                            )}
                           </span>
                         </button>
                       );
                     })}
                   </div>
 
-                  <div className="mt-8 flex flex-col gap-4 border-t border-brand-ink/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="cr-border mt-8 flex flex-col gap-4 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-h-[1.5rem] text-sm font-semibold">
                       {checked ? (
                         selected === currentQ.correct_option_id ? (
-                          <span className="inline-flex items-center gap-1.5 text-emerald-700">
+                          <span className="inline-flex items-center gap-1.5 text-emerald-400">
                             <CheckCircle2 className="h-4 w-4" /> Correct
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 text-red-700">
+                          <span className="inline-flex items-center gap-1.5 text-red-400">
                             <XCircle className="h-4 w-4" /> Incorrect
                           </span>
                         )
@@ -840,7 +1181,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         type="button"
                         disabled={!selected}
                         onClick={checkAnswer}
-                        className="rounded-2xl bg-brand-accent px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-brand-accent-dark disabled:bg-brand-ink/15 disabled:text-brand-ink/40"
+                        className="cr-accent-bg rounded-2xl px-6 py-3 text-sm font-bold transition-all duration-300 hover:opacity-90 disabled:opacity-40"
                       >
                         Check Answer
                       </button>
@@ -848,7 +1189,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                       <button
                         type="button"
                         onClick={onContinue}
-                        className="rounded-2xl border border-brand-ink bg-white px-6 py-3 text-sm font-bold text-brand-ink transition-all duration-300 hover:bg-brand-muted"
+                        className="cr-border cr-text cr-hover rounded-2xl border px-6 py-3 text-sm font-bold transition-all duration-300"
                       >
                         {qIndex + 1 >= quiz.length ? "See Results" : "Continue"}
                       </button>
