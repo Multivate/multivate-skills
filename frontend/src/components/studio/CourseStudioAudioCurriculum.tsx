@@ -400,8 +400,9 @@ export function CourseStudioAudioCurriculum({
                   <div>
                     <p className="mb-2 text-xs text-brand-ink/50">Current voice</p>
                     <audio
-                      key={active.audio_url ?? active.id}
+                      key={`${active.id}-${active.audio_url}`}
                       controls
+                      preload="metadata"
                       src={audioPreviewUrl(active) ?? undefined}
                       className="w-full"
                     />
@@ -413,7 +414,7 @@ export function CourseStudioAudioCurriculum({
                 )}
 
                 <Upload
-                  key={`${active.id}-${active.audio_url ?? "empty"}`}
+                  key={`${active.id}-${active.audio_url ?? "empty"}-${busy ? "busy" : "idle"}`}
                   folder="lessons"
                   subfolder={`${course.id}/${active.id}`}
                   uploadUrl={`/api/studio/phrases/${active.id}/audio`}

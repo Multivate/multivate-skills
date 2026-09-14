@@ -150,11 +150,12 @@ async def save_phrase_audio(course_id: UUID, phrase_id: UUID, file: UploadFile) 
         "audio/aac": "aac",
     }
     ext = ext_map.get(content_type, "mp3")
-    rel = f"courses/{course_id}/phrases/{phrase_id}/audio.{ext}"
+    # Unique key every upload so browsers/CDNs never keep serving a replaced file.
+    rel = f"courses/{course_id}/phrases/{phrase_id}/audio-{uuid.uuid4().hex[:12]}.{ext}"
     path = media_root() / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
-    logger.info("Saved phrase audio phrase_id=%s bytes=%s", phrase_id, len(data))
+    logger.info("Saved phrase audio phrase_id=%s bytes=%s key=%s", phrase_id, len(data), rel)
     return StoredFile(
         storage_key=rel,
         public_path=f"/api/media/public/{rel}",
@@ -163,6 +164,45 @@ async def save_phrase_audio(course_id: UUID, phrase_id: UUID, file: UploadFile) 
         file_size_bytes=len(data),
         duration_seconds=0,
     )
+
+
+def delete_storage_key(storage_key: str | None) -> None:
+    """Best-effort delete of a media file under the media root."""
+    if not storage_key or storage_key.startswith("http"):
+        return
+    key = storage_key.lstrip("/")
+    if key.startswith("api/media/public/"):
+        key = key[len("api/media/public/") :]
+    try:
+        root = media_root().resolve()
+        target = (root / key).resolve()
+        if not str(target).startswith(str(root)):
+            return
+        if target.is_file():
+            target.unlink()
+            logger.info("Deleted media file key=%s", key)
+    except OSError as exc:
+        logger.warning("Could not delete media file key=%s: %s", storage_key, exc)
+
+
+def clear_phrase_audio_files(course_id: UUID, phrase_id: UUID, current_key: str | None = None) -> None:
+    """Remove the current phrase audio file and any legacy fixed-name leftovers."""
+    delete_storage_key(current_key)
+    folder = media_root() / f"courses/{course_id}/phrases/{phrase_id}"
+    if not folder.is_dir():
+        return
+    try:
+        for path in folder.iterdir():
+            if not path.is_file():
+                continue
+            name = path.name.lower()
+            if name.startswith("audio.") or name.startswith("audio-"):
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
+    except OSError as exc:
+        logger.warning("Could not clear phrase audio folder phrase_id=%s: %s", phrase_id, exc)
 
 
 async def save_lesson_resource(course_id: UUID, lesson_id: UUID, file: UploadFile) -> StoredFile:

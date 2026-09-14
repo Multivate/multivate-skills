@@ -846,6 +846,8 @@ def delete_audio_phrase(db: Session, phrase_id: UUID, actor: User) -> None:
 
 def clear_phrase_audio(db: Session, phrase_id: UUID, actor: User) -> AudioPhraseOut:
     """Remove voice only - keep the phrase text so a new file can be uploaded."""
+    from app.services import media_storage_service
+
     phrase = db.get(AudioPhrase, phrase_id)
     if not phrase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Phrase not found")
@@ -853,6 +855,8 @@ def clear_phrase_audio(db: Session, phrase_id: UUID, actor: User) -> AudioPhrase
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
     course_service.assert_can_manage_course(actor, course)
+    old_key = phrase.audio_url if phrase.audio_source == AudioSource.UPLOAD else None
+    media_storage_service.clear_phrase_audio_files(course.id, phrase.id, old_key)
     phrase.audio_url = None
     phrase.audio_source = None
     phrase.audio_duration_seconds = 0
@@ -896,6 +900,8 @@ async def upload_phrase_audio(db: Session, phrase_id: UUID, file: UploadFile, ac
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
     course_service.assert_can_manage_course(actor, course)
+    old_key = phrase.audio_url if phrase.audio_source == AudioSource.UPLOAD else None
+    media_storage_service.clear_phrase_audio_files(course.id, phrase.id, old_key)
     stored = await media_storage_service.save_phrase_audio(course.id, phrase.id, file)
     phrase.audio_source = AudioSource.UPLOAD
     phrase.audio_url = stored.storage_key
