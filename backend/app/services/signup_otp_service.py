@@ -265,6 +265,9 @@ def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthRe
     )
     db.add(user)
     db.flush()
+    from app.services.bank_transfer_service import ensure_student_code
+
+    ensure_student_code(db, user)
     profile = StudentLearningProfile(
         user_id=user.id,
         education_level=lp["education_level"],
@@ -280,6 +283,9 @@ def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthRe
     db.commit()
     db.refresh(user)
     tokens = _tokens_for_user(user)
+    from app.services import notification_service
+
+    notification_service.notify_new_account(db, user)
     return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
 
 
@@ -309,6 +315,9 @@ def _create_instructor_from_payload(db: Session, payload: dict[str, Any]) -> Aut
     db.commit()
     db.refresh(user)
     tokens = _tokens_for_user(user)
+    from app.services import notification_service
+
+    notification_service.notify_new_account(db, user)
     return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
 
 
@@ -326,6 +335,9 @@ def _create_mentor_from_payload(db: Session, payload: dict[str, Any]) -> AuthRes
     db.refresh(user)
     mentor_service.create_draft_profile_for_user(db, user)
     tokens = _tokens_for_user(user)
+    from app.services import notification_service
+
+    notification_service.notify_new_account(db, user)
     return AuthResponse(**tokens.model_dump(), user=user_public_from_orm(user))
 
 

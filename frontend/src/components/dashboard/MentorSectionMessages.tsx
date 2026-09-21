@@ -78,8 +78,8 @@ export function MentorSectionMessages() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-      <aside className="rounded-md border border-slate-200 bg-white dark:border-slate-800 ">
-        <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+      <aside className="rounded-md border border-neutral-200 bg-brand-surface dark:border-zinc-800 ">
+        <div className="border-b border-neutral-100 px-4 py-3 dark:border-zinc-800">
           <h2 className="flex items-center gap-2 text-sm font-bold text-brand-ink dark:text-white">
             <MessageSquare className="h-4 w-4 text-brand-accent" />
             Inbox
@@ -90,7 +90,7 @@ export function MentorSectionMessages() {
             <Loader2 className="h-6 w-6 animate-spin text-brand-primary" />
           </div>
         ) : conversations.length === 0 ? (
-          <p className="p-4 text-sm text-slate-500">No messages yet.</p>
+          <p className="p-4 text-sm text-neutral-500">No messages yet.</p>
         ) : (
           <ul className="max-h-[28rem] overflow-y-auto">
             {conversations.map((c) => (
@@ -98,7 +98,7 @@ export function MentorSectionMessages() {
                 <button
                   type="button"
                   onClick={() => setActiveId(c.id)}
-                  className={`w-full border-b border-slate-50 px-4 py-3 text-left transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50 ${
+                  className={`w-full border-b border-neutral-50 px-4 py-3 text-left transition hover:bg-neutral-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 ${
                     activeId === c.id ? "bg-brand-primary/5" : ""
                   }`}
                 >
@@ -108,7 +108,7 @@ export function MentorSectionMessages() {
                       <span className="rounded-full bg-brand-accent px-2 py-0.5 text-[10px] font-bold text-white">{c.unread_count}</span>
                     ) : null}
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{c.last_message_preview}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-neutral-500">{c.last_message_preview}</p>
                 </button>
               </li>
             ))}
@@ -116,9 +116,9 @@ export function MentorSectionMessages() {
         )}
       </aside>
 
-      <div className="flex min-h-[24rem] flex-col rounded-md border border-slate-200 bg-white dark:border-slate-800 ">
+      <div className="flex min-h-[24rem] flex-col rounded-md border border-neutral-200 bg-brand-surface dark:border-zinc-800 ">
         {!activeId ? (
-          <div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-500">Select a conversation.</div>
+          <div className="flex flex-1 items-center justify-center p-8 text-sm text-neutral-500">Select a conversation.</div>
         ) : (
           <>
             <div className="flex-1 space-y-3 overflow-y-auto p-4">
@@ -126,7 +126,7 @@ export function MentorSectionMessages() {
                 const mine = m.sender_kind === "mentor";
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] rounded-md px-3.5 py-2.5 text-sm ${mine ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-800 dark:bg-slate-800"}`}>
+                    <div className={`max-w-[85%] rounded-md px-3.5 py-2.5 text-sm ${mine ? "bg-brand-primary text-white" : "bg-neutral-100 text-zinc-800 dark:bg-zinc-800"}`}>
                       {m.body}
                     </div>
                   </div>
@@ -134,9 +134,9 @@ export function MentorSectionMessages() {
               })}
             </div>
             {err ? <p className="px-4 text-sm text-red-600">{err}</p> : null}
-            <form onSubmit={sendReply} className="flex gap-2 border-t border-slate-100 p-3 dark:border-slate-800">
+            <form onSubmit={sendReply} className="flex gap-2 border-t border-neutral-100 p-3 dark:border-zinc-800">
               <input
-                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-brand-surface px-3 py-2 text-sm text-brand-ink outline-none transition placeholder:text-neutral-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 dark:border-neutral-500 dark:bg-zinc-800 dark:text-neutral-100"
                 placeholder="Write your reply…"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -144,7 +144,7 @@ export function MentorSectionMessages() {
               <button
                 type="submit"
                 disabled={busy}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-accent text-white shadow-none transition hover:bg-brand-accent-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-accent text-white shadow-none transition hover:bg-brand-accent-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Send reply"
               >
                 <Send className="h-4 w-4" />

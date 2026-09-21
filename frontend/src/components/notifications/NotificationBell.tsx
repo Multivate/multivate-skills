@@ -22,19 +22,30 @@ export function NotificationBell({ label }: { label: string }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lastLoadedAt = useRef(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
     try {
-      const listRes = await fetch("/api/notifications/me", { credentials: "include", cache: "no-store" });
+      const [listRes, countRes] = await Promise.all([
+        fetch("/api/notifications/me", { credentials: "include", cache: "no-store" }),
+        fetch("/api/notifications/me/unread-count", { credentials: "include", cache: "no-store" }),
+      ]);
       const list = await listRes.json().catch(() => []);
       if (listRes.ok && Array.isArray(list)) {
-        const rows = list as NotificationRow[];
-        setItems(rows);
-        setUnread(rows.filter((n) => !n.read_at).length);
+        setItems(list as NotificationRow[]);
         lastLoadedAt.current = Date.now();
       }
+      if (countRes.ok) {
+        const countJson = await countRes.json().catch(() => null);
+        if (countJson && typeof countJson.unread_count === "number") {
+          setUnread(countJson.unread_count);
+        } else if (listRes.ok && Array.isArray(list)) {
+          setUnread((list as NotificationRow[]).filter((n) => !n.read_at).length);
+        }
+      } else if (listRes.ok && Array.isArray(list)) {
+        setUnread((list as NotificationRow[]).filter((n) => !n.read_at).length);
+      }
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   }, []);
 
@@ -42,8 +53,8 @@ export function NotificationBell({ label }: { label: string }) {
     void load();
     const timer = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      void load();
-    }, 90000);
+      void load({ silent: true });
+    }, 45000);
     return () => window.clearInterval(timer);
   }, [load]);
 
@@ -79,7 +90,7 @@ export function NotificationBell({ label }: { label: string }) {
           setOpen((v) => !v);
           if (!open && Date.now() - lastLoadedAt.current > 15000) void load();
         }}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700"
+        className="relative flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-brand-surface text-neutral-500 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:bg-zinc-700"
         aria-label={label}
         aria-expanded={open}
       >
@@ -92,9 +103,9 @@ export function NotificationBell({ label }: { label: string }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200/95 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-            <p className="text-sm font-bold text-brand-ink dark:text-slate-100">Notifications</p>
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-md border border-neutral-200/95 bg-brand-surface shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 dark:border-zinc-800">
+            <p className="text-sm font-bold text-brand-ink dark:text-neutral-100">Notifications</p>
             {unread > 0 ? (
               <button
                 type="button"
@@ -107,20 +118,20 @@ export function NotificationBell({ label }: { label: string }) {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {loading && items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>
+              <p className="px-4 py-6 text-sm text-neutral-500">Loading…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-slate-500">You are all caught up.</p>
+              <p className="px-4 py-6 text-sm text-neutral-500">You are all caught up.</p>
             ) : (
               items.map((n) => {
                 const inner = (
                   <div
-                    className={`border-b border-slate-100 px-4 py-3 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60 ${
+                    className={`border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60 ${
                       n.read_at ? "opacity-75" : "bg-brand-secondary/5"
                     }`}
                   >
-                    <p className="text-sm font-bold text-brand-ink dark:text-slate-100">{n.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{n.body}</p>
-                    <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                    <p className="text-sm font-bold text-brand-ink dark:text-neutral-100">{n.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">{n.body}</p>
+                    <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
                       {new Date(n.created_at).toLocaleString()}
                     </p>
                   </div>

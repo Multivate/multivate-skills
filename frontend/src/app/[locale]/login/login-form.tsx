@@ -153,7 +153,7 @@ export function LoginForm() {
       form={
         <div className="flex min-h-0 flex-1 flex-col">
           <p className="tag-overline">{mfa ? t("mfaTitle") : t("badge")}</p>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-[2rem]">
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink sm:text-[2rem]">
             {mfa ? t("mfaTitle") : t("title")}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">
@@ -217,7 +217,7 @@ export function LoginForm() {
           ) : (
             <>
               <div
-                className="mt-6 grid grid-cols-2 gap-1 rounded-lg border border-brand-ink/10 bg-brand-muted/60 p-1"
+                className="mt-6 grid grid-cols-2 gap-1 rounded-sm border border-brand-ink/10 bg-brand-muted/60 p-1"
                 role="tablist"
                 aria-label={t("methodLabel")}
               >

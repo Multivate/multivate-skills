@@ -91,7 +91,7 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg border border-brand-ink/10 bg-white p-8 text-center">
+      <div className="mx-auto max-w-lg border border-brand-ink/10 bg-brand-surface p-8 text-center">
         <p className="text-sm leading-relaxed text-brand-ink/70">{error}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           {preview ? (

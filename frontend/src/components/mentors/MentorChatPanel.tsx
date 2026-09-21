@@ -20,7 +20,7 @@ type Props = {
 };
 
 const fieldClass =
-  "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100";
+  "mt-1.5 w-full rounded-md border border-neutral-200 bg-brand-surface px-3 py-2 text-sm text-brand-ink outline-none transition placeholder:text-neutral-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 dark:border-neutral-500 dark:bg-zinc-800 dark:text-neutral-100";
 
 function storageKey(slug: string) {
   return `multivate_mentor_chat_${slug}`;
@@ -148,14 +148,14 @@ export function MentorChatPanel({ mentorSlug, mentorName, open, onClose }: Props
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center p-4 sm:items-center">
-      <button type="button" className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
-      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+      <button type="button" className="absolute inset-0 bg-zinc-900/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-md border border-neutral-200 bg-brand-surface shadow-sm">
+        <header className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-brand-accent">{t("label")}</p>
             <h2 className="font-bold text-brand-ink">{mentorName}</h2>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="rounded-sm p-2 text-neutral-500 hover:bg-neutral-100">
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -163,19 +163,19 @@ export function MentorChatPanel({ mentorSlug, mentorName, open, onClose }: Props
         {!session ? (
           <form onSubmit={startChat} className="space-y-4 p-4">
             {err ? <p className="text-sm text-red-600">{err}</p> : null}
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className="block text-sm font-semibold text-zinc-800">
               {t("yourName")}
               <input required className={fieldClass} value={visitorName} onChange={(e) => setVisitorName(e.target.value)} />
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className="block text-sm font-semibold text-zinc-800">
               {t("yourEmail")}
               <input type="email" className={fieldClass} value={visitorEmail} onChange={(e) => setVisitorEmail(e.target.value)} />
             </label>
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className="block text-sm font-semibold text-zinc-800">
               {t("yourQuestion")}
               <textarea required rows={4} className={fieldClass} value={message} onChange={(e) => setMessage(e.target.value)} />
             </label>
-            <button type="submit" disabled={busy} className="btn-primary-brand flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60">
+            <button type="submit" disabled={busy} className="btn-primary-brand flex w-full items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {t("sendFirst")}
             </button>
@@ -188,8 +188,8 @@ export function MentorChatPanel({ mentorSlug, mentorName, open, onClose }: Props
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm ${
-                        mine ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-800"
+                      className={`max-w-[85%] rounded-md px-3.5 py-2.5 text-sm ${
+                        mine ? "bg-brand-primary text-white" : "bg-neutral-100 text-zinc-800"
                       }`}
                     >
                       {m.body}
@@ -200,9 +200,9 @@ export function MentorChatPanel({ mentorSlug, mentorName, open, onClose }: Props
               <div ref={bottomRef} />
             </div>
             {err ? <p className="px-4 text-sm text-red-600">{err}</p> : null}
-            <form onSubmit={sendReply} className="flex gap-2 border-t border-slate-100 bg-white p-3">
+            <form onSubmit={sendReply} className="flex gap-2 border-t border-neutral-100 bg-brand-surface p-3">
               <input
-                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink outline-none placeholder:text-slate-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+                className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-brand-surface px-3 py-2 text-sm text-brand-ink outline-none placeholder:text-neutral-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
                 placeholder={t("typeMessage")}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -210,7 +210,7 @@ export function MentorChatPanel({ mentorSlug, mentorName, open, onClose }: Props
               <button
                 type="submit"
                 disabled={busy || !draft.trim()}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-accent text-white shadow-sm transition hover:bg-brand-accent-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-accent text-white shadow-sm transition hover:bg-brand-accent-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Send message"
               >
                 <Send className="h-4 w-4" />

@@ -64,7 +64,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
         </Link>
 
         <SiteHeaderSearch
-          className={`hidden shrink-0 md:block ${floating ? "[&_input]:border-white/25 [&_input]:bg-white/10 [&_input]:text-white [&_input]:placeholder:text-white/55" : ""}`}
+          className={`hidden shrink-0 md:block ${floating ? "[&_input]:border-white/25 [&_input]:bg-brand-surface/10 [&_input]:text-white [&_input]:placeholder:text-white/55" : ""}`}
         />
 
         <nav className="hidden min-w-0 flex-1 lg:flex lg:justify-center">
@@ -86,7 +86,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
             </Link>
             <Link
               href="/register"
-              className="rounded-md bg-brand-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-accent-dark"
+              className="rounded-sm bg-brand-accent px-5 py-2.5 text-sm font-semibold text-brand-paper transition hover:bg-brand-accent-dark"
             >
               {tCommon("getStarted")}
             </Link>

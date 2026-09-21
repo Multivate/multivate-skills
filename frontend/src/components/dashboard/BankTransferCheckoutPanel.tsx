@@ -199,9 +199,9 @@ export function BankTransferCheckoutPanel() {
 
   if (authLoading || (busy && !data)) {
     return (
-      <section className="flex items-center gap-3 rounded-md border border-slate-200/90 bg-white p-8 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
+      <section className="flex items-center gap-3 rounded-md border border-neutral-200/90 bg-brand-surface p-8 shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900">
         <Loader2 className="h-5 w-5 animate-spin text-brand-secondary" aria-hidden />
-        <p className="text-sm text-slate-600">{t("loading")}</p>
+        <p className="text-sm text-neutral-500">{t("loading")}</p>
       </section>
     );
   }
@@ -209,8 +209,8 @@ export function BankTransferCheckoutPanel() {
   if (!user || user.role !== "student") {
     return (
       <section className="rounded-md border border-amber-200/90 bg-amber-50/80 p-6 dark:border-amber-900/50 dark:bg-amber-950/30">
-        <h2 className="text-lg font-extrabold text-brand-ink">{t("studentOnlyTitle")}</h2>
-        <p className="mt-2 text-sm text-slate-700">{t("studentOnlyBody")}</p>
+        <h2 className="text-lg font-semibold text-brand-ink">{t("studentOnlyTitle")}</h2>
+        <p className="mt-2 text-sm text-zinc-700">{t("studentOnlyBody")}</p>
       </section>
     );
   }
@@ -222,24 +222,24 @@ export function BankTransferCheckoutPanel() {
   return (
     <section className="space-y-6">
       {toast ? (
-        <p className="rounded-lg border border-brand-secondary/30 bg-brand-secondary/10 px-4 py-2 text-sm text-brand-ink">
+        <p className="rounded-sm border border-brand-secondary/30 bg-brand-secondary/10 px-4 py-2 text-sm text-brand-ink">
           {toast}
         </p>
       ) : null}
 
-      <div className="rounded-md border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
-        <h2 className="text-lg font-extrabold text-brand-ink">{remita ? t("remitaTitle") : t("title")}</h2>
-        <p className="mt-2 text-sm text-slate-600">{data?.message ?? t("subtitle")}</p>
+      <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900 sm:p-8">
+        <h2 className="text-lg font-semibold text-brand-ink">{remita ? t("remitaTitle") : t("title")}</h2>
+        <p className="mt-2 text-sm text-neutral-500">{data?.message ?? t("subtitle")}</p>
 
         {!awaitingReview && data?.enrollment_status !== "enrolled" ? (
-          <div className="mt-5 flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-4 sm:flex-row sm:items-end dark:border-slate-700 dark:bg-slate-950/40">
+          <div className="mt-5 flex flex-col gap-2 rounded-md border border-neutral-200 bg-neutral-50/80 p-4 sm:flex-row sm:items-end dark:border-zinc-700 dark:bg-zinc-950/40">
             <label className="flex-1 text-sm font-semibold text-brand-ink">
               {t("couponLabel")}
               <input
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                 placeholder={t("couponPlaceholder")}
-                className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 font-mono text-sm uppercase outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                className="mt-1.5 w-full rounded-sm border border-neutral-200 bg-brand-surface px-4 py-2.5 font-mono text-sm uppercase outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900"
               />
             </label>
             <button
@@ -255,12 +255,12 @@ export function BankTransferCheckoutPanel() {
 
         {remita ? (
           <div className="mt-6 space-y-4">
-            <div className="rounded-xl border-2 border-brand-accent/35 bg-brand-accent/5 p-5 shadow-sm transition hover:shadow-md">
+            <div className="rounded-md border-2 border-brand-accent/35 bg-brand-accent/5 p-5 shadow-sm transition hover:shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wide text-brand-accent">{t("remitaAmount")}</p>
-              <p className="mt-2 text-2xl font-extrabold text-brand-ink">
+              <p className="mt-2 text-2xl font-semibold text-brand-ink">
                 {formatMoney(remita.amount_cents, remita.currency)}
               </p>
-              <p className="mt-4 text-sm leading-relaxed text-slate-700">{t("remitaBody")}</p>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-700">{t("remitaBody")}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -272,13 +272,13 @@ export function BankTransferCheckoutPanel() {
                 <button
                   type="button"
                   onClick={() => void copyReference(remita.rrr)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-accent/30 px-3 py-2 text-xs font-semibold text-brand-accent transition hover:bg-brand-accent/10 active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-sm border border-brand-accent/30 px-3 py-2 text-xs font-semibold text-brand-accent transition hover:bg-brand-accent/10 active:scale-95"
                 >
                   {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? t("copied") : t("remitaCopyRrr")}
                 </button>
               </div>
-              <p className="mt-3 font-mono text-xs text-slate-500">{remita.rrr}</p>
+              <p className="mt-3 font-mono text-xs text-neutral-500">{remita.rrr}</p>
             </div>
             <form ref={remitaFormRef} method="POST" action={remita.payment_gateway_url} className="hidden">
               <input type="hidden" name="merchantId" value={remita.merchant_id} />
@@ -291,38 +291,38 @@ export function BankTransferCheckoutPanel() {
 
         {inst ? (
           <div className="mt-6 space-y-4">
-            <div className="rounded-xl border-2 border-brand-secondary/40 bg-brand-secondary/5 p-5 transition-shadow hover:shadow-md">
+            <div className="rounded-md border-2 border-brand-secondary/40 bg-brand-secondary/5 p-5 transition-shadow hover:shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wide text-brand-secondary">{t("referenceLabel")}</p>
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <p className="font-mono text-xl font-extrabold tracking-wider text-brand-ink">{ref}</p>
+                <p className="font-mono text-xl font-semibold tracking-wider text-brand-ink">{ref}</p>
                 <button
                   type="button"
                   onClick={() => void copyReference(ref)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-secondary/30 px-3 py-1.5 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/10 active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-sm border border-brand-secondary/30 px-3 py-1.5 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/10 active:scale-95"
                 >
                   {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? t("copied") : t("copyRef")}
                 </button>
               </div>
-              <p className="mt-3 text-sm font-medium text-slate-700">{t("referenceHint")}</p>
+              <p className="mt-3 text-sm font-medium text-zinc-700">{t("referenceHint")}</p>
             </div>
 
-            <dl className="grid gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-sm dark:border-slate-800 dark:bg-slate-950/40 sm:grid-cols-2">
+            <dl className="grid gap-3 rounded-md border border-neutral-100 bg-neutral-50/80 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950/40 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">{t("bankName")}</dt>
+                <dt className="text-xs font-semibold uppercase text-neutral-500">{t("bankName")}</dt>
                 <dd className="mt-1 font-semibold text-brand-ink">{inst.bank_name}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">{t("accountName")}</dt>
+                <dt className="text-xs font-semibold uppercase text-neutral-500">{t("accountName")}</dt>
                 <dd className="mt-1 font-semibold text-brand-ink">{inst.account_name}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">{t("accountNumber")}</dt>
+                <dt className="text-xs font-semibold uppercase text-neutral-500">{t("accountNumber")}</dt>
                 <dd className="mt-1 font-mono font-semibold text-brand-ink">{inst.account_number}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">{t("amount")}</dt>
-                <dd className="mt-1 text-lg font-extrabold text-brand-ink">
+                <dt className="text-xs font-semibold uppercase text-neutral-500">{t("amount")}</dt>
+                <dd className="mt-1 text-lg font-semibold text-brand-ink">
                   {formatMoney(inst.amount_cents, inst.currency)}
                 </dd>
                 {inst.discount_cents && inst.discount_cents > 0 && inst.original_amount_cents ? (
@@ -331,18 +331,18 @@ export function BankTransferCheckoutPanel() {
                       amount: formatMoney(inst.discount_cents, inst.currency),
                       code: inst.coupon_code ?? "",
                     })}
-                    <span className="ml-1 text-slate-500 line-through">
+                    <span className="ml-1 text-neutral-500 line-through">
                       {formatMoney(inst.original_amount_cents, inst.currency)}
                     </span>
                   </p>
                 ) : null}
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">{t("studentId")}</dt>
+                <dt className="text-xs font-semibold uppercase text-neutral-500">{t("studentId")}</dt>
                 <dd className="mt-1 font-mono text-brand-ink">{inst.student_code}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">{t("course")}</dt>
+                <dt className="text-xs font-semibold uppercase text-neutral-500">{t("course")}</dt>
                 <dd className="mt-1 font-semibold text-brand-ink">{inst.course_title}</dd>
               </div>
             </dl>
@@ -350,7 +350,7 @@ export function BankTransferCheckoutPanel() {
         ) : null}
 
         {awaitingReview ? (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-5">
             <p className="text-sm font-bold text-amber-950">{t("waitingTitle")}</p>
             <p className="mt-2 text-sm leading-relaxed text-amber-950/80">{t("waitingBody")}</p>
             <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-amber-900/70">{t("accessLocked")}</p>
@@ -362,7 +362,7 @@ export function BankTransferCheckoutPanel() {
             </Link>
           </div>
         ) : remita ? null : (
-          <div className="mt-6 space-y-4 rounded-xl border border-brand-ink/10 bg-brand-muted/30 p-4">
+          <div className="mt-6 space-y-4 rounded-md border border-brand-ink/10 bg-brand-muted/30 p-4">
             <label htmlFor="amount-sent" className="block text-sm font-semibold text-brand-ink">
               {t("amountSentLabel")}
             </label>
@@ -373,7 +373,7 @@ export function BankTransferCheckoutPanel() {
               value={amountSent}
               onChange={(e) => setAmountSent(e.target.value)}
               placeholder={inst ? (inst.amount_cents / 100).toFixed(2) : "0.00"}
-              className="w-full rounded-lg border border-brand-ink/15 bg-white px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
+              className="w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
             />
             <label htmlFor="txn-ref" className="block text-sm font-semibold text-brand-ink">
               {t("txnLabel")}
@@ -384,7 +384,7 @@ export function BankTransferCheckoutPanel() {
               value={txnRef}
               onChange={(e) => setTxnRef(e.target.value)}
               placeholder={t("txnPlaceholder")}
-              className="w-full rounded-lg border border-brand-ink/15 bg-white px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
+              className="w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-4 py-2.5 text-sm outline-none ring-brand-accent/30 focus:border-brand-accent focus:ring-2"
             />
             <button
               type="button"
@@ -398,7 +398,7 @@ export function BankTransferCheckoutPanel() {
         )}
 
         {err ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900" role="alert">
+          <p className="mt-4 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900" role="alert">
             {err}
           </p>
         ) : null}

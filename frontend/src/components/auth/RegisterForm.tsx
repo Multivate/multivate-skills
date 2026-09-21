@@ -51,9 +51,6 @@ export function RegisterForm() {
   const [yearsExperience, setYearsExperience] = useState("");
   const [teachingFormats, setTeachingFormats] = useState("");
 
-  const inputClass =
-    "mt-1.5 w-full rounded-md border border-brand-ink/15 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
-  const labelClass = "block text-sm font-semibold text-brand-ink";
 
   useEffect(() => {
     if (loading || !user || !pathname.includes("/register")) return;
@@ -316,13 +313,23 @@ export function RegisterForm() {
   const navBtnClass =
     "inline-flex min-h-[2.75rem] items-center justify-center rounded-md border border-brand-ink/15 bg-white px-5 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white";
 
-  const questionnaireShell =
-    "grid gap-6 border border-brand-ink/10 bg-brand-muted/50 p-5 sm:p-6 md:grid-cols-2 md:gap-x-8 md:gap-y-6";
-  const qSpan2 = "md:col-span-2";
+  const formTitle =
+    step === 4
+      ? t("otpTitle")
+      : step === 2
+        ? role === "instructor"
+          ? t("instructorBlockTitle")
+          : t("studentBlockTitle")
+        : t("title");
 
   return (
     <AuthSplitLayout
-      formMaxWidthClass="max-w-2xl xl:max-w-3xl"
+      formMaxWidthClass="max-w-xl"
+      coverPhoto={{
+        src: AUTH_IMAGES.registerHero,
+        alt: t("heroAlt"),
+        objectClassName: "object-cover object-[center_48%]",
+      }}
       brand={
         <AuthBrandBlock
           badge={t("badge")}
@@ -333,26 +340,30 @@ export function RegisterForm() {
             </>
           }
           description={t("brandDesc")}
-          imageSrc={AUTH_IMAGES.registerHero}
-          imageAlt={t("heroAlt")}
-          heroFraming="register-group"
         />
       }
       form={
         <div className="flex min-h-0 w-full flex-1 flex-col">
           <p className="tag-overline">{step === 4 ? t("otpTitle") : t("badge")}</p>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-[2rem]">
-            {step === 4 ? t("otpTitle") : t("title")}
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink sm:text-[2rem]">
+            {formTitle}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">
-            {step === 4 && signupSession
-              ? t("otpSubtitle", { email: signupSession.masked })
-              : t("subtitle")}
+            {step === 4 && signupSession ? t("otpSubtitle", { email: signupSession.masked }) : stepHint}
           </p>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-brand-ink/45" aria-live="polite">
-            {t("stepProgress", { current: step, total: TOTAL_STEPS })}
-          </p>
-          <p className="mt-1 text-sm text-brand-ink/65">{stepHint}</p>
+          <div className="mt-6" aria-live="polite">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-ink/45">
+              {t("stepProgress", { current: step, total: TOTAL_STEPS })}
+            </p>
+            <div className="mt-2.5 flex gap-1.5" aria-hidden>
+              {Array.from({ length: TOTAL_STEPS }, (_, index) => (
+                <span
+                  key={index}
+                  className={`h-1 flex-1 rounded-full ${index < step ? "bg-brand-accent" : "bg-brand-ink/10"}`}
+                />
+              ))}
+            </div>
+          </div>
 
           <div className="mt-6 space-y-6">
             {success ? (
@@ -390,7 +401,7 @@ export function RegisterForm() {
                   <p className="mb-3 text-xs leading-relaxed text-brand-ink/55">{t("oauthRoleHint")}</p>
                   <div className="relative my-2">
                     <div className="absolute inset-0 flex items-center" aria-hidden>
-                      <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                      <div className="w-full border-t border-neutral-200 dark:border-zinc-700" />
                     </div>
                     <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wide text-brand-ink/45">
                       <span className="bg-brand-paper px-3">{tLogin("divider")}</span>
@@ -417,73 +428,57 @@ export function RegisterForm() {
 
             {step === 2 && role === "student" ? (
               <div className="space-y-6">
-                <div className={questionnaireShell}>
-                  <p className={`text-sm font-bold text-brand-ink ${qSpan2}`}>{t("studentBlockTitle")}</p>
-                  <div className={`flex items-start gap-3 border-b border-slate-200 pb-4 ${qSpan2}`}>
-                    <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-brand-primary" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-xs font-extrabold uppercase tracking-wide text-slate-500">{tLearn("sectionBackground")}</h3>
-                      <label htmlFor="reg_education_level" className={labelClass}>
-                        {tLearn("educationLabel")} <span className="text-red-600">*</span>
-                      </label>
-                      <select
-                        id="reg_education_level"
-                        value={educationLevel}
-                        onChange={(e) => setEducationLevel(e.target.value)}
-                        className={inputClass}
-                      >
-                        <option value="">{tLearn("educationOptPlaceholder")}</option>
-                        <option value="secondary">{tLearn("educationOptSecondary")}</option>
-                        <option value="vocational">{tLearn("educationOptVocational")}</option>
-                        <option value="bachelors">{tLearn("educationOptBachelors")}</option>
-                        <option value="masters">{tLearn("educationOptMasters")}</option>
-                        <option value="phd">{tLearn("educationOptPhd")}</option>
-                        <option value="other">{tLearn("educationOptOther")}</option>
-                      </select>
-                    </div>
-                  </div>
-                  <SuggestionChipsField
-                    id="reg_skills_to_learn"
-                    label={tLearn("skillsToLearnLabel")}
-                    icon={Target}
-                    required
-                    hint={tLearn("skillsToLearnHint")}
-                    suggestions={skillsToLearnSuggestions}
-                    value={skillsToLearn}
-                    onChange={setSkillsToLearn}
-                    className={qSpan2}
-                  />
-                  <SuggestionChipsField
-                    id="reg_preferred_formats"
-                    label={tLearn("preferredFormatsLabel")}
-                    icon={MessageSquareText}
-                    required
-                    hint={tLearn("preferredFormatsHint")}
-                    suggestions={preferredFormatSuggestions}
-                    value={preferredFormats}
-                    onChange={setPreferredFormats}
-                    className={qSpan2}
-                  />
-                  <div className={qSpan2}>
-                    <label htmlFor="reg_weekly_hours" className={`${labelClass} flex items-center gap-2`}>
-                      <Clock className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tLearn("weeklyHoursLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <select
-                      id="reg_weekly_hours"
-                      value={weeklyHours}
-                      onChange={(e) => setWeeklyHours(e.target.value)}
-                      className={inputClass}
-                    >
-                      <option value="">{tLearn("weeklyOptPlaceholder")}</option>
-                      <option value="under5">{tLearn("weeklyOptUnder5")}</option>
-                      <option value="5to10">{tLearn("weeklyOpt5to10")}</option>
-                      <option value="10to15">{tLearn("weeklyOpt10to15")}</option>
-                      <option value="15plus">{tLearn("weeklyOpt15plus")}</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                <AuthSelect
+                  id="reg_education_level"
+                  label={tLearn("educationLabel")}
+                  icon={GraduationCap}
+                  required
+                  value={educationLevel}
+                  onChange={setEducationLevel}
+                >
+                  <option value="">{tLearn("educationOptPlaceholder")}</option>
+                  <option value="secondary">{tLearn("educationOptSecondary")}</option>
+                  <option value="vocational">{tLearn("educationOptVocational")}</option>
+                  <option value="bachelors">{tLearn("educationOptBachelors")}</option>
+                  <option value="masters">{tLearn("educationOptMasters")}</option>
+                  <option value="phd">{tLearn("educationOptPhd")}</option>
+                  <option value="other">{tLearn("educationOptOther")}</option>
+                </AuthSelect>
+                <SuggestionChipsField
+                  id="reg_skills_to_learn"
+                  label={tLearn("skillsToLearnLabel")}
+                  icon={Target}
+                  required
+                  hint={tLearn("skillsToLearnHint")}
+                  suggestions={skillsToLearnSuggestions}
+                  value={skillsToLearn}
+                  onChange={setSkillsToLearn}
+                />
+                <SuggestionChipsField
+                  id="reg_preferred_formats"
+                  label={tLearn("preferredFormatsLabel")}
+                  icon={MessageSquareText}
+                  required
+                  hint={tLearn("preferredFormatsHint")}
+                  suggestions={preferredFormatSuggestions}
+                  value={preferredFormats}
+                  onChange={setPreferredFormats}
+                />
+                <AuthSelect
+                  id="reg_weekly_hours"
+                  label={tLearn("weeklyHoursLabel")}
+                  icon={Clock}
+                  required
+                  value={weeklyHours}
+                  onChange={setWeeklyHours}
+                >
+                  <option value="">{tLearn("weeklyOptPlaceholder")}</option>
+                  <option value="under5">{tLearn("weeklyOptUnder5")}</option>
+                  <option value="5to10">{tLearn("weeklyOpt5to10")}</option>
+                  <option value="10to15">{tLearn("weeklyOpt10to15")}</option>
+                  <option value="15plus">{tLearn("weeklyOpt15plus")}</option>
+                </AuthSelect>
+                <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-between">
                   <button type="button" onClick={() => setStep(1)} className={navBtnClass}>
                     {t("back")}
                   </button>
@@ -496,45 +491,41 @@ export function RegisterForm() {
 
             {step === 2 && role === "instructor" ? (
               <div className="space-y-6">
-                <div className={questionnaireShell}>
-                  <p className={`text-sm font-bold text-brand-ink ${qSpan2}`}>{t("instructorBlockTitle")}</p>
-                  <SuggestionChipsField
-                    id="reg_expertise"
-                    label={tTeach("expertiseLabel")}
-                    icon={Target}
-                    required
-                    hint={tTeach("expertiseHint")}
-                    suggestions={expertiseSuggestions}
-                    value={expertiseAreas}
-                    onChange={setExpertiseAreas}
-                    className={qSpan2}
-                  />
-                  <div className={qSpan2}>
-                    <label htmlFor="reg_years" className={`${labelClass} flex items-center gap-2`}>
-                      <GraduationCap className="h-4 w-4 text-brand-primary" aria-hidden />
-                      {tTeach("yearsLabel")} <span className="text-red-600">*</span>
-                    </label>
-                    <select id="reg_years" value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} className={inputClass}>
-                      <option value="">{tTeach("yearsOptPlaceholder")}</option>
-                      <option value="under3">{tTeach("yearsOptUnder3")}</option>
-                      <option value="3to5">{tTeach("yearsOpt3to5")}</option>
-                      <option value="5to10">{tTeach("yearsOpt5to10")}</option>
-                      <option value="10plus">{tTeach("yearsOpt10plus")}</option>
-                    </select>
-                  </div>
-                  <SuggestionChipsField
-                    id="reg_teach_formats"
-                    label={tTeach("formatsLabel")}
-                    icon={MessageSquareText}
-                    required
-                    hint={tTeach("formatsHint")}
-                    suggestions={teachingFormatSuggestions}
-                    value={teachingFormats}
-                    onChange={setTeachingFormats}
-                    className={qSpan2}
-                  />
-                </div>
-                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                <SuggestionChipsField
+                  id="reg_expertise"
+                  label={tTeach("expertiseLabel")}
+                  icon={Target}
+                  required
+                  hint={tTeach("expertiseHint")}
+                  suggestions={expertiseSuggestions}
+                  value={expertiseAreas}
+                  onChange={setExpertiseAreas}
+                />
+                <AuthSelect
+                  id="reg_years"
+                  label={tTeach("yearsLabel")}
+                  icon={GraduationCap}
+                  required
+                  value={yearsExperience}
+                  onChange={setYearsExperience}
+                >
+                  <option value="">{tTeach("yearsOptPlaceholder")}</option>
+                  <option value="under3">{tTeach("yearsOptUnder3")}</option>
+                  <option value="3to5">{tTeach("yearsOpt3to5")}</option>
+                  <option value="5to10">{tTeach("yearsOpt5to10")}</option>
+                  <option value="10plus">{tTeach("yearsOpt10plus")}</option>
+                </AuthSelect>
+                <SuggestionChipsField
+                  id="reg_teach_formats"
+                  label={tTeach("formatsLabel")}
+                  icon={MessageSquareText}
+                  required
+                  hint={tTeach("formatsHint")}
+                  suggestions={teachingFormatSuggestions}
+                  value={teachingFormats}
+                  onChange={setTeachingFormats}
+                />
+                <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-between">
                   <button type="button" onClick={() => setStep(1)} className={navBtnClass}>
                     {t("back")}
                   </button>
@@ -547,8 +538,9 @@ export function RegisterForm() {
 
             {step === 3 ? (
               <form onSubmit={onSubmit} className="space-y-6">
-                <div className="grid gap-5 border-t border-slate-100 pt-2 md:grid-cols-2 md:gap-x-8 md:gap-y-5">
-                  <p className={`text-sm font-bold text-brand-ink ${qSpan2}`}>{t("accountSectionTitle")}</p>
+                <div className="space-y-5">
+                  <p className="text-sm font-semibold text-brand-ink">{t("accountSectionTitle")}</p>
+                  <div className="grid gap-5 md:grid-cols-2 md:gap-x-6">
                   <div className="min-w-0">
                     <AuthInput
                       id="name"
@@ -594,6 +586,7 @@ export function RegisterForm() {
                       placeholder={t("confirmPh")}
                     />
                   </div>
+                  </div>
                 </div>
 
                 <label className="flex cursor-pointer items-start gap-3 pt-0.5">
@@ -601,9 +594,9 @@ export function RegisterForm() {
                     type="checkbox"
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-panel focus:ring-brand-panel/30"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300 text-brand-panel focus:ring-brand-panel/30"
                   />
-                  <span className="text-sm leading-snug text-slate-600">
+                  <span className="text-sm leading-snug text-neutral-500">
                     {t("termsLead")}{" "}
                     <Link
                       href="/terms"
@@ -640,11 +633,11 @@ export function RegisterForm() {
             {step === 4 && signupSession ? (
               <form onSubmit={onOtpSubmit} className="space-y-6">
                 {otpNotice ? (
-                  <p className="rounded-lg border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-2 text-sm text-brand-ink dark:text-slate-200" role="status">
+                  <p className="rounded-sm border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-2 text-sm text-brand-ink dark:text-neutral-200" role="status">
                     {otpNotice}
                   </p>
                 ) : (
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{t("otpSpamHint")}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{t("otpSpamHint")}</p>
                 )}
                 <AuthInput
                   id="reg_otp"
@@ -670,7 +663,7 @@ export function RegisterForm() {
             ) : null}
           </div>
 
-          <p className="mt-8 text-center text-sm text-slate-600">
+          <p className="mt-8 text-center text-sm text-neutral-500">
             {t("hasAccount")}{" "}
             <Link href="/login" className="font-semibold text-brand-accent hover:text-brand-accent-dark">
               {t("signIn")}

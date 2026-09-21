@@ -49,7 +49,7 @@ export default async function AdminSectionPage({ params }: Props) {
   return (
     <div className={isAnalytics ? "space-y-6" : "mx-auto max-w-6xl space-y-6"}>
       {isAnalytics ? null : (
-        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">{title}</h1>
       )}
       <AdminSectionContent section={section} />
     </div>

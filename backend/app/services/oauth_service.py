@@ -210,6 +210,9 @@ def _ensure_instructor_profile(db: Session, user_id: Any) -> None:
 def _ensure_role_profile(db: Session, user: User) -> None:
     if user.role == UserRole.STUDENT:
         _ensure_student_profile(db, user.id)
+        from app.services.bank_transfer_service import ensure_student_code
+
+        ensure_student_code(db, user)
     elif user.role == UserRole.INSTRUCTOR:
         _ensure_instructor_profile(db, user.id)
     elif user.role == UserRole.MENTOR:
@@ -235,6 +238,7 @@ def _upsert_oauth_user(
 
     oauth_key = _oauth_key(provider, subject)
     user = db.execute(select(User).where(User.oauth_subject == oauth_key)).scalar_one_or_none()
+    created = False
 
     if user is None:
         user = db.execute(select(User).where(User.email == email_key)).scalar_one_or_none()
@@ -263,6 +267,7 @@ def _upsert_oauth_user(
             db.add(user)
             db.flush()
             _ensure_role_profile(db, user)
+            created = True
 
     _ensure_role_profile(db, user)
 
@@ -271,6 +276,10 @@ def _upsert_oauth_user(
 
     db.commit()
     db.refresh(user)
+    if created:
+        from app.services import notification_service
+
+        notification_service.notify_new_account(db, user)
     return user
 
 

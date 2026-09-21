@@ -11,14 +11,12 @@ import {
   Headphones,
   Lock,
   Menu,
-  Moon,
   Pause,
   Play,
   Repeat,
   SkipBack,
   SkipForward,
   Star,
-  Sun,
   Trophy,
   Volume2,
   X,
@@ -75,17 +73,6 @@ const PASS_MARK = 70;
 const SPEEDS = [1, 0.8] as const;
 const QUIZ_SIZE = 20;
 const LISTEN_COUNT = 5;
-
-const CLASSROOM_THEME_KEY = "multivate:classroom-theme";
-
-function loadClassroomTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  try {
-    return localStorage.getItem(CLASSROOM_THEME_KEY) === "dark" ? "dark" : "light";
-  } catch {
-    return "light";
-  }
-}
 
 function streakKey(userId: string) {
   return `multivate:learning-streak:${userId}`;
@@ -274,23 +261,6 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
   const [scoreCorrect, setScoreCorrect] = useState(0);
   const [quizDone, setQuizDone] = useState(false);
   const [finalScorePct, setFinalScorePct] = useState(0);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    setTheme(loadClassroomTheme());
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      try {
-        localStorage.setItem(CLASSROOM_THEME_KEY, next);
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const highlightTimer = useRef<number | null>(null);
@@ -648,7 +618,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg border border-brand-ink/10 bg-white px-6 py-10 text-center">
+      <div className="mx-auto max-w-lg border border-brand-ink/10 bg-brand-surface px-6 py-10 text-center">
         <p className="text-sm text-brand-ink/70">{error}</p>
         <Link
           href={preview ? `/dashboard/instructor/studio/${slug}` : "/dashboard/courses"}
@@ -670,7 +640,6 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
   return (
     <div
       className="classroom-room flex h-[100dvh] max-h-[100dvh] overflow-hidden antialiased"
-      data-theme={theme}
     >
       {sidebarOpen ? (
         <button
@@ -688,15 +657,10 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
       >
         <div className="cr-border border-b px-3 py-2.5">
           <div className="flex items-center justify-between gap-2">
-            <div className="cr-logo-light">
-              <LogoMark className="max-h-7 max-w-[7.5rem]" priority />
-            </div>
-            <div className="cr-logo-dark">
-              <LogoMark variant="inverse" className="max-h-7 max-w-[7.5rem]" priority />
-            </div>
+            <LogoMark className="max-h-7 max-w-[7.5rem]" priority />
             <button
               type="button"
-              className="cr-muted rounded-lg p-1 hover:opacity-80 lg:hidden"
+              className="cr-muted rounded-sm p-1 hover:opacity-80 lg:hidden"
               onClick={() => setSidebarOpen(false)}
               aria-label="Close sidebar"
             >
@@ -704,12 +668,12 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
             </button>
           </div>
           <p className="cr-text mt-1.5 truncate text-xs font-semibold">{data.course_title}</p>
-          <p className="cr-faint text-[0.65rem]">Audio classroom</p>
+          <p className="cr-faint text-[0.65rem]">Classroom</p>
         </div>
 
         <div className="hide-scrollbar flex-1 space-y-1 overflow-y-auto px-2 py-3">
           <p className="cr-faint px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em]">
-            Modules
+            Weeks
           </p>
           {moduleMeta.map((mod, i) => {
             const selectedMod = mod.id === activeModule.id;
@@ -728,7 +692,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                   setSidebarOpen(false);
                   stopPlayback();
                 }}
-                className={`relative w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                className={`relative w-full rounded-sm border px-2.5 py-2 text-left transition-colors ${
                   mod.locked
                     ? "cursor-not-allowed border-transparent opacity-45"
                     : selectedMod
@@ -778,7 +742,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           })}
         </div>
 
-        <div className="cr-accent-soft m-2 space-y-2 rounded-xl border px-3 py-2.5">
+        <div className="cr-surface-soft m-2 space-y-2 rounded-sm border px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <Flame className="cr-accent h-4 w-4 shrink-0" />
             <div className="min-w-0">
@@ -794,7 +758,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
             <Link
               href={`/dashboard/book-1on1?course=${encodeURIComponent(slug)}`}
               onClick={() => stopPlayback()}
-              className="cr-accent-bg flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition hover:opacity-95"
+              className="cr-border cr-text flex w-full items-center justify-center rounded-sm border px-3 py-2 text-xs font-semibold"
             >
               Book 1:1 mentor
             </Link>
@@ -803,11 +767,10 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <div className="cr-accent-bg h-1 w-full" />
-        <header className="cr-surface cr-border sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-xl sm:px-6">
+        <header className="cr-surface cr-border sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 sm:px-6">
           <button
             type="button"
-            className="cr-border cr-text rounded-xl border p-2 lg:hidden"
+            className="cr-border cr-text rounded-md border p-2 lg:hidden"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open modules"
           >
@@ -823,38 +786,28 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
               {preview ? "Studio" : "My courses"}
             </Link>
             <h1 className="cr-text truncate font-display text-lg font-bold sm:text-xl">
-              M{activeModule.index + 1}: {activeModule.title}
+              {activeModule.title}
             </h1>
           </div>
-
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="cr-border cr-text rounded-xl border p-2 transition hover:opacity-90"
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            title={theme === "dark" ? "Light mode" : "Dark mode"}
-          >
-            {theme === "dark" ? <Sun className="cr-yellow h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
 
           {!preview ? (
             <Link
               href={`/dashboard/book-1on1?course=${encodeURIComponent(slug)}`}
               onClick={() => stopPlayback()}
-              className="cr-accent-bg hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold sm:inline-flex"
+              className="cr-border cr-text hidden items-center rounded-sm border px-3 py-2 text-xs font-semibold sm:inline-flex"
             >
               Book 1:1
             </Link>
           ) : null}
 
-          <div className="cr-accent-soft flex rounded-2xl border p-1">
+          <div className="cr-accent-soft flex rounded-md border p-1">
             <button
               type="button"
               onClick={() => {
                 setView("phrasebook");
                 stopPlayback();
               }}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-300 sm:px-4 ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-all duration-300 sm:px-4 ${
                 view === "phrasebook" ? "cr-accent-bg shadow-sm" : "cr-muted"
               }`}
             >
@@ -867,7 +820,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                 if (!activeModule.locked) startAssessment();
               }}
               disabled={activeModule.locked}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-300 sm:px-4 disabled:opacity-40 ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-all duration-300 sm:px-4 disabled:opacity-40 ${
                 view === "assessment" ? "cr-accent-bg shadow-sm" : "cr-muted"
               }`}
             >
@@ -890,8 +843,8 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         if (node) phraseElsRef.current.set(phrase.id, node);
                         else phraseElsRef.current.delete(phrase.id);
                       }}
-                      className={`cr-surface flex scroll-mt-28 items-center gap-4 rounded-2xl border px-4 py-4 transition-all duration-300 sm:px-5 ${
-                        litNow ? "cr-card-active border-l-4 shadow-md" : "hover:opacity-95"
+                      className={`cr-surface flex scroll-mt-28 items-center gap-4 rounded-md border px-4 py-4 transition-all duration-300 sm:px-5 ${
+                        litNow ? "cr-card-active border-l-4 shadow-sm" : "hover:opacity-95"
                       }`}
                     >
                       <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -904,18 +857,18 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         </span>
                         <div className="min-w-0 space-y-1.5">
                           <div>
-                            <p className="cr-yellow text-[0.65rem] font-bold uppercase tracking-[0.14em]">
+                            <p className="cr-faint text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
                               English
                             </p>
-                            <p className="cr-yellow mt-0.5 text-base font-semibold leading-snug sm:text-lg">
+                            <p className="cr-text mt-0.5 text-base font-medium leading-snug sm:text-lg">
                               {phrase.source_text}
                             </p>
                           </div>
                           <div>
-                            <p className="cr-blue text-[0.65rem] font-bold uppercase tracking-[0.14em]">
+                            <p className="cr-faint text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
                               German
                             </p>
-                            <p className="cr-blue mt-0.5 font-display text-xl font-bold tracking-tight sm:text-2xl">
+                            <p className="cr-text mt-0.5 font-display text-xl font-semibold tracking-tighter sm:text-2xl">
                               {phrase.target_text}
                             </p>
                           </div>
@@ -925,7 +878,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         <button
                           type="button"
                           onClick={() => playTrack(phrase, "en")}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 ${
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-bold transition-all duration-300 ${
                             litNow && activeLang === "en" ? "cr-en-btn-active" : "cr-en-btn"
                           }`}
                           aria-label="Play English"
@@ -936,7 +889,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         <button
                           type="button"
                           onClick={() => playTrack(phrase, "de")}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 ${
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-bold transition-all duration-300 ${
                             litNow && activeLang === "de" ? "cr-de-btn-active" : "cr-de-btn"
                           }`}
                           aria-label="Play German"
@@ -950,7 +903,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                 })}
               </ul>
               {phrases.length === 0 ? (
-                <p className="cr-muted py-16 text-center text-sm">No phrases in this module yet.</p>
+                <p className="cr-muted py-16 text-center text-sm">No phrases in this week yet.</p>
               ) : null}
             </div>
 
@@ -963,25 +916,25 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                     if (playing) stopPlayback();
                     else playTrack(activePhrase, activeLang, true);
                   }}
-                  className="cr-accent-bg flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
+                  className="cr-accent-bg flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-sm transition-transform duration-300 hover:scale-105"
                   aria-label={playing ? "Pause" : "Play"}
                 >
                   {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 translate-x-0.5" />}
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${activeLang === "en" ? "cr-yellow" : "cr-blue"}`}>
-                    {autoPlay ? "Auto-play next" : "Now playing"}
+                  <p className="cr-faint text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
+                    {autoPlay ? "Playing through" : "Now playing"}
                     {activePhrase ? ` · ${activeLang === "en" ? "English" : "German"}` : ""}
                   </p>
-                  <p className={`truncate text-sm font-semibold ${activeLang === "en" ? "cr-yellow" : "cr-blue"}`}>
+                  <p className="cr-text truncate text-sm font-semibold">
                     {activePhrase
                       ? activeLang === "en"
                         ? activePhrase.source_text
                         : activePhrase.target_text
-                      : "Ready to start"}
+                      : "Ready"}
                   </p>
                   {activePhrase ? (
-                    <p className={`truncate text-xs ${activeLang === "en" ? "cr-blue" : "cr-yellow"}`}>
+                    <p className="cr-muted truncate text-xs">
                       {activeLang === "en" ? activePhrase.target_text : activePhrase.source_text}
                     </p>
                   ) : null}
@@ -994,7 +947,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                       const prev = phrases[activeIndex - 1];
                       if (prev) playTrack(prev, activeLang, true);
                     }}
-                    className="cr-muted cr-hover rounded-xl p-2 transition disabled:opacity-30"
+                    className="cr-muted cr-hover rounded-md p-2 transition disabled:opacity-30"
                     aria-label="Previous"
                   >
                     <SkipBack className="h-4 w-4" />
@@ -1006,7 +959,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                       const next = phrases[activeIndex + 1];
                       if (next) playTrack(next, activeLang, true);
                     }}
-                    className="cr-muted cr-hover rounded-xl p-2 transition disabled:opacity-30"
+                    className="cr-muted cr-hover rounded-md p-2 transition disabled:opacity-30"
                     aria-label="Next"
                   >
                     <SkipForward className="h-4 w-4" />
@@ -1019,7 +972,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         setSpeed(s);
                         if (audioRef.current) audioRef.current.playbackRate = s;
                       }}
-                      className={`rounded-lg px-2 py-1 text-[0.7rem] font-bold transition-all duration-300 ${
+                      className={`rounded-sm px-2 py-1 text-[0.7rem] font-bold transition-all duration-300 ${
                         speed === s ? "cr-accent-bg" : "cr-surface-soft cr-muted"
                       }`}
                     >
@@ -1029,7 +982,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                   <button
                     type="button"
                     onClick={() => setRepeat((v) => !v)}
-                    className={`rounded-xl p-2 transition-all duration-300 ${
+                    className={`rounded-md p-2 transition-all duration-300 ${
                       repeat ? "cr-accent-soft" : "cr-muted cr-hover"
                     }`}
                     aria-label="Repeat"
@@ -1039,7 +992,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                   <button
                     type="button"
                     onClick={() => setAutoPlay((v) => !v)}
-                    className={`rounded-xl px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide transition-all duration-300 ${
+                    className={`rounded-md px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide transition-all duration-300 ${
                       autoPlay ? "cr-accent-bg" : "cr-surface-soft cr-muted"
                     }`}
                   >
@@ -1051,7 +1004,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           </>
         ) : (
           <div className="hide-scrollbar flex flex-1 items-start justify-center overflow-y-auto px-4 py-8 sm:px-6">
-            <div className="cr-surface cr-border w-full max-w-2xl rounded-3xl border p-6 shadow-xl sm:p-8">
+            <div className="cr-surface cr-border w-full max-w-2xl rounded-md border p-6 shadow-sm sm:p-8">
               {quiz.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="cr-muted text-sm">Add more phrases to this module to unlock an assessment.</p>
@@ -1087,7 +1040,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                     <button
                       type="button"
                       onClick={() => startAssessment()}
-                      className="cr-accent-bg rounded-2xl px-6 py-3 text-sm font-bold transition hover:opacity-90"
+                      className="cr-accent-bg rounded-md px-6 py-3 text-sm font-bold transition hover:opacity-90"
                     >
                       Retake Assessment
                     </button>
@@ -1097,7 +1050,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         setView("phrasebook");
                         stopPlayback();
                       }}
-                      className="cr-border cr-text cr-hover rounded-2xl border px-6 py-3 text-sm font-bold transition"
+                      className="cr-border cr-text cr-hover rounded-md border px-6 py-3 text-sm font-bold transition"
                     >
                       Back to Phrasebook
                     </button>
@@ -1138,7 +1091,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                     <button
                       type="button"
                       onClick={() => playQuizClip(currentQ)}
-                      className="cr-de-btn-active mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold transition hover:opacity-90"
+                      className="cr-de-btn-active mt-6 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-bold transition hover:opacity-90"
                     >
                       <Volume2 className="h-4 w-4" />
                       Play audio again
@@ -1156,7 +1109,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                           type="button"
                           disabled={checked}
                           onClick={() => setSelected(opt.id)}
-                          className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition-all duration-300 ${
+                          className={`flex items-center justify-between gap-3 rounded-md border px-4 py-4 text-left text-sm font-semibold transition-all duration-300 ${
                             showCorrect
                               ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
                               : showWrong
@@ -1200,7 +1153,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                         type="button"
                         disabled={!selected}
                         onClick={checkAnswer}
-                        className="cr-accent-bg rounded-2xl px-6 py-3 text-sm font-bold transition-all duration-300 hover:opacity-90 disabled:opacity-40"
+                        className="cr-accent-bg rounded-md px-6 py-3 text-sm font-bold transition-all duration-300 hover:opacity-90 disabled:opacity-40"
                       >
                         Check Answer
                       </button>
@@ -1208,7 +1161,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
                       <button
                         type="button"
                         onClick={onContinue}
-                        className="cr-border cr-text cr-hover rounded-2xl border px-6 py-3 text-sm font-bold transition-all duration-300"
+                        className="cr-border cr-text cr-hover rounded-md border px-6 py-3 text-sm font-bold transition-all duration-300"
                       >
                         {qIndex + 1 >= quiz.length ? "See Results" : "Continue"}
                       </button>

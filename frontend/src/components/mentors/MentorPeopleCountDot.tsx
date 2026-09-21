@@ -21,7 +21,7 @@ export function MentorPeopleCountDot({ peopleHelped, activeConversations, classN
 
   return (
     <span
-      className={`absolute bottom-0 right-0 z-10 flex h-6 min-w-6 translate-x-1/4 translate-y-1/4 items-center justify-center rounded-full border-2 border-white bg-brand-accent px-1 text-[10px] font-extrabold leading-none text-white shadow-md transition group-hover:scale-110 dark:border-slate-900 ${className}`}
+      className={`absolute bottom-0 right-0 z-10 flex h-6 min-w-6 translate-x-1/4 translate-y-1/4 items-center justify-center rounded-full border-2 border-white bg-brand-accent px-1 text-[10px] font-semibold leading-none text-white shadow-sm transition group-hover:scale-110 dark:border-zinc-900 ${className}`}
       aria-label={label}
       title={label}
     >
@@ -55,7 +55,7 @@ export function MentorAvatarWithCount({
 }: MentorAvatarProps) {
   return (
     <div
-      className={`relative shrink-0 rounded-full shadow-md transition ${sizeClass} ${ringClass} group-hover:ring-brand-accent`}
+      className={`relative shrink-0 rounded-full shadow-sm transition ${sizeClass} ${ringClass} group-hover:ring-brand-accent`}
     >
       <div className="relative h-full w-full overflow-hidden rounded-full">
         {photo ? (

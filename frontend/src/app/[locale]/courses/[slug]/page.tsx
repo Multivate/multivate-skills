@@ -73,14 +73,14 @@ export default async function CourseDetailPage({ params }: Props) {
       <SiteHeader />
       <main className="section-y surface-section">
         <div className="container-page">
-          <nav className="text-sm text-slate-500" aria-label="Breadcrumb">
+          <nav className="text-sm text-neutral-500" aria-label="Breadcrumb">
             <Link
               href="/"
               className="font-semibold text-brand-primary transition hover:text-brand-primary-dark"
             >
               {tCourses("breadcrumbHome")}
             </Link>
-            <span className="mx-2 text-slate-300" aria-hidden>
+            <span className="mx-2 text-neutral-300" aria-hidden>
               /
             </span>
             <Link
@@ -89,10 +89,10 @@ export default async function CourseDetailPage({ params }: Props) {
             >
               {tCourses("breadcrumbCourses")}
             </Link>
-            <span className="mx-2 text-slate-300" aria-hidden>
+            <span className="mx-2 text-neutral-300" aria-hidden>
               /
             </span>
-            <span className="line-clamp-1 text-slate-700">{course.title}</span>
+            <span className="line-clamp-1 text-zinc-700">{course.title}</span>
           </nav>
 
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
@@ -101,29 +101,29 @@ export default async function CourseDetailPage({ params }: Props) {
                 {categoryLabel(course.category, tTabs)}
               </p>
               <h1 className="heading-section mt-2 text-2xl sm:text-3xl lg:text-[2rem]">{course.title}</h1>
-              {course.subtitle ? <p className="mt-2 text-base text-slate-600">{course.subtitle}</p> : null}
+              {course.subtitle ? <p className="mt-2 text-base text-neutral-500">{course.subtitle}</p> : null}
 
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-700">
-                <span className="font-medium text-slate-800">{levelLabel}</span>
-                <span className="text-slate-300" aria-hidden>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-700">
+                <span className="font-medium text-zinc-800">{levelLabel}</span>
+                <span className="text-neutral-300" aria-hidden>
                   ·
                 </span>
-                <span className="inline-flex items-center gap-1 text-slate-600">
-                  <Clock className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                <span className="inline-flex items-center gap-1 text-neutral-500">
+                  <Clock className="h-4 w-4 text-neutral-400" strokeWidth={2} />
                   {durationLabel} · {course.lessons_count} {tDetail("lessonsUnit")}
                 </span>
               </div>
 
-              <p className="mt-6 text-base leading-relaxed text-slate-600">{course.description}</p>
+              <p className="mt-6 text-base leading-relaxed text-neutral-500">{course.description}</p>
 
               {bullets.length > 0 ? (
                 <>
-                  <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-slate-900">
+                  <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-zinc-900">
                     {tDetail("whatYouLearn")}
                   </h2>
                   <ul className="mt-3 space-y-3">
                     {bullets.map((line) => (
-                      <li key={line} className="flex gap-3 text-sm leading-relaxed text-slate-700">
+                      <li key={line} className="flex gap-3 text-sm leading-relaxed text-zinc-700">
                         <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" strokeWidth={2.5} />
                         <span>{line}</span>
                       </li>
@@ -134,14 +134,14 @@ export default async function CourseDetailPage({ params }: Props) {
 
               {sortedLessons.length > 0 ? (
                 <>
-                  <h2 className="mt-10 text-sm font-bold uppercase tracking-wide text-slate-900">{tDetail("curriculum")}</h2>
-                  <p className="mt-1 text-xs text-slate-500">{tDetail("curriculumHint")}</p>
-                  <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-700">
+                  <h2 className="mt-10 text-sm font-bold uppercase tracking-wide text-zinc-900">{tDetail("curriculum")}</h2>
+                  <p className="mt-1 text-xs text-neutral-500">{tDetail("curriculumHint")}</p>
+                  <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-zinc-700">
                     {sortedLessons.map((lesson) => (
                       <li key={lesson.id} className="pl-1">
-                        <span className="font-semibold text-slate-900">{lesson.title}</span>
+                        <span className="font-semibold text-zinc-900">{lesson.title}</span>
                         {lesson.duration_minutes > 0 ? (
-                          <span className="text-slate-500"> · {lesson.duration_minutes} min</span>
+                          <span className="text-neutral-500"> · {lesson.duration_minutes} min</span>
                         ) : null}
                       </li>
                     ))}
@@ -150,7 +150,7 @@ export default async function CourseDetailPage({ params }: Props) {
               ) : null}
             </div>
 
-            <aside className="overflow-hidden rounded-2xl border border-brand-ink/10 bg-white shadow-sm lg:sticky lg:top-24">
+            <aside className="overflow-hidden rounded-md border border-brand-ink/10 bg-brand-surface shadow-sm lg:sticky lg:top-24">
               <div className="w-full bg-brand-muted">
                 <CourseThumbnail
                   src={course.image_url}
@@ -161,7 +161,7 @@ export default async function CourseDetailPage({ params }: Props) {
                 />
               </div>
               <div className="space-y-4 p-6">
-                <p className="font-display text-2xl font-bold tracking-tight text-brand-ink">{priceLabel}</p>
+                <p className="font-display text-2xl font-bold tracking-tighter text-brand-ink">{priceLabel}</p>
                 <CourseEnrollCta courseSlug={course.slug} />
                 <div className="space-y-2 border-t border-brand-ink/10 pt-4">
                   <Link

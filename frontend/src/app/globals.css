@@ -4,11 +4,12 @@
 
 :root {
   color-scheme: light;
-  --brand-ink: #0e1420;
-  --brand-paper: #faf8f5;
-  --brand-muted: #f3f1ec;
-  --brand-accent: #e8790a;
-  --brand-line: rgba(14, 20, 32, 0.1);
+  --brand-ink: #07091c;
+  --brand-paper: #fffdf6;
+  --brand-surface: #ffffff;
+  --brand-muted: #fff8eb;
+  --brand-accent: #a16207;
+  --brand-line: rgba(7, 9, 28, 0.12);
 }
 
 html {
@@ -33,7 +34,7 @@ input[type="number"] {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--brand-accent) 28%, white);
+  background: color-mix(in srgb, var(--brand-accent) 22%, var(--brand-paper));
   color: var(--brand-ink);
 }
 
@@ -43,31 +44,35 @@ input[type="number"] {
   }
 
   .heading-display {
-    @apply font-display text-balance font-bold tracking-tight text-brand-ink;
+    @apply font-display text-balance font-semibold leading-[1.1] tracking-tighter text-brand-ink;
   }
 
   .heading-section {
-    @apply font-display text-balance font-bold tracking-tight text-brand-ink;
+    @apply font-display text-balance font-semibold leading-[1.1] tracking-tighter text-brand-ink;
+  }
+
+  .body-copy {
+    @apply max-w-prose text-base leading-relaxed text-neutral-500;
   }
 
   .btn-primary-brand {
-    @apply inline-flex min-h-[3rem] min-w-[10rem] items-center justify-center gap-2 rounded-md bg-brand-accent px-7 py-3 text-sm font-semibold text-white transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent;
+    @apply inline-flex min-h-[3rem] min-w-[10rem] items-center justify-center gap-2 rounded-sm bg-brand-accent px-7 py-3 text-sm font-semibold text-brand-paper transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent;
   }
 
   .btn-outline-brand {
-    @apply inline-flex min-h-[3rem] items-center justify-center rounded-md border border-brand-ink/20 bg-transparent px-7 py-3 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white;
+    @apply inline-flex min-h-[3rem] items-center justify-center rounded-sm border border-brand-ink/15 bg-transparent px-7 py-3 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white;
   }
 
   .btn-outline-light {
-    @apply inline-flex min-h-[3rem] items-center justify-center rounded-md border border-white/55 bg-transparent px-7 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-brand-ink;
+    @apply inline-flex min-h-[3rem] items-center justify-center rounded-sm border border-neutral-400 bg-transparent px-7 py-3 text-sm font-semibold text-brand-paper transition hover:border-brand-paper hover:bg-brand-paper hover:text-zinc-900;
   }
 
   .btn-cta-accent {
-    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-md bg-brand-accent px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-sm bg-brand-accent px-7 py-3 text-sm font-semibold text-brand-paper shadow-sm transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-auth-social {
-    @apply inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-sm border border-neutral-200 bg-brand-surface px-4 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50;
   }
 
   .section-y {
@@ -75,11 +80,11 @@ input[type="number"] {
   }
 
   .tag-overline {
-    @apply font-sans text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-brand-accent;
+    @apply font-mono text-xs font-semibold uppercase tracking-widest text-neutral-500;
   }
 
   .float-widget {
-    @apply rounded-md border border-slate-200/90 bg-white p-3.5 shadow-widget sm:p-4;
+    @apply rounded-sm border border-neutral-200 bg-brand-surface p-3.5 shadow-sm sm:p-4;
   }
 
   .surface-section {
@@ -120,42 +125,23 @@ input[type="number"] {
   }
 }
 
-/* Audio classroom themes (scoped — does not affect the rest of the app) */
+/* Audio classroom: light cream background, navy + yellow text */
 .classroom-room {
-  --cr-bg: #faf8f5;
+  color-scheme: light;
+  --cr-bg: #fffdf6;
   --cr-surface: #ffffff;
-  --cr-surface-soft: #f3f1ec;
-  --cr-text: #0e1420;
-  --cr-muted: rgba(14, 20, 32, 0.55);
-  --cr-faint: rgba(14, 20, 32, 0.4);
-  --cr-border: rgba(14, 20, 32, 0.1);
-  --cr-accent: #e8790a;
+  --cr-surface-soft: #fff8eb;
+  --cr-text: #07091c;
+  --cr-muted: rgba(7, 9, 28, 0.62);
+  --cr-faint: rgba(7, 9, 28, 0.42);
+  --cr-border: rgba(7, 9, 28, 0.12);
+  --cr-accent: #a16207;
   --cr-accent-text: #ffffff;
-  --cr-yellow: #d97706;
-  --cr-blue: #0284c7;
-  --cr-overlay: rgba(14, 20, 32, 0.4);
+  --cr-yellow: #a16207;
+  --cr-blue: #07091c;
+  --cr-overlay: rgba(7, 9, 28, 0.4);
   color: var(--cr-text);
   background: var(--cr-bg);
-}
-
-.classroom-room[data-theme="dark"] {
-  color-scheme: dark;
-  --cr-bg: #06101f;
-  --cr-surface: #0c1a32;
-  --cr-surface-soft: #122445;
-  --cr-text: #eaf0fa;
-  --cr-muted: rgba(186, 206, 235, 0.7);
-  --cr-faint: rgba(186, 206, 235, 0.45);
-  --cr-border: rgba(120, 170, 230, 0.18);
-  --cr-accent: #f5c518;
-  --cr-accent-text: #0a1628;
-  --cr-yellow: #fbbf24;
-  --cr-blue: #38bdf8;
-  --cr-overlay: rgba(4, 10, 22, 0.65);
-  background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(30, 90, 180, 0.35), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(245, 197, 24, 0.12), transparent 45%),
-    var(--cr-bg);
 }
 
 .classroom-room .cr-surface {
@@ -209,27 +195,27 @@ input[type="number"] {
 }
 
 .classroom-room .cr-en-btn {
-  border-color: color-mix(in srgb, var(--cr-yellow) 45%, transparent);
-  background: color-mix(in srgb, var(--cr-yellow) 12%, transparent);
-  color: var(--cr-yellow);
+  border-color: var(--cr-border);
+  background: transparent;
+  color: var(--cr-text);
 }
 
 .classroom-room .cr-en-btn-active {
-  border-color: var(--cr-yellow);
-  background: var(--cr-yellow);
-  color: #0a1628;
+  border-color: var(--cr-accent);
+  background: var(--cr-accent);
+  color: var(--cr-accent-text);
 }
 
 .classroom-room .cr-de-btn {
-  border-color: color-mix(in srgb, var(--cr-blue) 45%, transparent);
-  background: color-mix(in srgb, var(--cr-blue) 12%, transparent);
-  color: var(--cr-blue);
+  border-color: var(--cr-border);
+  background: transparent;
+  color: var(--cr-text);
 }
 
 .classroom-room .cr-de-btn-active {
-  border-color: var(--cr-blue);
-  background: var(--cr-blue);
-  color: #06101f;
+  border-color: var(--cr-accent);
+  background: var(--cr-accent);
+  color: var(--cr-accent-text);
 }
 
 .classroom-room .cr-card-active {
@@ -244,17 +230,4 @@ input[type="number"] {
 
 .classroom-room .cr-hover:hover {
   background: var(--cr-surface-soft);
-}
-
-.classroom-room[data-theme="dark"] .cr-logo-light {
-  display: none;
-}
-
-.classroom-room[data-theme="light"] .cr-logo-dark,
-.classroom-room:not([data-theme="dark"]) .cr-logo-dark {
-  display: none;
-}
-
-.classroom-room[data-theme="dark"] .cr-logo-dark {
-  display: block;
 }

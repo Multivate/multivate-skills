@@ -16,10 +16,10 @@ export function DashboardPageHeader({
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0 max-w-3xl">
         {eyebrow ? <p className="tag-overline">{eyebrow}</p> : null}
-        <h1 className={`font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-4xl ${eyebrow ? "mt-3" : ""}`}>
+        <h1 className={`heading-display text-3xl sm:text-4xl ${eyebrow ? "mt-3" : ""}`}>
           {title}
         </h1>
-        {description ? <p className="mt-3 text-sm leading-relaxed text-brand-ink/65 sm:text-base">{description}</p> : null}
+        {description ? <p className="mt-3 max-w-prose text-sm leading-relaxed text-neutral-500 sm:text-base">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
@@ -45,9 +45,9 @@ export function DashboardMetricStrip({
       <div className={`grid divide-y divide-brand-ink/10 sm:divide-x sm:divide-y-0 ${gridClass}`}>
         {items.map((item) => (
           <div key={item.label} className="px-0 py-5 sm:px-6 sm:first:pl-0 sm:last:pr-0">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-brand-ink/45">{item.label}</p>
-            <p className="mt-3 font-display text-3xl font-bold tabular-nums tracking-tight text-brand-ink">{item.value}</p>
-            {item.hint ? <div className="mt-2 text-sm text-brand-ink/60">{item.hint}</div> : null}
+            <p className="font-mono text-xs font-semibold uppercase tracking-widest text-neutral-500">{item.label}</p>
+            <p className="mt-3 font-display text-3xl font-semibold tabular-nums leading-none tracking-tighter text-zinc-900">{item.value}</p>
+            {item.hint ? <div className="mt-2 text-sm leading-relaxed text-neutral-500">{item.hint}</div> : null}
           </div>
         ))}
       </div>
@@ -69,12 +69,12 @@ export function DashboardPanel({
   className?: string;
 }) {
   return (
-    <section className={`border border-brand-ink/10 bg-white ${className}`}>
+    <section className={`border border-brand-ink/10 bg-brand-surface ${className}`}>
       {title ? (
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand-ink/10 px-5 py-4 sm:px-6">
           <div>
-            <h2 className="font-display text-lg font-semibold tracking-tight text-brand-ink sm:text-xl">{title}</h2>
-            {description ? <p className="mt-1 text-sm text-brand-ink/55">{description}</p> : null}
+            <h2 className="font-display text-lg font-semibold leading-[1.1] tracking-tighter text-zinc-900 sm:text-xl">{title}</h2>
+            {description ? <p className="mt-1 max-w-prose text-sm leading-relaxed text-neutral-500">{description}</p> : null}
           </div>
           {action}
         </div>
@@ -98,9 +98,9 @@ export function DashboardState({
         ? "border-emerald-200 bg-emerald-50 text-emerald-900"
         : tone === "warn"
           ? "border-amber-200 bg-amber-50 text-amber-950"
-          : "border-brand-ink/10 bg-white text-brand-ink/70";
+          : "border-brand-ink/10 bg-brand-surface text-brand-ink/70";
   return (
-    <div className={`mx-auto max-w-2xl border px-6 py-10 text-center text-sm ${toneClass}`}>{children}</div>
+    <div className={`mx-auto max-w-prose border px-6 py-10 text-left text-sm leading-relaxed ${toneClass}`}>{children}</div>
   );
 }
 

@@ -21,12 +21,13 @@ export function AuthSelect({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-semibold text-slate-800">
+      <label htmlFor={id} className="block text-sm font-semibold text-brand-ink">
         {label}
+        {required ? <span className="text-red-600"> *</span> : null}
       </label>
       <div className="relative mt-1.5">
         <Icon
-          className="pointer-events-none absolute left-3.5 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-neutral-400"
           strokeWidth={2}
           aria-hidden
         />
@@ -36,12 +37,12 @@ export function AuthSelect({
           required={required}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full appearance-none rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-10 text-sm outline-none transition focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/25 ${value ? "text-brand-ink" : "text-slate-400"}`}
+          className={`w-full appearance-none rounded-md border border-brand-ink/15 bg-white py-3 pl-11 pr-10 text-sm outline-none transition focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 ${value ? "text-brand-ink" : "text-neutral-400"}`}
         >
           {children}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
           strokeWidth={2}
           aria-hidden
         />

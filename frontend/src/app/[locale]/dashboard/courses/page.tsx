@@ -18,12 +18,14 @@ type MyCourseItem = {
   status: string;
   instructor_name?: string | null;
   instructor_email?: string | null;
+  duration_minutes?: number;
+  current_week_title?: string;
 };
 
 function statusBadgeClass(status: string) {
   if (status === "Completed") return "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-200/90";
   if (status === "In Progress") return "bg-amber-100 text-amber-950 ring-1 ring-amber-200/90";
-  return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/90";
+  return "bg-neutral-100 text-zinc-700 ring-1 ring-neutral-200/90";
 }
 
 export default function DashboardCoursesPage() {
@@ -74,8 +76,8 @@ export default function DashboardCoursesPage() {
 
   if (items === null) {
     return (
-      <div className="mx-auto max-w-3xl rounded-md border border-slate-200/90 bg-white p-10 text-center shadow-none dark:border-slate-800/90 dark:bg-slate-900">
-        <p className="text-sm font-medium text-slate-600">Loading your courses…</p>
+      <div className="mx-auto max-w-3xl rounded-md border border-neutral-200/90 bg-brand-surface p-10 text-center shadow-none dark:border-zinc-800/90 dark:bg-zinc-900">
+        <p className="text-sm font-medium text-neutral-500">Loading your courses…</p>
       </div>
     );
   }
@@ -85,7 +87,7 @@ export default function DashboardCoursesPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <DashboardSavedCart />
         <div className="rounded-md border border-red-200/90 bg-red-50/80 p-8 text-center shadow-none sm:p-10">
-          <h1 className="text-lg font-extrabold text-brand-ink">We could not load your courses</h1>
+          <h1 className="text-lg font-semibold text-brand-ink">We could not load your courses</h1>
           <p className="mt-2 text-sm text-red-900/90">{error}</p>
           <Link href="/login" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
             Go to sign in
@@ -102,9 +104,9 @@ export default function DashboardCoursesPage() {
       <DashboardSavedCart />
 
       {!hasEnrollments ? (
-        <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none dark:border-slate-800/90 dark:bg-slate-900 sm:p-10">
-          <h1 className="text-lg font-extrabold text-brand-ink sm:text-xl">My courses</h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+        <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-8 text-center shadow-none dark:border-zinc-800/90 dark:bg-zinc-900 sm:p-10">
+          <h1 className="text-lg font-semibold text-brand-ink sm:text-xl">My courses</h1>
+          <p className="mt-2 text-sm leading-relaxed text-neutral-500">
             You have not enrolled in any courses yet. Saved courses from your cart appear above; browse the catalog to
             add more, then enroll when you are ready.
           </p>
@@ -117,8 +119,8 @@ export default function DashboardCoursesPage() {
           <div>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">My courses</h1>
-                <p className="mt-1 text-sm text-slate-600">
+                <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">My courses</h1>
+                <p className="mt-1 text-sm text-neutral-500">
                   Enrollments and progress stay up to date on your dashboard.
                 </p>
               </div>
@@ -131,9 +133,9 @@ export default function DashboardCoursesPage() {
                 <Link
                   key={row.slug}
                   href={`/learn/${row.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-none transition hover:border-slate-300 hover:shadow-md dark:border-slate-800/90 dark:bg-slate-900"
+                  className="group flex flex-col overflow-hidden rounded-md border border-neutral-200/90 bg-brand-surface shadow-none transition hover:border-neutral-300 hover:shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900"
                 >
-                  <div className="relative aspect-[16/10] w-full bg-slate-100">
+                  <div className="relative aspect-[16/10] w-full bg-neutral-100">
                     <CourseThumbnail
                       src={row.image_url}
                       alt={row.image_alt}
@@ -148,18 +150,20 @@ export default function DashboardCoursesPage() {
                   </div>
                   <div className="flex flex-1 flex-col p-4">
                     <h2 className="font-bold leading-snug text-brand-ink group-hover:text-brand-primary">{row.title}</h2>
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-600">{row.description}</p>
-                    <p className="mt-3 text-sm text-slate-600">
+                    <p className="mt-2 line-clamp-2 text-sm text-neutral-500">{row.description}</p>
+                    <p className="mt-3 text-sm text-neutral-500">
+                      {row.current_week_title ? `${row.current_week_title}. ` : ""}
                       Lesson {row.lesson_done} of {row.lessons}
+                      {row.duration_minutes ? ` · ${row.duration_minutes} min` : ""}
                     </p>
                     <div className="mt-3 flex items-center gap-3">
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100">
                         <div
                           className="h-full rounded-full bg-brand-accent"
                           style={{ width: `${Math.min(100, Math.max(0, row.progress_pct))}%` }}
                         />
                       </div>
-                      <span className="text-xs font-bold tabular-nums text-slate-700">{row.progress_pct}%</span>
+                      <span className="text-xs font-bold tabular-nums text-zinc-700">{row.progress_pct}%</span>
                     </div>
                   </div>
                 </Link>
@@ -167,9 +171,9 @@ export default function DashboardCoursesPage() {
             </div>
           </div>
 
-          <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
-            <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Rate a course</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          <section className="rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-none dark:border-zinc-800/90 dark:bg-zinc-900 sm:p-8">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Rate a course</h2>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-500">
               Share feedback on courses you are enrolled in. You can update your review anytime. Only enrolled
               learners can submit ratings.
             </p>
@@ -209,7 +213,7 @@ export default function DashboardCoursesPage() {
                 />
               </label>
             </div>
-            {revMsg ? <p className="mt-4 text-sm font-medium text-slate-800">{revMsg}</p> : null}
+            {revMsg ? <p className="mt-4 text-sm font-medium text-zinc-800">{revMsg}</p> : null}
             <button
               type="button"
               disabled={revBusy}

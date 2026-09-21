@@ -43,8 +43,8 @@ function ProfileField({ label, value, wide }: { label: string; value: string | n
   if (value == null || value === "") return null;
   return (
     <div className={wide ? "sm:col-span-2" : ""}>
-      <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 whitespace-pre-wrap text-slate-800">{value}</dd>
+      <dt className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">{label}</dt>
+      <dd className="mt-1 whitespace-pre-wrap text-zinc-800">{value}</dd>
     </div>
   );
 }
@@ -299,64 +299,64 @@ export function AdminSectionContent({ section }: { section: string }) {
   if (section === "data-management") {
     if (dmErr) return <p className="text-sm text-red-800">{dmErr}</p>;
     if (dmDash === null || dmRows === null) {
-      return <p className="text-sm text-slate-600">{tDm("loading")}</p>;
+      return <p className="text-sm text-neutral-500">{tDm("loading")}</p>;
     }
     const { totals } = dmDash;
     return (
       <div className="space-y-8">
-        <div className="rounded-md border border-slate-200/90 bg-slate-50/90 px-5 py-4 text-sm leading-relaxed text-slate-800 dark:border-slate-700 /50 dark:text-slate-200">
-          <p className="font-bold text-brand-ink dark:text-slate-100">{tDm("hubTitle")}</p>
+        <div className="rounded-md border border-neutral-200/90 bg-neutral-50/90 px-5 py-4 text-sm leading-relaxed text-zinc-800 dark:border-zinc-700 /50 dark:text-neutral-200">
+          <p className="font-bold text-brand-ink dark:text-neutral-100">{tDm("hubTitle")}</p>
           <p className="mt-2">{tDm("hubIntro")}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{tDm("cardStudentTitle")}</p>
-            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{tDm("cardStudentBody")}</p>
+          <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-5 shadow-none ">
+            <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{tDm("cardStudentTitle")}</p>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-neutral-300">{tDm("cardStudentBody")}</p>
             <Link href="/dashboard" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
               {tDm("openStudentDash")}
             </Link>
           </div>
-          <div className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{tDm("cardInstructorTitle")}</p>
-            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{tDm("cardInstructorBody")}</p>
+          <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-5 shadow-none ">
+            <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{tDm("cardInstructorTitle")}</p>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-neutral-300">{tDm("cardInstructorBody")}</p>
             <Link href="/dashboard/instructor/students" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
               {tDm("openInstructorStudents")}
             </Link>
           </div>
-          <div className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{tDm("cardAdminTitle")}</p>
-            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{tDm("cardAdminBody")}</p>
+          <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-5 shadow-none ">
+            <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{tDm("cardAdminTitle")}</p>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-neutral-300">{tDm("cardAdminBody")}</p>
             <Link href="/dashboard/admin/enrollments" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
               {tDm("openAdminEnrollments")}
             </Link>
           </div>
         </div>
-        <section className="rounded-md border border-slate-200/90 bg-white p-5 shadow-none ">
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">{tDm("snapshotTitle")}</h2>
+        <section className="rounded-md border border-neutral-200/90 bg-brand-surface p-5 shadow-none ">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">{tDm("snapshotTitle")}</h2>
           <dl className="mt-4 grid gap-3 sm:grid-cols-3">
             <div>
-              <dt className="text-xs font-bold uppercase text-slate-500">{tDm("metricUsers")}</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_users}</dd>
+              <dt className="text-xs font-bold uppercase text-neutral-500">{tDm("metricUsers")}</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums text-brand-ink">{totals.total_users}</dd>
             </div>
             <div>
-              <dt className="text-xs font-bold uppercase text-slate-500">{tDm("metricCourses")}</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_courses}</dd>
+              <dt className="text-xs font-bold uppercase text-neutral-500">{tDm("metricCourses")}</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums text-brand-ink">{totals.total_courses}</dd>
             </div>
             <div>
-              <dt className="text-xs font-bold uppercase text-slate-500">{tDm("metricEnrollments")}</dt>
-              <dd className="mt-1 text-2xl font-extrabold tabular-nums text-brand-ink">{totals.total_enrollments}</dd>
+              <dt className="text-xs font-bold uppercase text-neutral-500">{tDm("metricEnrollments")}</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums text-brand-ink">{totals.total_enrollments}</dd>
             </div>
           </dl>
         </section>
-        <section className="overflow-x-auto rounded-md border border-slate-200/90 bg-white shadow-none ">
-          <h2 className="border-b border-slate-200 px-4 py-3 text-sm font-extrabold uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <section className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface shadow-none ">
+          <h2 className="border-b border-neutral-200 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
             {tDm("recentTitle")}
           </h2>
           {dmRows.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-slate-600">{tDm("recentEmpty")}</p>
+            <p className="px-4 py-6 text-sm text-neutral-500">{tDm("recentEmpty")}</p>
           ) : (
             <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
                 <tr>
                   <th className="px-4 py-3">{tDm("colWhen")}</th>
                   <th className="px-4 py-3">{tDm("colLearner")}</th>
@@ -364,16 +364,16 @@ export function AdminSectionContent({ section }: { section: string }) {
                   <th className="px-4 py-3">{tDm("colInstructor")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-neutral-100">
                 {dmRows.map((e) => (
                   <tr key={`${e.user_email}-${e.course_slug}-${e.created_at}`}>
-                    <td className="px-4 py-3 text-xs text-slate-600">{new Date(e.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-xs text-neutral-500">{new Date(e.created_at).toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <span className="font-semibold text-brand-ink">{e.user_name}</span>
-                      <span className="block text-xs text-slate-500">{e.user_email}</span>
+                      <span className="block text-xs text-neutral-500">{e.user_email}</span>
                     </td>
                     <td className="px-4 py-3 font-semibold text-brand-ink">{e.course_title}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-neutral-500">
                       {e.instructor_name || e.instructor_email ? (
                         <>
                           <span className="font-semibold text-brand-ink">{e.instructor_name ?? "-"}</span>
@@ -395,42 +395,42 @@ export function AdminSectionContent({ section }: { section: string }) {
 
   if (section === "instructors") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (instructors === null) return <p className="text-sm text-slate-600">Loading instructors…</p>;
+    if (instructors === null) return <p className="text-sm text-neutral-500">Loading instructors…</p>;
     return (
-      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
+      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
         <table className="w-full min-w-[520px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Joined</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-neutral-100">
             {instructors.map((u) => (
               <tr key={u.id}>
                 <td className="px-4 py-3 font-semibold text-brand-ink">{u.name}</td>
-                <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{new Date(u.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-neutral-500">{u.email}</td>
+                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(u.created_at).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {instructors.length === 0 ? <p className="p-4 text-sm text-slate-600">No instructor-role accounts yet.</p> : null}
+        {instructors.length === 0 ? <p className="p-4 text-sm text-neutral-500">No instructor-role accounts yet.</p> : null}
       </div>
     );
   }
 
   if (section === "instructor-profiles") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (instructorProfiles === null) return <p className="text-sm text-slate-600">Loading instructor teaching profiles…</p>;
+    if (instructorProfiles === null) return <p className="text-sm text-neutral-500">Loading instructor teaching profiles…</p>;
     return (
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-neutral-500">
           Onboarding questionnaire from instructors who completed registration (joined to name and email).
         </p>
         {instructorProfiles.length === 0 ? (
-          <p className="rounded-md border border-slate-200/90 bg-white  p-6 text-sm text-slate-600 shadow-none">
+          <p className="rounded-md border border-neutral-200/90 bg-brand-surface  p-6 text-sm text-neutral-500 shadow-none">
             No instructor teaching profiles yet.
           </p>
         ) : (
@@ -438,21 +438,21 @@ export function AdminSectionContent({ section }: { section: string }) {
             {instructorProfiles.map((row) => (
               <details
                 key={row.user_id}
-                className="group rounded-md border border-slate-200/90 bg-white  shadow-none open:ring-1 open:ring-slate-200"
+                className="group rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none open:ring-1 open:ring-neutral-200"
               >
                 <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-bold text-brand-ink">{row.user_name}</p>
-                      <p className="text-xs text-slate-600">{row.user_email}</p>
+                      <p className="text-xs text-neutral-500">{row.user_email}</p>
                     </div>
-                    <p className="text-xs font-semibold text-slate-500">
+                    <p className="text-xs font-semibold text-neutral-500">
                       Updated {new Date(row.updated_at).toLocaleString()}
                     </p>
                   </div>
                   <p className="mt-2 text-xs text-brand-accent group-open:hidden">Click to expand full responses</p>
                 </summary>
-                <div className="border-t border-slate-100 px-4 py-4 text-sm sm:px-5">
+                <div className="border-t border-neutral-100 px-4 py-4 text-sm sm:px-5">
                   <dl className="grid gap-3 sm:grid-cols-2">
                     <ProfileField label="Years experience" value={row.years_experience} />
                     <ProfileField label="Teaching formats" value={row.teaching_formats} />
@@ -473,14 +473,14 @@ export function AdminSectionContent({ section }: { section: string }) {
 
   if (section === "student-profiles") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (studentProfiles === null) return <p className="text-sm text-slate-600">Loading student learning profiles…</p>;
+    if (studentProfiles === null) return <p className="text-sm text-neutral-500">Loading student learning profiles…</p>;
     return (
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-neutral-500">
           Submitted questionnaire data from learners. Only students who have saved the form appear here.
         </p>
         {studentProfiles.length === 0 ? (
-          <p className="rounded-md border border-slate-200/90 bg-white  p-6 text-sm text-slate-600 shadow-none">
+          <p className="rounded-md border border-neutral-200/90 bg-brand-surface  p-6 text-sm text-neutral-500 shadow-none">
             No learning profiles saved yet.
           </p>
         ) : (
@@ -488,21 +488,21 @@ export function AdminSectionContent({ section }: { section: string }) {
             {studentProfiles.map((row) => (
               <details
                 key={row.user_id}
-                className="group rounded-md border border-slate-200/90 bg-white  shadow-none open:ring-1 open:ring-slate-200"
+                className="group rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none open:ring-1 open:ring-neutral-200"
               >
                 <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-bold text-brand-ink">{row.user_name}</p>
-                      <p className="text-xs text-slate-600">{row.user_email}</p>
+                      <p className="text-xs text-neutral-500">{row.user_email}</p>
                     </div>
-                    <p className="text-xs font-semibold text-slate-500">
+                    <p className="text-xs font-semibold text-neutral-500">
                       Updated {new Date(row.updated_at).toLocaleString()}
                     </p>
                   </div>
                   <p className="mt-2 text-xs text-brand-accent group-open:hidden">Click to expand full responses</p>
                 </summary>
-                <div className="border-t border-slate-100 px-4 py-4 text-sm sm:px-5">
+                <div className="border-t border-neutral-100 px-4 py-4 text-sm sm:px-5">
                   <dl className="grid gap-3 sm:grid-cols-2">
                     <ProfileField label="Education" value={row.education_level} />
                     <ProfileField label="Weekly hours" value={row.weekly_hours} />
@@ -538,18 +538,18 @@ export function AdminSectionContent({ section }: { section: string }) {
 
   if (section === "reviews") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (adminReviews === null) return <p className="text-sm text-slate-600">Loading reviews…</p>;
+    if (adminReviews === null) return <p className="text-sm text-neutral-500">Loading reviews…</p>;
     if (adminReviews.length === 0) {
       return (
-        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
-          <p className="text-sm leading-relaxed text-slate-600">No learner reviews yet. They appear here after enrolled students rate a course.</p>
+        <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-12 text-center dark:border-zinc-700 /50">
+          <p className="text-sm leading-relaxed text-neutral-500">No learner reviews yet. They appear here after enrolled students rate a course.</p>
         </div>
       );
     }
     return (
-      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white shadow-none ">
+      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface shadow-none ">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Course</th>
@@ -558,10 +558,10 @@ export function AdminSectionContent({ section }: { section: string }) {
               <th className="px-4 py-3">Comment</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-neutral-100">
             {adminReviews.map((r) => (
               <tr key={r.id}>
-                <td className="px-4 py-3 text-xs text-slate-600">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(r.created_at).toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <Link href={`/courses/${r.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                     {r.course_title}
@@ -569,10 +569,10 @@ export function AdminSectionContent({ section }: { section: string }) {
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-semibold text-brand-ink">{r.reviewer_name}</p>
-                  <p className="text-xs text-slate-500">{r.reviewer_email}</p>
+                  <p className="text-xs text-neutral-500">{r.reviewer_email}</p>
                 </td>
                 <td className="px-4 py-3 font-bold tabular-nums text-brand-ink">{r.rating} / 5</td>
-                <td className="max-w-xs px-4 py-3 text-slate-700">{r.comment ? r.comment : "-"}</td>
+                <td className="max-w-xs px-4 py-3 text-zinc-700">{r.comment ? r.comment : "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -593,11 +593,11 @@ export function AdminSectionContent({ section }: { section: string }) {
 
   if (section === "users") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (users === null) return <p className="text-sm text-slate-600">Loading users…</p>;
+    if (users === null) return <p className="text-sm text-neutral-500">Loading users…</p>;
     return (
-      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
+      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
         <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
@@ -606,13 +606,13 @@ export function AdminSectionContent({ section }: { section: string }) {
               <th className="px-4 py-3">Active</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-neutral-100">
             {users.map((u) => (
               <tr key={u.id}>
                 <td className="px-4 py-3 font-semibold text-brand-ink">{u.name}</td>
-                <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                <td className="px-4 py-3 text-neutral-500">{u.email}</td>
                 <td className="px-4 py-3 capitalize">{u.role}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{new Date(u.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(u.created_at).toLocaleString()}</td>
                 <td className="px-4 py-3 text-xs font-bold">{u.is_active ? "Yes" : "No"}</td>
               </tr>
             ))}
@@ -628,15 +628,15 @@ export function AdminSectionContent({ section }: { section: string }) {
 
   if (section === "enrollments") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (enrollments === null) return <p className="text-sm text-slate-600">Loading enrollments…</p>;
+    if (enrollments === null) return <p className="text-sm text-neutral-500">Loading enrollments…</p>;
     return (
       <div className="space-y-4">
-        <div className="rounded-md border border-slate-200/90 bg-slate-50/90 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 /50 dark:text-slate-300">
+        <div className="rounded-md border border-neutral-200/90 bg-neutral-50/90 px-4 py-3 text-sm leading-relaxed text-zinc-700 dark:border-zinc-700 /50 dark:text-neutral-300">
           {tDash("adminEnrollmentsBlurb")}
         </div>
-        <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
+        <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
           <table className="w-full min-w-[880px] text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
               <tr>
                 <th className="px-4 py-3">When</th>
                 <th className="px-4 py-3">Learner (student)</th>
@@ -644,27 +644,27 @@ export function AdminSectionContent({ section }: { section: string }) {
                 <th className="px-4 py-3">Instructor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-neutral-100">
               {enrollments.map((e) => (
                 <tr key={`${e.user_email}-${e.course_slug}-${e.created_at}`}>
-                  <td className="px-4 py-3 text-xs text-slate-600">{new Date(e.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-xs text-neutral-500">{new Date(e.created_at).toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <p className="font-semibold text-brand-ink">{e.user_name}</p>
-                    <p className="text-xs text-slate-500">{e.user_email}</p>
+                    <p className="text-xs text-neutral-500">{e.user_email}</p>
                   </td>
                   <td className="px-4 py-3">
                     <Link href={`/courses/${e.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                       {e.course_title}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-3 text-zinc-700 dark:text-neutral-300">
                     {e.instructor_name || e.instructor_email ? (
                       <>
                         <p className="font-semibold text-brand-ink">{e.instructor_name ?? "-"}</p>
-                        <p className="text-xs text-slate-500">{e.instructor_email ?? ""}</p>
+                        <p className="text-xs text-neutral-500">{e.instructor_email ?? ""}</p>
                       </>
                     ) : (
-                      <span className="text-xs text-slate-500">-</span>
+                      <span className="text-xs text-neutral-500">-</span>
                     )}
                   </td>
                 </tr>
@@ -678,7 +678,7 @@ export function AdminSectionContent({ section }: { section: string }) {
 
   if (section === "courses") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (courses === null) return <p className="text-sm text-slate-600">Loading catalog…</p>;
+    if (courses === null) return <p className="text-sm text-neutral-500">Loading catalog…</p>;
 
     async function reloadCatalog() {
       const [res, pendingRes] = await Promise.all([
@@ -742,7 +742,7 @@ export function AdminSectionContent({ section }: { section: string }) {
       <div className="space-y-10">
         {courseMsg ? (
           <p
-            className={`rounded-xl px-4 py-3 text-sm font-medium ${
+            className={`rounded-md px-4 py-3 text-sm font-medium ${
               courseMsg.includes("approved") || courseMsg.includes("sent back")
                 ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
                 : "border border-red-200 bg-red-50 text-red-900"
@@ -753,23 +753,23 @@ export function AdminSectionContent({ section }: { section: string }) {
         ) : null}
         {pendingCourses && pendingCourses.length > 0 ? (
           <section>
-            <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Awaiting approval</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Awaiting approval</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {pendingCourses.map((c) => (
                 <div key={c.slug} className="rounded-md border border-amber-200/90 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
                   <p className="font-bold text-brand-ink">{c.title}</p>
-                  <p className="mt-1 text-xs text-slate-600">{c.lessons_count} lessons · {c.slug}</p>
+                  <p className="mt-1 text-xs text-neutral-500">{c.lessons_count} lessons · {c.slug}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Link
                       href={`/learn/${c.slug}?preview=1`}
-                      className="rounded-lg border border-brand-primary/30 bg-brand-muted px-3 py-1.5 text-xs font-bold text-brand-primary transition hover:bg-brand-muted"
+                      className="rounded-sm border border-brand-primary/30 bg-brand-muted px-3 py-1.5 text-xs font-bold text-brand-primary transition hover:bg-brand-muted"
                     >
                       Preview
                     </Link>
                     <button
                       type="button"
                       disabled={courseBusySlug === c.slug}
-                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      className="rounded-sm bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                       onClick={() => void approveCourse(c.slug)}
                     >
                       {courseBusySlug === c.slug ? "Saving…" : "Approve"}
@@ -777,7 +777,7 @@ export function AdminSectionContent({ section }: { section: string }) {
                     <button
                       type="button"
                       disabled={courseBusySlug === c.slug}
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-50"
+                      className="rounded-sm border border-neutral-300 bg-brand-surface px-3 py-1.5 text-xs font-bold text-zinc-700 disabled:opacity-50"
                       onClick={() => void rejectCourse(c.slug)}
                     >
                       Send back
@@ -788,25 +788,25 @@ export function AdminSectionContent({ section }: { section: string }) {
             </div>
           </section>
         ) : (
-          <section className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 /50">
-            <p className="text-sm text-slate-600">No courses are waiting for review right now.</p>
+          <section className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-10 text-center dark:border-zinc-700 /50">
+            <p className="text-sm text-neutral-500">No courses are waiting for review right now.</p>
           </section>
         )}
         <section>
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Published catalog</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Published catalog</h2>
           {courses.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-600">No live courses yet. Approve a submitted course to show it here.</p>
+            <p className="mt-4 text-sm text-neutral-500">No live courses yet. Approve a submitted course to show it here.</p>
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {courses.map((c) => (
-                <div key={c.slug} className="flex gap-3 rounded-md border border-slate-200/90 bg-white  p-4 shadow-none">
-                  <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                <div key={c.slug} className="flex gap-3 rounded-md border border-neutral-200/90 bg-brand-surface  p-4 shadow-none">
+                  <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-sm bg-neutral-100">
                     <CourseThumbnail src={c.image_url} alt={c.title} sizes="112px" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-brand-ink">{c.title}</p>
-                    <p className="line-clamp-2 text-xs text-slate-600">{c.description}</p>
-                    <p className="mt-1 text-xs text-slate-500">{c.lessons_count} lessons · {c.slug}</p>
+                    <p className="line-clamp-2 text-xs text-neutral-500">{c.description}</p>
+                    <p className="mt-1 text-xs text-neutral-500">{c.lessons_count} lessons · {c.slug}</p>
                     <div className="mt-2 flex flex-wrap gap-3">
                       <Link href={`/courses/${c.slug}`} className="text-xs font-bold text-brand-accent hover:underline">
                         Course page

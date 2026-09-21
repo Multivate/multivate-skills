@@ -124,7 +124,7 @@ export function ProtectedVideoPlayer({
 
   if (!src) {
     return (
-      <div className={`flex aspect-video w-full items-center justify-center bg-slate-900 text-sm text-white/70 ${className}`}>
+      <div className={`flex aspect-video w-full items-center justify-center bg-zinc-900 text-sm text-white/70 ${className}`}>
         Add a video to preview it here
       </div>
     );
@@ -173,7 +173,7 @@ export function ProtectedVideoPlayer({
           className="absolute inset-0 flex items-center justify-center bg-black/25 transition hover:bg-black/35"
           aria-label="Play video"
         >
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-accent text-white shadow-lg transition hover:scale-105">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-accent text-white shadow-sm transition hover:scale-105">
             <Play className="ml-1 h-7 w-7 fill-current" />
           </span>
         </button>
@@ -196,7 +196,7 @@ export function ProtectedVideoPlayer({
           role="slider"
           aria-label="Seek"
           tabIndex={0}
-          className="group/bar h-1.5 cursor-pointer rounded-full bg-white/25"
+          className="group/bar h-1.5 cursor-pointer rounded-full bg-brand-surface/25"
           onClick={(e) => {
             const rect = barRef.current?.getBoundingClientRect();
             if (!rect) return;
@@ -209,16 +209,16 @@ export function ProtectedVideoPlayer({
           />
         </div>
         <div className="mt-2 flex items-center gap-3 text-white">
-          <button type="button" onClick={() => void togglePlay()} className="rounded-lg p-1 hover:bg-white/10" aria-label={playing ? "Pause" : "Play"}>
+          <button type="button" onClick={() => void togglePlay()} className="rounded-sm p-1 hover:bg-brand-surface/10" aria-label={playing ? "Pause" : "Play"}>
             {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-current" />}
           </button>
-          <button type="button" onClick={toggleMute} className="rounded-lg p-1 hover:bg-white/10" aria-label={muted ? "Unmute" : "Mute"}>
+          <button type="button" onClick={toggleMute} className="rounded-sm p-1 hover:bg-brand-surface/10" aria-label={muted ? "Unmute" : "Mute"}>
             {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </button>
           <span className="text-xs tabular-nums text-white/90">
             {formatTime(current)} / {formatTime(duration)}
           </span>
-          <button type="button" onClick={toggleFullscreen} className="ml-auto rounded-lg p-1 hover:bg-white/10" aria-label="Fullscreen">
+          <button type="button" onClick={toggleFullscreen} className="ml-auto rounded-sm p-1 hover:bg-brand-surface/10" aria-label="Fullscreen">
             <Maximize2 className="h-5 w-5" />
           </button>
         </div>

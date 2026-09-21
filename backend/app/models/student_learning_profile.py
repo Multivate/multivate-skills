@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, Uuid, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -29,6 +29,7 @@ class StudentLearningProfile(Base):
     learning_goals: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     preferred_formats: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     weekly_hours: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    weekly_course_target: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     career_direction: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     extra_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(

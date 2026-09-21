@@ -69,7 +69,7 @@ function NavDropdown({
         <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] border border-brand-ink/10 bg-white py-1.5 shadow-lift">
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] border border-brand-ink/10 bg-brand-surface py-1.5 shadow-sm">
           {group.items.map((item) => {
             const itemActive = navHrefActive(pathname, item.href);
             return (
@@ -78,7 +78,7 @@ function NavDropdown({
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={`block px-4 py-2.5 text-sm font-medium transition ${
-                  itemActive ? accent.itemActive : "text-slate-700 hover:bg-slate-50 hover:text-brand-ink"
+                  itemActive ? accent.itemActive : "text-zinc-700 hover:bg-neutral-50 hover:text-brand-ink"
                 }`}
               >
                 {tDash(`${navItemsNs}.${item.id}`)}
@@ -168,11 +168,11 @@ export function DashboardTopNav({
             <div className="mx-auto hidden min-w-0 max-w-md flex-1 md:block">
               <label className="relative block">
                 <span className="sr-only">{tDash("shell.searchSr")}</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden />
                 <input
                   type="search"
                   placeholder={searchPlaceholder}
-                  className={`w-full rounded-md border border-brand-ink/15 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-brand-ink placeholder:text-brand-ink/40 outline-none transition ${accent.focus}`}
+                  className={`w-full rounded-md border border-brand-ink/15 bg-brand-surface py-2.5 pl-10 pr-3 text-sm font-medium text-brand-ink placeholder:text-brand-ink/40 outline-none transition ${accent.focus}`}
                 />
               </label>
             </div>
@@ -184,12 +184,12 @@ export function DashboardTopNav({
             <NotificationBell label={notificationsLabel} />
             <Link
               href="/dashboard/settings"
-              className="hidden items-center gap-2 rounded-md border border-brand-ink/15 bg-white py-1.5 pl-1.5 pr-3 transition hover:border-brand-ink/30 sm:flex"
+              className="hidden items-center gap-2 rounded-md border border-brand-ink/15 bg-brand-surface py-1.5 pl-1.5 pr-3 transition hover:border-brand-ink/30 sm:flex"
             >
               <UserAvatar name={userName} avatarUrl={userAvatar} className="h-9 w-9 text-sm" fallbackClassName={accent.avatar} />
               <div className="min-w-0 text-left">
                 <p className="truncate text-sm font-bold text-brand-ink">{userName}</p>
-                <p className="text-xs font-medium text-slate-500">{roleLabel}</p>
+                <p className="text-xs font-medium text-neutral-500">{roleLabel}</p>
               </div>
             </Link>
             <button
@@ -204,14 +204,14 @@ export function DashboardTopNav({
         </div>
 
         {showSearch ? (
-          <div className="border-t border-slate-100 px-4 py-2 md:hidden">
+          <div className="border-t border-neutral-100 px-4 py-2 md:hidden">
             <label className="relative block">
               <span className="sr-only">{tDash("shell.searchSr")}</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden />
               <input
                 type="search"
                 placeholder={searchPlaceholder}
-                className={`w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-brand-ink outline-none ${accent.focus}`}
+                className={`w-full rounded-md border border-neutral-200 bg-brand-surface py-2 pl-10 pr-3 text-sm text-brand-ink outline-none ${accent.focus}`}
               />
             </label>
           </div>
@@ -220,11 +220,11 @@ export function DashboardTopNav({
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Close menu" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-[min(20rem,88vw)] flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+          <button type="button" className="absolute inset-0 bg-zinc-900/40" aria-label="Close menu" onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-y-0 left-0 flex w-[min(20rem,88vw)] flex-col bg-brand-surface shadow-sm">
+            <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-4">
               <LogoMark className="max-w-[8rem]" />
-              <button type="button" className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100" onClick={() => setMobileOpen(false)}>
+              <button type="button" className="flex h-10 w-10 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100" onClick={() => setMobileOpen(false)}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -232,21 +232,21 @@ export function DashboardTopNav({
               <Link
                 href="/dashboard"
                 onClick={() => setMobileOpen(false)}
-                className={`mb-4 block rounded-xl px-3 py-2.5 text-sm font-semibold ${homeActive ? accent.active : "text-slate-800"}`}
+                className={`mb-4 block rounded-md px-3 py-2.5 text-sm font-semibold ${homeActive ? accent.active : "text-zinc-800"}`}
               >
                 {tNavItem("home")}
               </Link>
               {groups.map((group) => (
                 <div key={group.id} className="mb-5">
-                  <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">{tNavGroup(group.labelKey)}</p>
+                  <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-wide text-neutral-400">{tNavGroup(group.labelKey)}</p>
                   <ul className="space-y-0.5">
                     {group.items.map((item) => (
                       <li key={item.href}>
                         <Link
                           href={item.href}
                           onClick={() => setMobileOpen(false)}
-                          className={`block rounded-xl px-3 py-2.5 text-sm font-medium ${
-                            navHrefActive(pathname, item.href) ? accent.active : "text-slate-700 hover:bg-slate-50"
+                          className={`block rounded-md px-3 py-2.5 text-sm font-medium ${
+                            navHrefActive(pathname, item.href) ? accent.active : "text-zinc-700 hover:bg-neutral-50"
                           }`}
                         >
                           {tDash(`${navItemsNs}.${item.id}`)}
@@ -256,11 +256,11 @@ export function DashboardTopNav({
                   </ul>
                 </div>
               ))}
-              <div className="border-t border-slate-200 pt-4">
+              <div className="border-t border-neutral-200 pt-4">
                 <Link
                   href="/dashboard/settings"
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold ${settingsActive ? accent.active : "text-slate-700 hover:bg-slate-50"}`}
+                  className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold ${settingsActive ? accent.active : "text-zinc-700 hover:bg-neutral-50"}`}
                 >
                   <Settings className="h-4 w-4" />
                   {tNavItem("settings")}
@@ -271,7 +271,7 @@ export function DashboardTopNav({
                     setMobileOpen(false);
                     onLogout();
                   }}
-                  className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-zinc-700 hover:bg-neutral-50"
                 >
                   <LogOut className="h-4 w-4" />
                   {tDash("shell.logOut")}

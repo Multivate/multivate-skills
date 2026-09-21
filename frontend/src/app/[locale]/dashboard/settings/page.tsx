@@ -149,7 +149,7 @@ export default function DashboardSettingsPage() {
   }
 
   const inputClass =
-    "mt-2 w-full max-w-md rounded-md border border-brand-ink/15 bg-white px-4 py-2.5 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+    "mt-2 w-full max-w-md rounded-md border border-brand-ink/15 bg-brand-surface px-4 py-2.5 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
 
   return (
     <div className="mx-auto max-w-5xl space-y-10">
@@ -377,7 +377,7 @@ export default function DashboardSettingsPage() {
                     await logout();
                     hardNavigate("/", locale);
                   }}
-                  className="mt-6 inline-flex border border-brand-ink/15 bg-white px-5 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white"
+                  className="mt-6 inline-flex border border-brand-ink/15 bg-brand-surface px-5 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white"
                 >
                   {t("signOut")}
                 </button>

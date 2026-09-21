@@ -33,13 +33,13 @@ def send_message(db: Session, sender_id: UUID, payload: MessageCreate) -> Messag
     db.commit()
     db.refresh(row)
     sender = db.execute(select(User).where(User.id == sender_id)).scalar_one()
-    notification_service.create_notification(
+    notification_service.safe_notify(
         db,
         user_id=recipient.id,
         kind="message",
         title=f"New message from {sender.name}",
         body=payload.subject.strip() or "You have a new message.",
-        link_href="/dashboard/messages",
+        link_href=notification_service.inbox_href_for(recipient),
     )
     return _serialize(row, viewer_id=sender_id, correspondent=recipient)
 

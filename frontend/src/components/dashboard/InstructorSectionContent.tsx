@@ -114,11 +114,11 @@ function InstructorContentUpload() {
   };
 
   if (err) return <p className="text-sm text-red-800">{err}</p>;
-  if (!dash) return <p className="text-sm text-slate-600">Loading your courses…</p>;
+  if (!dash) return <p className="text-sm text-neutral-500">Loading your courses…</p>;
   if (dash.courses.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center dark:border-slate-700 /50">
-        <p className="text-sm leading-relaxed text-slate-600">
+      <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-10 text-center dark:border-zinc-700 /50">
+        <p className="text-sm leading-relaxed text-neutral-500">
           Create a course first, then add lessons and media here.
         </p>
         <Link
@@ -133,16 +133,16 @@ function InstructorContentUpload() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <p className="text-sm leading-relaxed text-slate-600">
+      <p className="text-sm leading-relaxed text-neutral-500">
         Add structured lessons to a course you own. Each lesson appears in the public curriculum for that course.
       </p>
-      <div className="space-y-4 rounded-md border border-slate-200/90 bg-white  p-6 shadow-none">
-        <label className="block text-sm font-semibold text-slate-800">
+      <div className="space-y-4 rounded-md border border-neutral-200/90 bg-brand-surface  p-6 shadow-none">
+        <label className="block text-sm font-semibold text-zinc-800">
           Course
           <select
             value={courseSlug}
             onChange={(e) => setCourseSlug(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+            className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100"
           >
             {dash.courses.map((c) => (
               <option key={c.slug} value={c.slug}>
@@ -151,29 +151,29 @@ function InstructorContentUpload() {
             ))}
           </select>
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-zinc-800">
           Lesson title
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+            className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100"
           />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-zinc-800">
           Body (optional)
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100" />
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100" />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-zinc-800">
           Duration (minutes)
           <input
             type="number"
             min={0}
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value) || 0)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+            className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100"
           />
         </label>
-        {saveMsg ? <p className="text-sm text-slate-700">{saveMsg}</p> : null}
+        {saveMsg ? <p className="text-sm text-zinc-700">{saveMsg}</p> : null}
         <button
           type="button"
           disabled={busy}
@@ -267,8 +267,8 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "create-course") {
     return (
-      <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none">
-        <p className="text-sm text-slate-600">Course creation now lives in the full studio experience.</p>
+      <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-8 text-center shadow-none">
+        <p className="text-sm text-neutral-500">Course creation now lives in the full studio experience.</p>
         <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand mt-4 inline-flex !min-w-0 text-sm">
           Open course studio
         </Link>
@@ -278,8 +278,8 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "content-upload") {
     return (
-      <div className="rounded-md border border-slate-200/90 bg-white p-8 text-center shadow-none dark:border-slate-800 ">
-        <p className="text-sm leading-relaxed text-slate-600">
+      <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-8 text-center shadow-none dark:border-zinc-800 ">
+        <p className="text-sm leading-relaxed text-neutral-500">
           Add lessons and videos in Course Studio.
         </p>
         <Link href="/dashboard/instructor/studio" className="btn-primary-brand mt-5 inline-flex !min-w-0 text-sm !no-underline">
@@ -291,11 +291,11 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "students") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (students === null) return <p className="text-sm text-slate-600">Loading enrollments…</p>;
+    if (students === null) return <p className="text-sm text-neutral-500">Loading enrollments…</p>;
     if (students.length === 0) {
       return (
-        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
-          <p className="text-sm leading-relaxed text-slate-600">
+        <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-12 text-center dark:border-zinc-700 /50">
+          <p className="text-sm leading-relaxed text-neutral-500">
             Enrolled students will show up here.
           </p>
           <Link href="/courses" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
@@ -306,15 +306,15 @@ export function InstructorSectionContent({ section }: { section: string }) {
     }
     return (
       <div className="space-y-4">
-        <p className="max-w-3xl text-sm leading-relaxed text-slate-700 dark:text-slate-300">{tRel("instructorRosterBlurb")}</p>
+        <p className="max-w-3xl text-sm leading-relaxed text-zinc-700 dark:text-neutral-300">{tRel("instructorRosterBlurb")}</p>
         <p>
           <Link href="/courses" className="text-sm font-bold text-brand-accent hover:underline">
             {tRel("browseCatalogCta")}
           </Link>
         </p>
-        <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
+        <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
         <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
             <tr>
               <th className="px-4 py-3">Enrolled</th>
               <th className="px-4 py-3">Learner</th>
@@ -323,20 +323,20 @@ export function InstructorSectionContent({ section }: { section: string }) {
               <th className="px-4 py-3">Progress</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-neutral-100">
             {students.map((s) => (
               <tr key={`${s.user_id}-${s.course_slug}-${s.enrolled_at}`}>
-                <td className="px-4 py-3 text-xs text-slate-600">{new Date(s.enrolled_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(s.enrolled_at).toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <p className="font-semibold text-brand-ink">{s.user_name}</p>
-                  <p className="text-xs text-slate-500">{s.user_email}</p>
+                  <p className="text-xs text-neutral-500">{s.user_email}</p>
                 </td>
                 <td className="px-4 py-3">
                   <Link href={`/courses/${s.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                     {s.course_title}
                   </Link>
                 </td>
-                <td className="px-4 py-3 tabular-nums text-slate-700">{s.lesson_done ?? 0}</td>
+                <td className="px-4 py-3 tabular-nums text-zinc-700">{s.lesson_done ?? 0}</td>
                 <td className="px-4 py-3 tabular-nums font-semibold text-brand-ink">{s.progress_pct ?? 0}%</td>
               </tr>
             ))}
@@ -356,22 +356,22 @@ export function InstructorSectionContent({ section }: { section: string }) {
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-6">
           <div>
             <p className="tag-overline">Instructor</p>
-            <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink">Analytics</h1>
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink">Analytics</h1>
             <p className="mt-2 text-sm text-brand-ink/60">Enrollment and learner activity across your courses.</p>
           </div>
           <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
         </header>
 
         <section className="grid grid-cols-1 gap-px overflow-hidden border border-brand-ink/10 bg-brand-ink/10 sm:grid-cols-3">
-          <div className="bg-white px-5 py-5">
+          <div className="bg-brand-surface px-5 py-5">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Courses</p>
             <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.total_courses}</p>
           </div>
-          <div className="bg-white px-5 py-5">
+          <div className="bg-brand-surface px-5 py-5">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Enrollments</p>
             <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.total_enrollments}</p>
           </div>
-          <div className="bg-white px-5 py-5">
+          <div className="bg-brand-surface px-5 py-5">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Unique learners</p>
             <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.unique_learners}</p>
           </div>
@@ -385,7 +385,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
           .
         </p>
 
-        <section className="border border-brand-ink/10 bg-white">
+        <section className="border border-brand-ink/10 bg-brand-surface">
           <div className="border-b border-brand-ink/10 px-5 py-4 sm:px-6">
             <h2 className="font-display text-lg font-semibold text-brand-ink">Per-course enrollments</h2>
             <p className="mt-1 text-sm text-brand-ink/55">How each course is performing</p>
@@ -431,18 +431,18 @@ export function InstructorSectionContent({ section }: { section: string }) {
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-6">
           <div>
             <p className="tag-overline">Instructor</p>
-            <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink">Earnings</h1>
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink">Earnings</h1>
             <p className="mt-2 text-sm text-brand-ink/60">Completed payment volume from your courses.</p>
           </div>
           <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
         </header>
 
-        <section className="border border-brand-ink/10 bg-white px-5 py-8 sm:px-8">
+        <section className="border border-brand-ink/10 bg-brand-surface px-5 py-8 sm:px-8">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">
             Completed course revenue
           </p>
           <p
-            className="mt-4 font-display text-4xl font-bold tabular-nums tracking-tight text-brand-ink"
+            className="mt-4 font-display text-4xl font-bold tabular-nums tracking-tighter text-brand-ink"
             title={formatMoney(dash.totals.revenue_completed_cents)}
           >
             {formatMoneyCompact(dash.totals.revenue_completed_cents)}
@@ -465,11 +465,11 @@ export function InstructorSectionContent({ section }: { section: string }) {
 
   if (section === "reviews") {
     if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (reviews === null) return <p className="text-sm text-slate-600">Loading reviews…</p>;
+    if (reviews === null) return <p className="text-sm text-neutral-500">Loading reviews…</p>;
     if (reviews.length === 0) {
       return (
-        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 /50">
-          <p className="text-sm leading-relaxed text-slate-600">
+        <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-12 text-center dark:border-zinc-700 /50">
+          <p className="text-sm leading-relaxed text-neutral-500">
             Reviews from your students appear here.
           </p>
           <Link href="/dashboard/instructor/analytics" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
@@ -479,9 +479,9 @@ export function InstructorSectionContent({ section }: { section: string }) {
       );
     }
     return (
-      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white  shadow-none">
+      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
             <tr>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Course</th>
@@ -490,10 +490,10 @@ export function InstructorSectionContent({ section }: { section: string }) {
               <th className="px-4 py-3">Comment</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-neutral-100">
             {reviews.map((r) => (
               <tr key={r.id}>
-                <td className="px-4 py-3 text-xs text-slate-600">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(r.created_at).toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <Link href={`/courses/${r.course_slug}`} className="font-semibold text-brand-accent hover:underline">
                     {r.course_title}
@@ -501,10 +501,10 @@ export function InstructorSectionContent({ section }: { section: string }) {
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-semibold text-brand-ink">{r.reviewer_name}</p>
-                  <p className="text-xs text-slate-500">{r.reviewer_email}</p>
+                  <p className="text-xs text-neutral-500">{r.reviewer_email}</p>
                 </td>
                 <td className="px-4 py-3 font-bold tabular-nums text-brand-ink">{r.rating} / 5</td>
-                <td className="max-w-xs px-4 py-3 text-slate-700">{r.comment ? r.comment : "-"}</td>
+                <td className="max-w-xs px-4 py-3 text-zinc-700">{r.comment ? r.comment : "-"}</td>
               </tr>
             ))}
           </tbody>

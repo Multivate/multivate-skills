@@ -19,7 +19,7 @@ function ThumbnailPlaceholder({ compact }: { compact?: boolean }) {
   return (
     <div className="flex h-full min-h-[10rem] w-full items-center justify-center bg-brand-muted">
       <div
-        className={`flex items-center justify-center rounded-xl border border-brand-accent/25 bg-white shadow-sm ${
+        className={`flex items-center justify-center rounded-md border border-brand-accent/25 bg-brand-surface shadow-sm ${
           compact ? "h-10 w-10" : "h-12 w-12"
         }`}
       >

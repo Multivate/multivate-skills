@@ -136,7 +136,7 @@ export function AdminPaymentsPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-brand-ink/10 bg-white p-5 sm:p-6">
+      <div className="rounded-md border border-brand-ink/10 bg-brand-surface p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-xl font-bold text-brand-ink">Payment review</h2>
@@ -144,12 +144,12 @@ export function AdminPaymentsPanel() {
               Approve only when the bank amount matches the invoice.
             </p>
           </div>
-          <div className="flex rounded-xl border border-brand-ink/10 bg-brand-muted/60 p-1">
+          <div className="flex rounded-md border border-brand-ink/10 bg-brand-muted/60 p-1">
             <button
               type="button"
               onClick={() => setFilter("outstanding")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                filter === "outstanding" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/50"
+              className={`rounded-sm px-3 py-1.5 text-xs font-semibold transition ${
+                filter === "outstanding" ? "bg-brand-surface text-brand-ink shadow-sm" : "text-brand-ink/50"
               }`}
             >
               Outstanding ({outstanding.length})
@@ -157,8 +157,8 @@ export function AdminPaymentsPanel() {
             <button
               type="button"
               onClick={() => setFilter("all")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                filter === "all" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/50"
+              className={`rounded-sm px-3 py-1.5 text-xs font-semibold transition ${
+                filter === "all" ? "bg-brand-surface text-brand-ink shadow-sm" : "text-brand-ink/50"
               }`}
             >
               All
@@ -167,19 +167,19 @@ export function AdminPaymentsPanel() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-amber-800/70">Awaiting review</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-amber-950">
               {payments.filter((p) => p.status === "awaiting_review").length}
             </p>
           </div>
-          <div className="rounded-xl border border-brand-ink/10 bg-brand-muted/50 px-4 py-3">
+          <div className="rounded-md border border-brand-ink/10 bg-brand-muted/50 px-4 py-3">
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-brand-ink/45">Pending checkout</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-brand-ink">
               {payments.filter((p) => p.status === "pending").length}
             </p>
           </div>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-emerald-800/70">Paid</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-950">
               {payments.filter((p) => p.status === "paid" || p.status === "completed").length}
@@ -190,7 +190,7 @@ export function AdminPaymentsPanel() {
 
       {msg ? (
         <p
-          className={`rounded-xl px-4 py-3 text-sm font-medium ${
+          className={`rounded-md px-4 py-3 text-sm font-medium ${
             msg.startsWith("Payment approved")
               ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
               : msg.startsWith("Payment rejected")
@@ -205,7 +205,7 @@ export function AdminPaymentsPanel() {
       {err ? <p className="text-sm text-red-800">{err}</p> : null}
 
       {visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-brand-ink/15 bg-brand-muted/30 px-6 py-12 text-center">
+        <div className="rounded-md border border-dashed border-brand-ink/15 bg-brand-muted/30 px-6 py-12 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-brand-ink/30" />
           <p className="mt-3 text-sm text-brand-ink/55">
             {filter === "outstanding" ? "No outstanding payments right now." : "No payments yet."}
@@ -217,7 +217,7 @@ export function AdminPaymentsPanel() {
             const canApprove = p.status === "awaiting_review";
             const isPending = p.status === "pending";
             return (
-              <li key={p.id} className="rounded-2xl border border-brand-ink/10 bg-white p-5 shadow-sm">
+              <li key={p.id} className="rounded-md border border-brand-ink/10 bg-brand-surface p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-display text-lg font-bold text-brand-ink">
@@ -285,7 +285,7 @@ export function AdminPaymentsPanel() {
                           }))
                         }
                         placeholder={(p.amount_cents / 100).toFixed(2)}
-                        className="mt-1.5 w-full rounded-xl border border-brand-ink/15 bg-brand-paper px-3 py-2.5 text-sm outline-none ring-brand-accent/25 focus:border-brand-accent focus:ring-2"
+                        className="mt-1.5 w-full rounded-md border border-brand-ink/15 bg-brand-paper px-3 py-2.5 text-sm outline-none ring-brand-accent/25 focus:border-brand-accent focus:ring-2"
                       />
                       <span className="mt-1 block text-xs font-normal text-brand-ink/45">
                         Must equal {money(p.amount_cents, p.currency)} exactly.
@@ -296,7 +296,7 @@ export function AdminPaymentsPanel() {
                         type="button"
                         disabled={busyId === p.id}
                         onClick={() => void approve(p)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-brand-accent px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-accent-dark disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-brand-accent px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-accent-dark disabled:opacity-50"
                       >
                         <CheckCircle2 className="h-4 w-4" />
                         {busyId === p.id ? "Saving…" : "Approve & enroll"}
@@ -305,7 +305,7 @@ export function AdminPaymentsPanel() {
                         type="button"
                         disabled={busyId === p.id}
                         onClick={() => void reject(p)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-800 transition hover:bg-red-100 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-800 transition hover:bg-red-100 disabled:opacity-50"
                       >
                         <XCircle className="h-4 w-4" />
                         Reject
@@ -313,7 +313,7 @@ export function AdminPaymentsPanel() {
                     </div>
                   </div>
                 ) : isPending ? (
-                  <p className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-muted/60 px-3 py-2 text-xs text-brand-ink/60">
+                  <p className="mt-4 inline-flex items-center gap-2 rounded-md bg-brand-muted/60 px-3 py-2 text-xs text-brand-ink/60">
                     <Lock className="h-3.5 w-3.5" />
                     Waiting for the student to finish checkout or submit a bank claim. Do not approve yet.
                   </p>

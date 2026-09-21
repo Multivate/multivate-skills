@@ -8,7 +8,7 @@ from app.models.enrollment import Enrollment
 from app.models.enrollment_status import EnrollmentStatus
 from app.models.role import UserRole
 from app.models.user import User
-from app.services import course_service
+from app.services import course_service, notification_service
 
 
 def enroll_by_slug(db: Session, user: User, course_slug: str) -> None:
@@ -32,6 +32,7 @@ def enroll_by_slug(db: Session, user: User, course_slug: str) -> None:
         existing.status = EnrollmentStatus.ENROLLED
         db.add(existing)
         db.commit()
+        notification_service.notify_enrollment(db, student=user, course=course)
         return
     db.add(
         Enrollment(
@@ -43,6 +44,7 @@ def enroll_by_slug(db: Session, user: User, course_slug: str) -> None:
         )
     )
     db.commit()
+    notification_service.notify_enrollment(db, student=user, course=course)
 
 
 def unenroll_by_slug(db: Session, user: User, course_slug: str) -> None:

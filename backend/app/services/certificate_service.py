@@ -65,6 +65,25 @@ def issue_for_course(db: Session, user_id: UUID, course_slug: str) -> Certificat
     db.add(cert)
     db.commit()
     db.refresh(cert)
+    from app.services import notification_service
+
+    notification_service.safe_notify(
+        db,
+        user_id=user_id,
+        kind="certificate",
+        title="Certificate ready",
+        body=f"Your certificate for {course.title} is ready to download.",
+        link_href="/dashboard/certificates",
+    )
+    if course.instructor_id:
+        notification_service.safe_notify(
+            db,
+            user_id=course.instructor_id,
+            kind="certificate_issued",
+            title="Student earned a certificate",
+            body=f"A learner completed {course.title} and claimed a certificate.",
+            link_href="/dashboard/instructor/students",
+        )
     return CertificateOut(
         id=cert.id,
         course_slug=course.slug,

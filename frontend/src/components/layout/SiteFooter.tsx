@@ -23,13 +23,13 @@ export async function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id="about" className="w-full bg-brand-ink text-white">
+    <footer id="about" className="w-full bg-brand-navy text-white">
       <div className="border-b border-white/10">
         <div className="container-page py-16 sm:py-20">
           <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <LogoMark variant="inverse" className="max-h-9 max-w-[11rem]" />
-              <h2 className="mt-8 max-w-xl font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="mt-8 max-w-xl heading-display text-3xl text-brand-paper sm:text-4xl">
                 {t("ctaTitle")}
               </h2>
               <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
@@ -117,7 +117,7 @@ export async function SiteFooter() {
             <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t("newsletter")}</h3>
             <p className="mt-4 text-sm leading-relaxed text-white/60">{t("newsletterBody")}</p>
             <form
-              className="mt-4 flex w-full items-stretch overflow-hidden rounded-md border border-white/15 bg-white/5 focus-within:border-brand-accent"
+              className="mt-4 flex w-full items-stretch overflow-hidden rounded-md border border-white/15 bg-brand-surface/5 focus-within:border-brand-accent"
               action="#"
               method="post"
             >

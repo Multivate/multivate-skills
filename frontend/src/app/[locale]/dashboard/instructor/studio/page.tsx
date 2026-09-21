@@ -108,9 +108,9 @@ export default function InstructorStudioListPage() {
       ) : null}
 
       {rows && rows.length === 0 ? (
-        <div className="border border-brand-ink/10 bg-white px-6 py-16 text-center sm:px-10">
+        <div className="border border-brand-ink/10 bg-brand-surface px-6 py-16 text-center sm:px-10">
           <p className="tag-overline">Empty studio</p>
-          <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl">
+          <h2 className="mt-3 font-display text-2xl font-bold tracking-tighter text-brand-ink sm:text-3xl">
             Build your first course
           </h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-brand-ink/60">
@@ -127,7 +127,7 @@ export default function InstructorStudioListPage() {
       ) : null}
 
       {rows && rows.length > 0 ? (
-        <div className="border border-brand-ink/10 bg-white">
+        <div className="border border-brand-ink/10 bg-brand-surface">
           <div className="hidden grid-cols-[minmax(0,1.4fr)_7rem_6rem_6rem_8rem_10rem] gap-4 border-b border-brand-ink/10 px-5 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45 sm:grid sm:px-6">
             <span>Course</span>
             <span>Status</span>

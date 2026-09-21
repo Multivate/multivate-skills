@@ -11,7 +11,7 @@ export function UserAvatar({
   name,
   avatarUrl,
   className = "h-10 w-10 text-sm",
-  fallbackClassName = "bg-slate-100 text-brand-panel dark:bg-slate-800 dark:text-violet-200",
+  fallbackClassName = "bg-neutral-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100",
 }: UserAvatarProps) {
   const src = resolveAvatarUrl(avatarUrl);
   const initial = (name.trim()[0] ?? "?").toUpperCase();

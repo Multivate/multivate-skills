@@ -60,8 +60,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-sm font-medium text-slate-600">{tDash("loadingWorkspace")}</p>
+      <div className="flex min-h-screen items-center justify-center bg-brand-paper">
+        <p className="text-sm font-medium text-neutral-500">{tDash("loadingWorkspace")}</p>
       </div>
     );
   }

@@ -31,7 +31,7 @@ export function MentorCatalogCard({ mentor, layout = "grid", onMessage }: Props)
 
   return (
     <article
-      className={`group flex h-full flex-col overflow-hidden rounded-xl border border-brand-accent/25 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-accent/45 hover:shadow-md dark:border-brand-accent/30 dark:bg-slate-900 ${shellClass}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-md border border-brand-accent/25 bg-brand-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-accent/45 hover:shadow-sm dark:border-brand-accent/30 dark:bg-zinc-900 ${shellClass}`}
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-brand-accent/[0.04] dark:bg-brand-accent/8">
         <div className="absolute inset-0 flex items-center justify-center">
@@ -50,14 +50,14 @@ export function MentorCatalogCard({ mentor, layout = "grid", onMessage }: Props)
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-1 text-[0.9375rem] font-bold text-slate-900 transition group-hover:text-brand-primary dark:text-white sm:text-base">
+        <h3 className="line-clamp-1 text-[0.9375rem] font-bold text-zinc-900 transition group-hover:text-brand-primary dark:text-white sm:text-base">
           {mentor.full_name}
         </h3>
-        <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+        <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
           {mentor.headline}
         </p>
         {mentor.city ? (
-          <p className="mt-2 flex items-center gap-1 text-xs font-medium text-slate-500">
+          <p className="mt-2 flex items-center gap-1 text-xs font-medium text-neutral-500">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-brand-accent" aria-hidden />
             <span className="truncate">
               {mentor.city}
@@ -65,20 +65,20 @@ export function MentorCatalogCard({ mentor, layout = "grid", onMessage }: Props)
             </span>
           </p>
         ) : null}
-        <p className="mt-3 line-clamp-3 flex-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{mentor.bio}</p>
+        <p className="mt-3 line-clamp-3 flex-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">{mentor.bio}</p>
 
         <div className="mt-4 flex gap-2">
           <button
             type="button"
             onClick={() => onMessage(mentor.slug)}
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-accent-dark active:scale-[0.98]"
+            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md bg-brand-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-accent-dark active:scale-[0.98]"
           >
             <MessageCircle className="h-4 w-4" />
             {continuing ? t("continueChat") : t("messageCta")}
           </button>
           <Link
             href={`/mentors/${mentor.slug}`}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:border-brand-primary hover:text-brand-primary dark:border-slate-700 dark:text-slate-200"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 text-zinc-700 transition hover:border-brand-primary hover:text-brand-primary dark:border-zinc-700 dark:text-neutral-200"
             aria-label={`View ${mentor.full_name}`}
           >
             <ArrowRight className="h-4 w-4" />

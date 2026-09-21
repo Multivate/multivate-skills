@@ -37,6 +37,7 @@ def upsert_review(db: Session, user_id: UUID, payload: ReviewCreate) -> ReviewOu
     existing = db.execute(
         select(CourseReview).where(CourseReview.user_id == user_id, CourseReview.course_id == course.id)
     ).scalar_one_or_none()
+    is_new = existing is None
     if existing:
         existing.rating = payload.rating
         existing.comment = payload.comment
@@ -47,6 +48,34 @@ def upsert_review(db: Session, user_id: UUID, payload: ReviewCreate) -> ReviewOu
     db.commit()
     db.refresh(row)
     invalidate_public_reviews_cache()
+    if is_new:
+        from app.services import notification_service
+
+        notification_service.safe_notify(
+            db,
+            user_id=user_id,
+            kind="review_saved",
+            title="Review saved",
+            body=f"Thanks for reviewing {course.title}.",
+            link_href="/dashboard/courses",
+        )
+        if course.instructor_id and course.instructor_id != user_id:
+            stars = f"{payload.rating} star" if payload.rating == 1 else f"{payload.rating} stars"
+            notification_service.safe_notify(
+                db,
+                user_id=course.instructor_id,
+                kind="new_review",
+                title="New course review",
+                body=f"{user.name} left {stars} on {course.title}.",
+                link_href="/dashboard/instructor/reviews",
+            )
+        notification_service.notify_admins(
+            db,
+            kind="new_review",
+            title="New course review",
+            body=f"{user.name} reviewed {course.title} ({payload.rating}/5).",
+            link_href="/dashboard/admin/reviews",
+        )
     return _to_out(row, course, user)
 
 

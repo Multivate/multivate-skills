@@ -14,7 +14,7 @@ export default async function MentorProfilePage({ params }: Props) {
   return (
     <>
       <SiteHeader />
-      <main className="bg-white dark:bg-slate-950">
+      <main className="bg-brand-surface dark:bg-zinc-950">
         <MentorProfileClient mentor={mentor} />
       </main>
       <SiteFooter />

@@ -8,7 +8,7 @@ from app.core.deps import get_current_user
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.certificate import CertificateOut
-from app.schemas.learning import MyCourseItem, ProgressUpdate, RecommendedCourseOut
+from app.schemas.learning import MyCourseItem, ProgressUpdate, RecommendedCourseOut, WeeklyCourseTargetIn, WeeklyCourseTargetOut
 from app.services import certificate_service, learning_service, recommendation_service
 
 router = APIRouter(prefix="/learning", tags=["learning"])
@@ -21,6 +21,25 @@ def read_my_courses(
 ) -> list[MyCourseItem]:
     """Return the signed-in learner's enrollments joined to course catalog rows."""
     return learning_service.list_my_courses(db, user.id)
+
+
+@router.get("/weekly-target", response_model=WeeklyCourseTargetOut)
+def read_weekly_target(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> WeeklyCourseTargetOut:
+    return learning_service.get_weekly_course_target(db, user.id)
+
+
+@router.patch("/weekly-target", response_model=WeeklyCourseTargetOut)
+def patch_weekly_target(
+    body: WeeklyCourseTargetIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> WeeklyCourseTargetOut:
+    if user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students only")
+    return learning_service.set_weekly_course_target(db, user.id, body.weekly_course_target)
 
 
 @router.get("/recommendations", response_model=list[RecommendedCourseOut])

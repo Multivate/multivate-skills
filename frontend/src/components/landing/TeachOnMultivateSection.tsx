@@ -1,4 +1,3 @@
-import { ArrowRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
@@ -31,7 +30,6 @@ export async function TeachOnMultivateSection() {
                 className="btn-primary-brand inline-flex items-center justify-center gap-2 sm:w-auto"
               >
                 {t("ctaInstructor")}
-                <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.25} />
               </Link>
               <Link href="/login?from=%2Fdashboard%2Finstructor%2Fstudio" className="btn-outline-brand sm:w-auto">
                 {t("ctaStudio")}
@@ -59,7 +57,7 @@ export async function TeachOnMultivateSection() {
               </li>
             </ul>
             <Link href="/courses" className="mt-8 inline-flex text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
-              {t("ctaBrowse")} →
+              {t("ctaBrowse")}
             </Link>
           </aside>
         </div>

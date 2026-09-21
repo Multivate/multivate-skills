@@ -47,18 +47,13 @@ export function SuggestionChipsField({
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-        {Icon ? <Icon className="h-4 w-4 text-brand-primary" aria-hidden /> : null}
+      <label htmlFor={id} className="flex items-center gap-2 text-sm font-semibold text-brand-ink">
+        {Icon ? <Icon className="h-4 w-4 text-brand-accent" aria-hidden /> : null}
         {label}
         {required ? <span className="text-red-600">*</span> : null}
       </label>
-      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-      <div
-        id={id}
-        role="group"
-        aria-label={label}
-        className="mt-2 flex flex-wrap gap-2"
-      >
+      {hint ? <p className="mt-1 text-sm text-brand-ink/55">{hint}</p> : null}
+      <div id={id} role="group" aria-label={label} className="mt-3 flex flex-wrap gap-2">
         {suggestions.map((suggestion) => {
           const active = selected.includes(suggestion);
           return (
@@ -67,10 +62,10 @@ export function SuggestionChipsField({
               type="button"
               aria-pressed={active}
               onClick={() => toggle(suggestion)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+              className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                 active
-                  ? "border-brand-secondary/60 bg-brand-secondary/15 text-brand-ink shadow-sm ring-1 ring-brand-secondary/30"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-brand-secondary/40 hover:bg-brand-secondary/5 hover:text-brand-ink"
+                  ? "border-brand-navy bg-brand-navy text-brand-paper"
+                  : "border-brand-ink/15 bg-white text-brand-ink/80 hover:border-brand-navy/40 hover:text-brand-ink"
               }`}
             >
               {suggestion}
@@ -78,11 +73,6 @@ export function SuggestionChipsField({
           );
         })}
       </div>
-      {selected.length > 0 ? (
-        <p className="mt-2 text-xs text-slate-500" aria-live="polite">
-          {selected.join(" · ")}
-        </p>
-      ) : null}
     </div>
   );
 }

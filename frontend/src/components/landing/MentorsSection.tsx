@@ -81,10 +81,10 @@ export function MentorsSection({ initialMentors = [] }: { initialMentors?: Publi
         </div>
 
         {loading ? (
-          <p className="mt-10 text-sm text-slate-500">{t("loading")}</p>
+          <p className="mt-10 text-sm text-neutral-500">{t("loading")}</p>
         ) : mentors.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{t("empty")}</p>
+          <div className="mt-10 border border-dashed border-neutral-200 bg-brand-surface px-6 py-12">
+            <p className="max-w-prose text-sm leading-relaxed text-neutral-500">{t("empty")}</p>
             <Link href="/mentors" className="btn-outline-brand mt-5 inline-flex text-sm !py-2.5">
               {t("viewAll")}
             </Link>
@@ -103,7 +103,7 @@ export function MentorsSection({ initialMentors = [] }: { initialMentors?: Publi
               type="button"
               aria-label={t("scrollLeft")}
               onClick={() => scrollBy(-1)}
-              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-brand-surface text-zinc-700 shadow-sm transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
             >
               <ChevronLeft className="h-5 w-5" strokeWidth={2} />
             </button>
@@ -111,7 +111,7 @@ export function MentorsSection({ initialMentors = [] }: { initialMentors?: Publi
               type="button"
               aria-label={t("scrollRight")}
               onClick={() => scrollBy(1)}
-              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-brand-surface text-zinc-700 shadow-sm transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
             >
               <ChevronRight className="h-5 w-5" strokeWidth={2} />
             </button>

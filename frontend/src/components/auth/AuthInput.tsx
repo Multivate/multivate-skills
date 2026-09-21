@@ -33,7 +33,7 @@ export function AuthInput({
       </label>
       <div className="relative mt-1.5">
         <Icon
-          className="pointer-events-none absolute left-3.5 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-neutral-400"
           strokeWidth={2}
           aria-hidden
         />
@@ -47,7 +47,7 @@ export function AuthInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-brand-ink/15 bg-white py-3 pl-11 pr-4 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+          className="w-full rounded-md border border-brand-ink/15 bg-brand-surface py-3 pl-11 pr-4 text-sm text-brand-ink outline-none transition placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
         />
       </div>
     </div>

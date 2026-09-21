@@ -105,7 +105,7 @@ function PaymentsHistory() {
   function PaymentCard({ p, locked }: { p: PaymentRow; locked?: boolean }) {
     const meta = statusMeta(p.status);
     return (
-      <li className="rounded-2xl border border-brand-ink/10 bg-white p-5">
+      <li className="rounded-md border border-brand-ink/10 bg-brand-surface p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="font-display text-base font-bold text-brand-ink">{p.course_title ?? "Course"}</p>
@@ -151,7 +151,7 @@ function PaymentsHistory() {
       <section className="space-y-3">
         <h2 className="font-display text-lg font-bold text-brand-ink">{t("historyTitle")}</h2>
         {rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-brand-ink/15 bg-brand-muted/40 px-6 py-12 text-center">
+          <div className="rounded-md border border-dashed border-brand-ink/15 bg-brand-muted/40 px-6 py-12 text-center">
             <p className="text-sm text-brand-ink/55">{t("empty")}</p>
           </div>
         ) : history.length === 0 ? (
@@ -174,13 +174,13 @@ export default function DashboardPaymentsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <header>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl">{t("title")}</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tighter text-brand-ink sm:text-3xl">{t("title")}</h1>
         <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">{t("intro")}</p>
       </header>
 
       <Suspense
         fallback={
-          <section className="rounded-2xl border border-brand-ink/10 bg-white p-6">
+          <section className="rounded-md border border-brand-ink/10 bg-brand-surface p-6">
             <p className="text-sm text-brand-ink/55">{t("loadingCheckout")}</p>
           </section>
         }

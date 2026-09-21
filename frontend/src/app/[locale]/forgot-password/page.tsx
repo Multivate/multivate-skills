@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
       form={
         <div className="flex min-h-0 flex-1 flex-col">
           <p className="tag-overline">{step === "email" ? t("title") : t("resetTitle")}</p>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-[2rem]">
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink sm:text-[2rem]">
             {step === "email" ? t("title") : t("resetTitle")}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">

@@ -56,8 +56,8 @@ export function PaymentsCheckoutPanel() {
 
   if (authLoading) {
     return (
-      <section className="rounded-md border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900">
-        <p className="text-sm text-slate-600">{t("checkingSession")}</p>
+      <section className="rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900">
+        <p className="text-sm text-neutral-500">{t("checkingSession")}</p>
       </section>
     );
   }
@@ -65,8 +65,8 @@ export function PaymentsCheckoutPanel() {
   if (!user || user.role !== "student") {
     return (
       <section className="rounded-md border border-amber-200/90 bg-amber-50/80 p-6 dark:border-amber-900/50 dark:bg-amber-950/30">
-        <h2 className="text-lg font-extrabold text-brand-ink">{t("studentOnlyTitle")}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-700">{t("studentOnlyBody")}</p>
+        <h2 className="text-lg font-semibold text-brand-ink">{t("studentOnlyTitle")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-700">{t("studentOnlyBody")}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
           {t("backDashboard")}
         </Link>
@@ -110,22 +110,22 @@ export function PaymentsCheckoutPanel() {
   }
 
   return (
-    <section className="mb-10 rounded-md border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800/90 dark:bg-slate-900 sm:p-8">
-      <h2 className="text-lg font-extrabold tracking-tight text-brand-ink">{t("title")}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("subtitle")}</p>
+    <section className="mb-10 rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900 sm:p-8">
+      <h2 className="text-lg font-semibold tracking-tighter text-brand-ink">{t("title")}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-500">{t("subtitle")}</p>
       {loadErr ? <p className="mt-2 text-xs text-amber-800">{loadErr}</p> : null}
-      <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{t("courseLabel")}</p>
+      <div className="mt-6 rounded-md border border-neutral-100 bg-neutral-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{t("courseLabel")}</p>
         <p className="mt-1 font-bold text-brand-ink">{course?.title ?? slug}</p>
         {course?.description ? (
-          <p className="mt-2 line-clamp-2 text-sm text-slate-600">{course.description}</p>
+          <p className="mt-2 line-clamp-2 text-sm text-neutral-500">{course.description}</p>
         ) : null}
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-slate-200/80 pt-4 dark:border-slate-800">
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-neutral-200/80 pt-4 dark:border-zinc-800">
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">{t("priceLabel")}</p>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="text-xs font-semibold uppercase text-neutral-500">{t("priceLabel")}</p>
+            <p className="mt-1 text-sm text-neutral-500">
               {t("displayPrice", { price: displayPrice })}{" "}
-              <span className="text-xs text-slate-500">({t("chargedNote")})</span>
+              <span className="text-xs text-neutral-500">({t("chargedNote")})</span>
             </p>
           </div>
           <button
@@ -138,9 +138,9 @@ export function PaymentsCheckoutPanel() {
           </button>
         </div>
       </div>
-      <p className="mt-4 text-xs leading-relaxed text-slate-500">{t("gatewayNote")}</p>
+      <p className="mt-4 text-xs leading-relaxed text-neutral-500">{t("gatewayNote")}</p>
       {err ? (
-        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900" role="alert">
+        <p className="mt-4 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900" role="alert">
           {err}
         </p>
       ) : null}

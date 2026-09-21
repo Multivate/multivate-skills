@@ -34,7 +34,7 @@ export default async function InstructorSectionPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-[90rem] space-y-6">
       {ownsHeader ? null : (
-        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">{title}</h1>
       )}
       <InstructorSectionContent section={section} />
     </div>

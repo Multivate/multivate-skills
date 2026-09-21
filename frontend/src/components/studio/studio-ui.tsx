@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 
 export const studioLabelClass =
-  "block text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45";
+  "block font-mono text-xs font-semibold uppercase tracking-widest text-neutral-500";
 
 export const studioFieldClass =
-  "mt-2 w-full border border-brand-ink/15 bg-white px-3.5 py-2.5 text-sm text-brand-ink placeholder:text-brand-ink/35 transition focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent/30";
+  "mt-2 w-full border border-brand-ink/15 bg-brand-surface px-3.5 py-2.5 text-sm text-brand-ink placeholder:text-brand-ink/35 transition focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent/30";
 
 export const studioTextareaClass = `${studioFieldClass} min-h-[7rem] resize-y leading-relaxed`;
 
@@ -26,10 +26,10 @@ export function StudioPageHeader({
     <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-8">
       <div className="min-w-0 max-w-3xl">
         {eyebrow ? <p className="tag-overline">{eyebrow}</p> : null}
-        <h1 className={`font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-4xl ${eyebrow ? "mt-3" : ""}`}>
+        <h1 className={`heading-display text-3xl sm:text-4xl ${eyebrow ? "mt-3" : ""}`}>
           {title}
         </h1>
-        {description ? <p className="mt-3 max-w-2xl text-sm leading-relaxed text-brand-ink/65 sm:text-base">{description}</p> : null}
+        {description ? <p className="mt-3 max-w-prose text-sm leading-relaxed text-neutral-500 sm:text-base">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
@@ -50,12 +50,12 @@ export function StudioPanel({
   className?: string;
 }) {
   return (
-    <section className={`border border-brand-ink/10 bg-white ${className}`}>
+    <section className={`border border-brand-ink/10 bg-brand-surface ${className}`}>
       {title ? (
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand-ink/10 px-5 py-4 sm:px-6">
           <div>
-            <h2 className="font-display text-lg font-semibold tracking-tight text-brand-ink sm:text-xl">{title}</h2>
-            {description ? <p className="mt-1 text-sm text-brand-ink/55">{description}</p> : null}
+            <h2 className="font-display text-lg font-semibold leading-[1.1] tracking-tighter text-zinc-900 sm:text-xl">{title}</h2>
+            {description ? <p className="mt-1 max-w-prose text-sm leading-relaxed text-neutral-500">{description}</p> : null}
           </div>
           {action}
         </div>
@@ -83,7 +83,7 @@ export function StudioStatusPill({ status }: { status: string }) {
         ? "bg-amber-50 text-amber-950"
         : "bg-brand-muted text-brand-ink/70";
   return (
-    <span className={`inline-flex px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${tone}`}>
+    <span className={`inline-flex rounded-sm px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-widest ${tone}`}>
       {label}
     </span>
   );

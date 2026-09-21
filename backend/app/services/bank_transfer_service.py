@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import secrets
 from datetime import datetime, timezone
 from uuid import UUID
@@ -55,19 +56,61 @@ def _rate_limit_verify(user_id: UUID) -> None:
     )
 
 
+_STUDENT_CODE_RE = re.compile(r"^(?:MTV|STU)-(\d{2,4})-(\d+)$", re.I)
+
+
+def _mtv_student_code(year: int, seq: int) -> str:
+    return f"MTV-{year % 100:02d}-{seq:04d}"
+
+
+def _legacy_stu_to_mtv(code: str) -> str | None:
+    match = re.match(r"^STU-(\d{4})-(\d+)$", (code or "").strip(), re.I)
+    if not match:
+        return None
+    return _mtv_student_code(int(match.group(1)), int(match.group(2)))
+
+
+def _max_student_seq_for_year(db: Session, year: int) -> int:
+    yy = year % 100
+    codes = db.execute(select(User.student_code).where(User.student_code.isnot(None))).scalars().all()
+    highest = -1
+    for raw in codes:
+        match = _STUDENT_CODE_RE.match(str(raw or ""))
+        if not match:
+            continue
+        year_part = int(match.group(1))
+        if year_part not in (year, yy):
+            continue
+        highest = max(highest, int(match.group(2)))
+    return highest
+
+
 def ensure_student_code(db: Session, user: User) -> str:
     if user.student_code:
+        migrated = _legacy_stu_to_mtv(user.student_code)
+        if migrated and migrated != user.student_code:
+            taken = db.execute(
+                select(User.id).where(User.student_code == migrated, User.id != user.id)
+            ).scalar_one_or_none()
+            if not taken:
+                user.student_code = migrated
+                db.add(user)
+                db.flush()
         return user.student_code
+
     year = _utcnow().year
-    seq = db.execute(
-        select(func.count()).select_from(User).where(User.student_code.isnot(None))
-    ).scalar_one()
-    code = f"STU-{year}-{int(seq) + 1:04d}"
-    user.student_code = code
-    db.add(user)
-    db.flush()
-    _logger.info("Assigned student_code=%s user_id=%s", code, user.id)
-    return code
+    seq = _max_student_seq_for_year(db, year) + 1
+    for _ in range(50):
+        code = _mtv_student_code(year, seq)
+        taken = db.execute(select(User.id).where(User.student_code == code)).scalar_one_or_none()
+        if not taken:
+            user.student_code = code
+            db.add(user)
+            db.flush()
+            _logger.info("Assigned student_code=%s user_id=%s", code, user.id)
+            return code
+        seq += 1
+    raise HTTPException(status_code=500, detail="Could not assign a student ID")
 
 
 def _new_payment_reference(db: Session) -> str:
@@ -657,17 +700,66 @@ def _complete_payment(
 
     course = db.get(Course, payment.course_id) if payment.course_id else None
     student = db.get(User, payment.user_id)
-    if student and course:
+    if student:
         try:
-            _send_enrollment_confirmed_email(student, course)
-            notification_service.create_notification(
-                db,
-                user_id=student.id,
-                kind="payment_approved",
-                title="You are enrolled",
-                body=f"Your payment for {course.title} was confirmed. You can start learning now.",
-                link_href="/dashboard/courses",
-            )
+            if course:
+                _send_enrollment_confirmed_email(student, course)
+                notification_service.safe_notify(
+                    db,
+                    user_id=student.id,
+                    kind="payment_approved",
+                    title="You are enrolled",
+                    body=f"Your payment for {course.title} was confirmed. You can start learning now.",
+                    link_href="/dashboard/courses",
+                )
+                if course.instructor_id and course.instructor_id != student.id:
+                    notification_service.safe_notify(
+                        db,
+                        user_id=course.instructor_id,
+                        kind="new_student",
+                        title="New student enrolled",
+                        body=f"{student.name} joined {course.title} after payment was confirmed.",
+                        link_href="/dashboard/instructor/students",
+                    )
+            elif payment.mentor_session_id:
+                from app.models.mentor_session import MentorSessionBooking
+
+                booking = db.get(MentorSessionBooking, payment.mentor_session_id)
+                session_label = "your 1:1 German session"
+                mentor_user_id = None
+                if booking:
+                    from app.models.mentor_profile import MentorProfile
+
+                    mentor = db.get(MentorProfile, booking.mentor_profile_id) if booking.mentor_profile_id else None
+                    if mentor:
+                        session_label = f"your 1:1 session with {mentor.full_name}"
+                        mentor_user_id = mentor.user_id
+                notification_service.safe_notify(
+                    db,
+                    user_id=student.id,
+                    kind="mentor_session_paid",
+                    title="1:1 session confirmed",
+                    body=f"Payment for {session_label} is confirmed. We will follow up with scheduling details.",
+                    link_href="/dashboard/book-1on1",
+                )
+                notification_service.safe_notify(
+                    db,
+                    user_id=mentor_user_id,
+                    kind="mentor_session_booked",
+                    title="New 1:1 booking",
+                    body=f"{student.name} booked a paid 1:1 session.",
+                    link_href="/dashboard/mentor/messages",
+                )
+                notification_service.notify_admins(
+                    db,
+                    kind="mentor_session_paid",
+                    title="1:1 session paid",
+                    body=(
+                        f"{student.name} paid for a 1:1 session. "
+                        f"Amount {payment.currency} {payment.amount_cents / 100:,.2f}."
+                    ),
+                    link_href="/dashboard/admin/payments",
+                )
         except Exception:
             _logger.exception(
                 "Post-approval notifications failed payment_id=%s user_id=%s",
@@ -759,25 +851,31 @@ def verify_payment(db: Session, user: User, payload: PaymentVerifyIn) -> Payment
 
     course = db.get(Course, payment.course_id) if payment.course_id else None
     student = db.get(User, payment.user_id)
-    if course and student:
+    if student:
         try:
+            purchase = course.title if course else "a 1:1 German session"
+            student_body = (
+                "We got your payment details. You will unlock the course after an admin confirms the exact amount."
+                if course
+                else "We got your payment details. Your 1:1 session is confirmed after an admin matches the exact amount."
+            )
             notification_service.notify_admins(
                 db,
                 kind="payment_claim",
                 title="Payment waiting for review",
                 body=(
-                    f"{student.name} says they paid for {course.title}. "
+                    f"{student.name} says they paid for {purchase}. "
                     f"Amount {payment.currency} {payment.amount_cents / 100:,.2f} · "
                     f"Reference {payment.payment_reference or '-'} · Txn {txn}"
                 ),
                 link_href="/dashboard/admin/payments",
             )
-            notification_service.create_notification(
+            notification_service.safe_notify(
                 db,
                 user_id=student.id,
                 kind="payment_submitted",
                 title="Payment submitted for review",
-                body="We got your payment details. You will unlock the course after an admin confirms the exact amount.",
+                body=student_body,
                 link_href="/dashboard/payments",
             )
         except Exception:
@@ -923,13 +1021,14 @@ def admin_reject_payment(db: Session, admin: User, payment_id: UUID, reason: str
     course = db.get(Course, payment.course_id) if payment.course_id else None
     if student:
         detail = (reason or "").strip() or "We could not confirm your payment."
-        notification_service.create_notification(
+        retry_href = "/dashboard/book-1on1" if payment.mentor_session_id else "/dashboard/payments"
+        notification_service.safe_notify(
             db,
             user_id=student.id,
             kind="payment_rejected",
             title="Payment not confirmed",
             body=f"{detail} You can try again from your payments page.",
-            link_href="/dashboard/payments",
+            link_href=retry_href,
         )
     if not student:
         raise HTTPException(status_code=500, detail="Payment owner missing")

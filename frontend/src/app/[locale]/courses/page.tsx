@@ -48,28 +48,28 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
       <SiteHeader />
       <main className="section-y surface-section">
         <div className="container-page">
-          <nav className="text-sm text-slate-500" aria-label="Breadcrumb">
+          <nav className="text-sm text-neutral-500" aria-label="Breadcrumb">
             <Link
               href="/"
               className="font-semibold text-brand-primary transition hover:text-brand-primary-dark"
             >
               {t("breadcrumbHome")}
             </Link>
-            <span className="mx-2 text-slate-300" aria-hidden>
+            <span className="mx-2 text-neutral-300" aria-hidden>
               /
             </span>
-            <span className="text-slate-700">{t("breadcrumbCourses")}</span>
+            <span className="text-zinc-700">{t("breadcrumbCourses")}</span>
           </nav>
 
           <h1 className="heading-section mt-6 text-2xl sm:text-3xl">{t("title")}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-neutral-500 sm:text-base">
             {t("introLead")}{" "}
-            <strong className="font-semibold text-slate-800">{t("introHighlight")}</strong> {t("introTrail")}
+            <strong className="font-semibold text-zinc-800">{t("introHighlight")}</strong> {t("introTrail")}
           </p>
 
           {searchQ ? (
-            <div className="mt-6 flex flex-col gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-3 text-sm dark:border-slate-800/90 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-slate-700">
+            <div className="mt-6 flex flex-col gap-2 rounded-md border border-neutral-200/90 bg-brand-surface px-4 py-3 text-sm dark:border-zinc-800/90 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-zinc-700">
                 <span className="font-semibold text-brand-ink">{t("searchActiveLabel")}</span>{" "}
                 <q className="text-brand-primary">{searchQ}</q> ({t("searchResultCount", { count: filtered.length })})
               </p>
@@ -94,7 +94,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
           </ul>
 
           {filtered.length === 0 ? (
-            <p className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/40">
+            <p className="mt-10 rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-10 text-center text-sm text-neutral-500 dark:border-zinc-700 dark:bg-zinc-900/40">
               {searchQ ? t("searchNoResults") : t("emptyCatalog")}
             </p>
           ) : null}

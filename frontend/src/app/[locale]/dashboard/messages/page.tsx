@@ -80,8 +80,8 @@ export default function DashboardMessagesPage() {
 
   if (rows === null) {
     return (
-      <div className="mx-auto max-w-3xl rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-10 text-center shadow-none">
-        <p className="text-sm font-medium text-slate-600">Loading inbox…</p>
+      <div className="mx-auto max-w-3xl rounded-md border border-neutral-200/90 bg-brand-surface dark:border-zinc-800/90 dark:bg-zinc-900 p-10 text-center shadow-none">
+        <p className="text-sm font-medium text-neutral-500">Loading inbox…</p>
       </div>
     );
   }
@@ -89,14 +89,14 @@ export default function DashboardMessagesPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-10">
       <header>
-        <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">Messages</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+        <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">Messages</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-500">
           Email anyone on Multivate, and read what they send you.
         </p>
       </header>
 
-      <section className="rounded-md border border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-slate-900 p-6 shadow-none sm:p-8">
-        <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Compose</h2>
+      <section className="rounded-md border border-neutral-200/90 bg-brand-surface dark:border-zinc-800/90 dark:bg-zinc-900 p-6 shadow-none sm:p-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Compose</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <label className={`${formLabelClass} sm:col-span-2`}>
             Recipient email
@@ -127,7 +127,7 @@ export default function DashboardMessagesPage() {
             />
           </label>
         </div>
-        {sent ? <p className="mt-4 text-sm font-medium text-slate-800">{sent}</p> : null}
+        {sent ? <p className="mt-4 text-sm font-medium text-zinc-800">{sent}</p> : null}
         <button
           type="button"
           disabled={busy}
@@ -142,10 +142,10 @@ export default function DashboardMessagesPage() {
         <p className="text-sm font-medium text-red-800">{error}</p>
       ) : (
         <section>
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-500">Inbox</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Inbox</h2>
           {rows.length === 0 ? (
-            <div className="mt-6 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
-              <p className="text-sm text-slate-600">No messages yet.</p>
+            <div className="mt-6 rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-12 text-center">
+              <p className="text-sm text-neutral-500">No messages yet.</p>
             </div>
           ) : (
             <ul className="mt-4 space-y-3">
@@ -153,19 +153,19 @@ export default function DashboardMessagesPage() {
                 <li
                   key={m.id}
                   className={`rounded-md border px-5 py-4 shadow-none ${
-                    m.from_me ? "border-slate-200/90 bg-white" : "border-slate-200/90 bg-white"
+                    m.from_me ? "border-neutral-200/90 bg-brand-surface" : "border-neutral-200/90 bg-brand-surface"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="text-xs font-bold uppercase text-slate-500">{m.from_me ? "Sent" : "Received"}</p>
+                      <p className="text-xs font-bold uppercase text-neutral-500">{m.from_me ? "Sent" : "Received"}</p>
                       <p className="mt-1 font-semibold text-brand-ink">{m.correspondent_name}</p>
-                      <p className="text-xs text-slate-500">{m.correspondent_email}</p>
+                      <p className="text-xs text-neutral-500">{m.correspondent_email}</p>
                     </div>
-                    <time className="text-xs text-slate-500">{new Date(m.created_at).toLocaleString()}</time>
+                    <time className="text-xs text-neutral-500">{new Date(m.created_at).toLocaleString()}</time>
                   </div>
-                  <p className="mt-3 font-semibold text-slate-800">{m.subject}</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{m.body}</p>
+                  <p className="mt-3 font-semibold text-zinc-800">{m.subject}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">{m.body}</p>
                   {!m.from_me && !m.read_at ? (
                     <button
                       type="button"

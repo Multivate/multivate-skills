@@ -30,7 +30,7 @@ export function SiteHeaderSearch({ className = "" }: { className?: string }) {
       <label htmlFor="site-header-search" className="sr-only">
         {t("searchLabel")}
       </label>
-      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" strokeWidth={2} aria-hidden />
+      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" strokeWidth={2} aria-hidden />
       <input
         id="site-header-search"
         type="search"
@@ -38,7 +38,7 @@ export function SiteHeaderSearch({ className = "" }: { className?: string }) {
         onChange={(e) => setQ(e.target.value)}
         placeholder={t("searchPlaceholder")}
         autoComplete="off"
-        className="h-9 w-[min(100%,11rem)] rounded-lg border border-slate-200 bg-slate-50/90 py-1.5 pl-8 pr-2 text-xs text-brand-ink outline-none transition placeholder:text-slate-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/20 sm:w-44 dark:border-slate-700 dark:bg-slate-900/80"
+        className="h-9 w-[min(100%,11rem)] rounded-sm border border-neutral-200 bg-neutral-50/90 py-1.5 pl-8 pr-2 text-xs text-brand-ink outline-none transition placeholder:text-neutral-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/20 sm:w-44 dark:border-zinc-700 dark:bg-zinc-900/80"
       />
     </form>
   );

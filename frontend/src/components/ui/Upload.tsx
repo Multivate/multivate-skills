@@ -185,7 +185,7 @@ export function Upload({
           className={`inline-flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 text-sm font-semibold transition
             ${isUploading
               ? "cursor-not-allowed border-brand-ink/15 bg-brand-muted text-brand-ink/40"
-              : "border-brand-ink/20 bg-white text-brand-ink hover:border-brand-accent hover:text-brand-accent"
+              : "border-brand-ink/20 bg-brand-surface text-brand-ink hover:border-brand-accent hover:text-brand-accent"
             }`}
         >
           {isUploading ? (
@@ -269,7 +269,7 @@ export function Upload({
               className="absolute inset-0 h-full w-full object-cover"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-brand-ink/50 opacity-0 transition-opacity hover:opacity-100">
-              <span className="bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink">
+              <span className="bg-brand-surface px-3 py-1.5 text-xs font-semibold text-brand-ink">
                 Change image
               </span>
             </div>

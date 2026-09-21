@@ -54,7 +54,7 @@ function ChartTooltip({
   const clampedX = Math.min(Math.max(x, 72), 92);
   return (
     <div
-      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full border border-brand-ink/10 bg-white px-3 py-2 text-xs shadow-sm transition-opacity duration-150"
+      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full border border-brand-ink/10 bg-brand-surface px-3 py-2 text-xs shadow-sm transition-opacity duration-150"
       style={{ left: `${clampedX}%`, top: `${Math.max(y - 8, 4)}%` }}
     >
       {children}

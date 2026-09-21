@@ -74,7 +74,7 @@ export function AiGuidanceChat() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-md bg-brand-ink px-4 py-3 text-sm font-semibold text-white shadow-lift transition hover:bg-brand-primary active:scale-[0.98] sm:bottom-6 sm:right-6"
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-md bg-brand-ink px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primary active:scale-[0.98] sm:bottom-6 sm:right-6"
           aria-expanded={false}
           aria-label={t("openAria")}
         >
@@ -84,8 +84,8 @@ export function AiGuidanceChat() {
       ) : null}
 
       {open ? (
-        <div className="fixed bottom-4 right-4 z-50 flex h-[min(32rem,calc(100vh-2rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-brand-ink/10 bg-brand-paper shadow-lift sm:bottom-6 sm:right-6">
-          <header className="flex shrink-0 items-center justify-between border-b border-brand-ink/10 bg-white px-4 py-3">
+        <div className="fixed bottom-4 right-4 z-50 flex h-[min(32rem,calc(100vh-2rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-brand-ink/10 bg-brand-paper shadow-sm sm:bottom-6 sm:right-6">
+          <header className="flex shrink-0 items-center justify-between border-b border-brand-ink/10 bg-brand-surface px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-ink font-display text-sm font-bold text-brand-accent">
                 V
@@ -120,7 +120,7 @@ export function AiGuidanceChat() {
 
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
             {turns.length === 0 ? (
-              <div className="border border-brand-ink/10 bg-white px-4 py-5 text-sm text-brand-ink/70">
+              <div className="border border-brand-ink/10 bg-brand-surface px-4 py-5 text-sm text-brand-ink/70">
                 <p className="font-display text-base font-semibold text-brand-ink">{t("greeting")}</p>
                 <p className="mt-2 leading-relaxed">{t("intro")}</p>
               </div>
@@ -131,7 +131,7 @@ export function AiGuidanceChat() {
                   className={`max-w-[90%] px-3.5 py-2.5 text-sm ${
                     turn.role === "user"
                       ? "rounded-md bg-brand-ink text-white"
-                      : "rounded-md border border-brand-ink/10 bg-white text-brand-ink"
+                      : "rounded-md border border-brand-ink/10 bg-brand-surface text-brand-ink"
                   }`}
                 >
                   {turn.role === "assistant" ? (
@@ -153,7 +153,7 @@ export function AiGuidanceChat() {
 
           {err ? <p className="shrink-0 px-4 text-xs text-red-600">{err}</p> : null}
 
-          <form onSubmit={send} className="flex shrink-0 gap-2 border-t border-brand-ink/10 bg-white p-3">
+          <form onSubmit={send} className="flex shrink-0 gap-2 border-t border-brand-ink/10 bg-brand-surface p-3">
             <input
               type="text"
               autoComplete="off"

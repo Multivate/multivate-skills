@@ -38,8 +38,8 @@ export function AddToCartButton({
     variant === "primary"
       ? "btn-primary-brand inline-flex items-center justify-center gap-2 !py-2.5 text-sm"
       : variant === "compact"
-        ? "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-brand-panel hover:text-brand-primary"
-        : "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-800 transition hover:border-brand-panel hover:text-brand-primary";
+        ? "inline-flex items-center gap-1.5 rounded-sm border border-neutral-200 bg-brand-surface px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary"
+        : "inline-flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 bg-brand-surface py-2.5 text-sm font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary";
 
   if (inCart) {
     return (

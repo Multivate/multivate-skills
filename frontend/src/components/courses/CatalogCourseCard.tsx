@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Star } from "lucide-react";
+import { Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
@@ -40,64 +40,57 @@ export function CatalogCourseCard({ course, layout = "grid", categoryLabel }: Pr
 
   return (
     <article
-      className={`group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-accent/30 hover:shadow-md ${shellClass}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-sm border border-neutral-200 bg-brand-surface shadow-sm transition ${shellClass}`}
     >
       <Link href={`/courses/${course.slug}`} className="flex flex-1 flex-col">
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-neutral-100">
           <CourseThumbnail
             src={course.image_url}
             alt={course.title}
             sizes={layout === "scroll" ? "320px" : "(min-width: 1280px) 25vw, (min-width: 640px) 45vw, 100vw"}
-            className="object-cover transition duration-300 group-hover:scale-[1.03]"
+            className="object-cover"
           />
           {categoryLabel ? (
-            <span className="absolute left-2 top-2 rounded-md bg-brand-ink/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            <span className="absolute left-2 top-2 rounded-sm bg-zinc-950/80 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-brand-paper">
               {categoryLabel}
             </span>
           ) : null}
         </div>
 
         <div className="flex flex-1 flex-col p-4">
-          <h3 className="line-clamp-2 min-h-[2.75rem] text-[0.9375rem] font-bold leading-snug text-slate-900 transition group-hover:text-brand-primary sm:text-base">
+          <h3 className="line-clamp-2 min-h-[2.75rem] font-display text-base font-semibold leading-[1.2] tracking-tighter text-zinc-900 sm:text-[1.05rem]">
             {course.title}
           </h3>
           {course.subtitle ? (
-            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600">{course.subtitle}</p>
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-500">{course.subtitle}</p>
           ) : null}
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-slate-600">
-            <span className="inline-flex items-center gap-0.5 text-amber-600">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
-              New
-            </span>
-            <span className="text-slate-300" aria-hidden>
-              ·
-            </span>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-neutral-500">
             <span>{tTop("lessons", { count: course.lessons_count })}</span>
-            <span className="text-slate-300" aria-hidden>
+            <span className="text-neutral-300" aria-hidden>
               ·
             </span>
-            <span className="inline-flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5 text-brand-accent" strokeWidth={2} aria-hidden />
+            <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
+              <Clock className="h-3.5 w-3.5 text-neutral-500" strokeWidth={2} aria-hidden />
               {formatCourseDuration(course.duration_minutes ?? 0)}
             </span>
           </div>
 
-          <p className="mt-3 text-lg font-extrabold tracking-tight text-slate-900">{priceLabel}</p>
+          <p className="mt-3 text-lg font-semibold tracking-tighter text-zinc-900">{priceLabel}</p>
         </div>
       </Link>
 
-      <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3">
+      <div className="flex items-center gap-2 border-t border-neutral-100 px-4 py-3">
         <Link
           href={`/courses/${course.slug}`}
-          className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg bg-brand-primary px-3 text-center text-sm font-semibold text-white transition hover:bg-brand-primary-dark"
+          className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-sm bg-zinc-900 px-3 text-center text-sm font-semibold text-brand-paper transition hover:bg-zinc-800"
         >
           {tCommon("viewCourse")}
         </Link>
         <AddToCartButton
           item={cartLine}
           variant="outline"
-          className="!min-h-[2.5rem] !flex-1 !rounded-lg !py-2 !text-sm !font-semibold !text-slate-800"
+          className="!min-h-[2.5rem] !flex-1 !rounded-sm !py-2 !text-sm !font-semibold !text-zinc-800"
           addLabel={tCart("add")}
         />
       </div>

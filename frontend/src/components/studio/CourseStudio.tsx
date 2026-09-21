@@ -356,7 +356,7 @@ export function CourseStudio({ initialSlug }: Props) {
   return (
     <div className="mx-auto max-w-[90rem] space-y-8">
       {toast ? (
-        <div className="fixed bottom-6 right-6 z-50 border border-brand-ink bg-brand-ink px-4 py-3 text-sm font-semibold text-white shadow-lg">
+        <div className="fixed bottom-6 right-6 z-50 border border-brand-ink bg-brand-ink px-4 py-3 text-sm font-semibold text-white shadow-sm">
           {toast}
         </div>
       ) : null}
@@ -370,7 +370,7 @@ export function CourseStudio({ initialSlug }: Props) {
             </span>
           </StudioQuietLink>
           <p className="tag-overline mt-5">Course studio</p>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-ink sm:text-4xl">
+          <h1 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink sm:text-4xl">
             {slug ? title || "Untitled course" : "New course"}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -387,7 +387,7 @@ export function CourseStudio({ initialSlug }: Props) {
         {slug ? (
           <Link
             href={`/learn/${slug}?preview=1`}
-            className="inline-flex items-center gap-2 border border-brand-ink/15 bg-white px-4 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink/30 hover:bg-brand-muted/50"
+            className="inline-flex items-center gap-2 border border-brand-ink/15 bg-brand-surface px-4 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink/30 hover:bg-brand-muted/50"
           >
             <Play className="h-4 w-4" aria-hidden />
             Preview
@@ -482,7 +482,7 @@ export function CourseStudio({ initialSlug }: Props) {
                         disabled={Boolean(locked) && !active}
                         onClick={() => setCourseFormat(value)}
                         className={`px-3 py-2.5 text-sm font-semibold transition ${
-                          active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
+                          active ? "bg-brand-surface text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                       >
                         {label}
@@ -687,7 +687,7 @@ export function CourseStudio({ initialSlug }: Props) {
       ) : null}
 
       {step === 2 && slug && !course ? (
-        <div className="flex min-h-[240px] items-center justify-center border border-brand-ink/10 bg-white">
+        <div className="flex min-h-[240px] items-center justify-center border border-brand-ink/10 bg-brand-surface">
           <p className="text-sm text-brand-ink/50">Loading curriculum…</p>
         </div>
       ) : null}

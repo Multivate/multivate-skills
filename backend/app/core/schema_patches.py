@@ -158,6 +158,19 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_subject VARCHAR(255)")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_users_oauth_subject ON users (oauth_subject)")
         _run(conn, "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_student_code ON users (student_code)")
+        _run(
+            conn,
+            """
+            UPDATE users
+            SET student_code = 'MTV-' || RIGHT(SPLIT_PART(student_code, '-', 2), 2) || '-' || LPAD(SPLIT_PART(student_code, '-', 3), 4, '0')
+            WHERE student_code ~ '^STU-[0-9]{4}-[0-9]+$'
+              AND NOT EXISTS (
+                SELECT 1 FROM users u2
+                WHERE u2.id <> users.id
+                  AND u2.student_code = 'MTV-' || RIGHT(SPLIT_PART(users.student_code, '-', 2), 2) || '-' || LPAD(SPLIT_PART(users.student_code, '-', 3), 4, '0')
+              )
+            """,
+        )
 
 
         # Course Studio: sections must exist before lesson.section_id FK.
@@ -451,6 +464,61 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "UPDATE inbox_messages SET body = COALESCE(body, '') WHERE body IS NULL")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_inbox_messages_sender_id ON inbox_messages (sender_id)")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_inbox_messages_recipient_id ON inbox_messages (recipient_id)")
+
+        # Heal Alembic 000 notifications (message/read) → body/kind/link_href/read_at.
+        # Old `message TEXT NOT NULL` with no default makes ORM inserts fail.
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID NOT NULL PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                kind VARCHAR(48) NOT NULL DEFAULT 'general',
+                title VARCHAR(255) NOT NULL,
+                body TEXT NOT NULL DEFAULT '',
+                link_href VARCHAR(512),
+                read_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS kind VARCHAR(48) NOT NULL DEFAULT 'general'")
+        _run(conn, "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS body TEXT")
+        _run(conn, "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_href VARCHAR(512)")
+        _run(conn, "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ")
+        _run(
+            conn,
+            """
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'notifications' AND column_name = 'message'
+              ) THEN
+                EXECUTE 'UPDATE notifications SET body = message WHERE body IS NULL';
+                BEGIN
+                  ALTER TABLE notifications ALTER COLUMN message DROP NOT NULL;
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+                BEGIN
+                  ALTER TABLE notifications ALTER COLUMN message SET DEFAULT '';
+                EXCEPTION WHEN others THEN
+                  NULL;
+                END;
+              END IF;
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'notifications' AND column_name = 'read'
+              ) THEN
+                EXECUTE 'UPDATE notifications SET read_at = created_at WHERE read IS TRUE AND read_at IS NULL';
+              END IF;
+            END $$;
+            """,
+        )
+        _run(conn, "UPDATE notifications SET body = COALESCE(body, '') WHERE body IS NULL")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_notifications_user_id ON notifications (user_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_notifications_kind ON notifications (kind)")
         _run(
             conn,
             """
@@ -632,6 +700,10 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(
             conn,
             "CREATE INDEX IF NOT EXISTS ix_payments_mentor_session_id ON payments (mentor_session_id)",
+        )
+        _run(
+            conn,
+            "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS weekly_course_target INTEGER NOT NULL DEFAULT 1",
         )
 
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")

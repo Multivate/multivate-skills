@@ -8,6 +8,13 @@ import {
   studioFieldClass,
   studioLabelClass,
 } from "@/components/studio/studio-ui";
+import {
+  nextWeekTitle,
+  readDoneWeekIds,
+  readStoredWeekId,
+  writeDoneWeekIds,
+  writeStoredWeekId,
+} from "@/lib/studio-weeks";
 
 type Section = { id: string; title: string; position: number };
 type Phrase = {
@@ -63,21 +70,45 @@ export function CourseStudioAudioCurriculum({
     () => [...(course.phrases ?? [])].sort((a, b) => a.position - b.position),
     [course.phrases],
   );
-  const [newSectionTitle, setNewSectionTitle] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
-  const [sectionId, setSectionId] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editSource, setEditSource] = useState("");
   const [editTarget, setEditTarget] = useState("");
   const [audioLink, setAudioLink] = useState("");
-  /** Mobile: avoid scrolling past a long list to reach voice upload */
   const [mobilePane, setMobilePane] = useState<"list" | "editor">("list");
+  const [currentWeekId, setCurrentWeekId] = useState<string | null>(null);
+  const [doneWeekIds, setDoneWeekIds] = useState<string[]>([]);
+
+  const weeks = useMemo(
+    () => [...course.sections].sort((a, b) => a.position - b.position),
+    [course.sections],
+  );
+  const currentWeek = weeks.find((w) => w.id === currentWeekId) ?? weeks[0] ?? null;
+  const weekPhrases = useMemo(
+    () =>
+      currentWeek
+        ? phrases.filter((p) => p.section_id === currentWeek.id)
+        : phrases.filter((p) => !p.section_id),
+    [phrases, currentWeek],
+  );
 
   const active = useMemo(
-    () => phrases.find((p) => p.id === selectedId) ?? phrases[0] ?? null,
-    [phrases, selectedId],
+    () => weekPhrases.find((p) => p.id === selectedId) ?? weekPhrases[0] ?? null,
+    [weekPhrases, selectedId],
   );
+
+  useEffect(() => {
+    setDoneWeekIds(readDoneWeekIds(slug));
+    const stored = readStoredWeekId(slug);
+    if (stored && weeks.some((w) => w.id === stored)) {
+      setCurrentWeekId(stored);
+      return;
+    }
+    const done = new Set(readDoneWeekIds(slug));
+    const open = weeks.find((w) => !done.has(w.id)) ?? weeks[weeks.length - 1] ?? null;
+    setCurrentWeekId(open?.id ?? null);
+  }, [slug, weeks]);
 
   useEffect(() => {
     if (!active) return;
@@ -95,27 +126,50 @@ export function CourseStudioAudioCurriculum({
     setMobilePane("editor");
   };
 
-  const addSection = async () => {
-    if (!newSectionTitle.trim()) return;
+  const selectWeek = (id: string) => {
+    setCurrentWeekId(id);
+    writeStoredWeekId(slug, id);
+    setSelectedId(null);
+  };
+
+  const addWeek = async () => {
+    const title = nextWeekTitle(weeks.map((w) => w.title));
     setBusy(true);
     try {
       const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/sections`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newSectionTitle.trim() }),
+        body: JSON.stringify({ title }),
       });
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that section.");
+        setError(typeof data?.detail === "string" ? data.detail : "Could not add that week.");
         return;
       }
-      setNewSectionTitle("");
+      const created = data as Section;
+      if (created?.id) {
+        selectWeek(created.id);
+      }
       await loadCourse(slug);
-      showToast("Section added");
+      showToast(`${title} is ready`);
     } finally {
       setBusy(false);
     }
+  };
+
+  const markWeekReady = () => {
+    if (!currentWeek) return;
+    const nextDone = Array.from(new Set([...doneWeekIds, currentWeek.id]));
+    setDoneWeekIds(nextDone);
+    writeDoneWeekIds(slug, nextDone);
+    const remaining = weeks.filter((w) => !nextDone.includes(w.id) && w.id !== currentWeek.id);
+    if (remaining[0]) {
+      selectWeek(remaining[0].id);
+      showToast(`${currentWeek.title} is put away`);
+      return;
+    }
+    void addWeek();
   };
 
   const addPhrase = async () => {
@@ -127,14 +181,14 @@ export function CourseStudioAudioCurriculum({
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          section_id: sectionId || null,
+          section_id: currentWeek?.id ?? null,
           source_text: sourceText.trim(),
           target_text: targetText.trim(),
         }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that phrase.");
+        setError(typeof data?.detail === "string" ? data.detail : "Could not add that phrase.");
         return;
       }
       setSourceText("");
@@ -166,7 +220,7 @@ export function CourseStudioAudioCurriculum({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't save that phrase.");
+        setError(typeof data?.detail === "string" ? data.detail : "Could not save that phrase.");
         return;
       }
       await loadCourse(slug);
@@ -186,7 +240,7 @@ export function CourseStudioAudioCurriculum({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't remove that phrase.");
+        setError(typeof data?.detail === "string" ? data.detail : "Could not remove that phrase.");
         return;
       }
       if (selectedId === id) setSelectedId(null);
@@ -220,161 +274,148 @@ export function CourseStudioAudioCurriculum({
     }
   };
 
-  const grouped = useMemo(() => {
-    const sections = [...course.sections].sort((a, b) => a.position - b.position);
-    const rows: { key: string; title: string; items: Phrase[] }[] = sections.map((s) => ({
-      key: s.id,
-      title: s.title,
-      items: phrases.filter((p) => p.section_id === s.id),
-    }));
-    const loose = phrases.filter((p) => !p.section_id);
-    if (loose.length || sections.length === 0) {
-      rows.unshift({ key: "loose", title: "All phrases", items: loose.length ? loose : phrases.filter((p) => !p.section_id) });
-    }
-    return rows.filter((r) => r.key === "loose" || r.items.length >= 0);
-  }, [course.sections, phrases]);
+  const weekReady = weekPhrases.length > 0 && weekPhrases.every((p) => Boolean(p.audio_url));
+  const hiddenWeeks = weeks.filter((w) => doneWeekIds.includes(w.id) && w.id !== currentWeek?.id);
 
   return (
-    <div className="space-y-6">
-      <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
-        Add phrases and audio. Students practice them in the classroom. Select a phrase, then upload voice in the editor
-        — it stays in view while you work.
-      </p>
-
-      <div className="flex rounded-lg border border-brand-ink/10 bg-brand-muted/40 p-1 xl:hidden">
+    <div className="space-y-5">
+      <div className="flex rounded-sm border border-brand-ink/10 bg-brand-muted/40 p-1 xl:hidden">
         <button
           type="button"
           onClick={() => setMobilePane("list")}
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
-            mobilePane === "list" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55"
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${
+            mobilePane === "list" ? "bg-brand-surface text-brand-ink" : "text-brand-ink/55"
           }`}
         >
-          Phrase list
+          This week
         </button>
         <button
           type="button"
           onClick={() => setMobilePane("editor")}
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
-            mobilePane === "editor" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55"
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${
+            mobilePane === "editor" ? "bg-brand-surface text-brand-ink" : "text-brand-ink/55"
           }`}
         >
-          Voice &amp; edit
+          Voice
         </button>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-12 xl:items-start">
         <StudioPanel
-          title="Phrase list"
+          title={currentWeek ? currentWeek.title : "Start with Week 1"}
           description={`${course.source_language?.toUpperCase() ?? "EN"} to ${course.target_language?.toUpperCase() ?? "DE"}`}
+          action={
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void addWeek()}
+              className="text-xs font-semibold text-brand-ink/70"
+            >
+              New week
+            </button>
+          }
           className={`xl:col-span-7 ${mobilePane === "editor" ? "hidden xl:block" : ""}`}
         >
-          <div className="space-y-5">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={newSectionTitle}
-                onChange={(e) => setNewSectionTitle(e.target.value)}
-                placeholder="Section title (optional grouping)"
-                className={`${studioFieldClass} !mt-0 flex-1`}
-              />
-              <button
-                type="button"
-                disabled={busy || !newSectionTitle.trim()}
-                onClick={() => void addSection()}
-                className="inline-flex items-center justify-center gap-1.5 border border-brand-ink bg-brand-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" /> Section
-              </button>
-            </div>
-
-            <div className="border border-brand-ink/10 bg-brand-muted/30 p-4">
-              <p className={studioLabelClass}>Add phrase</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <input
-                  value={sourceText}
-                  onChange={(e) => setSourceText(e.target.value)}
-                  placeholder="Source text (e.g. I)"
-                  className={`${studioFieldClass} !mt-0`}
-                />
-                <input
-                  value={targetText}
-                  onChange={(e) => setTargetText(e.target.value)}
-                  placeholder="Target text (e.g. ich)"
-                  className={`${studioFieldClass} !mt-0`}
-                />
-              </div>
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                <select
-                  value={sectionId}
-                  onChange={(e) => setSectionId(e.target.value)}
-                  className={`${studioFieldClass} !mt-0 sm:w-48`}
-                >
-                  <option value="">No section</option>
-                  {course.sections.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  disabled={busy || !sourceText.trim() || !targetText.trim()}
-                  onClick={() => void addPhrase()}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  Add phrase
-                </button>
-              </div>
-            </div>
-
-            {phrases.length === 0 ? (
-              <div className="border border-dashed border-brand-ink/15 px-6 py-12 text-center">
-                <p className="font-display text-xl font-semibold text-brand-ink">No phrases yet</p>
-                <p className="mt-2 text-sm text-brand-ink/55">Add your first source and target line above.</p>
-              </div>
-            ) : (
-              <div className="overflow-hidden border border-brand-ink/10">
-                {grouped.map((group) => (
-                  <div key={group.key}>
-                    {course.sections.length > 0 ? (
-                      <div className="border-b border-brand-ink/10 bg-brand-muted/50 px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-brand-ink/45">
-                        {group.title}
-                      </div>
-                    ) : null}
-                    <ul>
-                      {group.items.map((p, idx) => {
-                        const selected = (selectedId ?? active?.id) === p.id;
-                        return (
-                          <li
-                            key={p.id}
-                            onClick={() => syncEdit(p)}
-                            className={`grid cursor-pointer grid-cols-[1fr_1fr_auto] items-center gap-3 border-b border-brand-ink/10 px-4 py-3 text-sm last:border-b-0 ${
-                              selected ? "bg-brand-muted" : idx % 2 === 1 ? "bg-brand-muted/30" : "bg-white"
-                            }`}
-                          >
-                            <span className="font-medium text-brand-ink">{p.source_text}</span>
-                            <span className="font-semibold text-brand-accent">{p.target_text}</span>
-                            <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-brand-ink/40">
-                              {p.audio_url ? "Audio" : "No audio"}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+          <div className="space-y-4">
+            {hiddenWeeks.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {hiddenWeeks.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => selectWeek(w.id)}
+                    className="rounded-full border border-brand-ink/10 bg-brand-muted/50 px-3 py-1 text-xs font-medium text-brand-ink/55"
+                  >
+                    {w.title} (done)
+                  </button>
                 ))}
               </div>
+            ) : null}
+
+            {!currentWeek ? (
+              <div className="border border-dashed border-brand-ink/15 px-6 py-10 text-center">
+                <p className="font-display text-lg font-semibold text-brand-ink">No week yet</p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void addWeek()}
+                  className="btn-cta-accent mt-4 inline-flex items-center gap-1.5"
+                >
+                  <Plus className="h-4 w-4" /> Add Week 1
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="border border-brand-ink/10 bg-brand-muted/30 p-4">
+                  <p className={studioLabelClass}>Add to {currentWeek.title}</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <input
+                      value={sourceText}
+                      onChange={(e) => setSourceText(e.target.value)}
+                      placeholder="English"
+                      className={`${studioFieldClass} !mt-0`}
+                    />
+                    <input
+                      value={targetText}
+                      onChange={(e) => setTargetText(e.target.value)}
+                      placeholder="German"
+                      className={`${studioFieldClass} !mt-0`}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy || !sourceText.trim() || !targetText.trim()}
+                    onClick={() => void addPhrase()}
+                    className="mt-2 inline-flex w-full items-center justify-center gap-1.5 bg-brand-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    Add phrase
+                  </button>
+                </div>
+
+                {weekPhrases.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-brand-ink/50">Add the lines for this week, then upload voice.</p>
+                ) : (
+                  <ul className="overflow-hidden border border-brand-ink/10">
+                    {weekPhrases.map((p, idx) => {
+                      const selected = (selectedId ?? active?.id) === p.id;
+                      return (
+                        <li
+                          key={p.id}
+                          onClick={() => syncEdit(p)}
+                          className={`grid cursor-pointer grid-cols-[1fr_1fr_auto] items-center gap-3 border-b border-brand-ink/10 px-4 py-3 text-sm last:border-b-0 ${
+                            selected ? "bg-brand-muted" : idx % 2 === 1 ? "bg-brand-muted/30" : "bg-brand-surface"
+                          }`}
+                        >
+                          <span className="font-medium text-brand-ink">{p.source_text}</span>
+                          <span className="font-medium text-brand-ink/80">{p.target_text}</span>
+                          <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-brand-ink/40">
+                            {p.audio_url ? "Voice" : "Needs voice"}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                {weekReady ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => markWeekReady()}
+                    className="w-full border border-brand-ink bg-brand-surface py-2.5 text-sm font-semibold text-brand-ink"
+                  >
+                    This week is ready. Hide it and open the next.
+                  </button>
+                ) : null}
+              </>
             )}
           </div>
         </StudioPanel>
 
         <StudioPanel
-          title="Phrase editor"
-          description={
-            active
-              ? `${active.source_text.slice(0, 40)}${active.source_text.length > 40 ? "…" : ""} → voice`
-              : "Text and pronunciation audio"
-          }
+          title="Voice"
+          description={active ? active.source_text : "Pick a phrase"}
           action={
             active ? (
               <button
@@ -392,15 +433,15 @@ export function CourseStudioAudioCurriculum({
         >
           {active ? (
             <div className="space-y-5">
-              <div className="space-y-3 rounded-lg border border-brand-accent/25 bg-brand-accent/5 p-3">
+              <div className="space-y-3 border border-brand-ink/10 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className={studioLabelClass}>Voice / audio</span>
+                  <span className={studioLabelClass}>Audio file</span>
                   {active.audio_url ? (
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => void clearVoice()}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 transition hover:text-red-900 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
                       Remove voice
@@ -409,19 +450,16 @@ export function CourseStudioAudioCurriculum({
                 </div>
 
                 {audioPreviewUrl(active) ? (
-                  <div>
-                    <p className="mb-2 text-xs text-brand-ink/50">Current voice</p>
-                    <audio
-                      key={`${active.id}-${active.audio_url}`}
-                      controls
-                      preload="metadata"
-                      src={audioPreviewUrl(active) ?? undefined}
-                      className="w-full"
-                    />
-                  </div>
+                  <audio
+                    key={`${active.id}-${active.audio_url}`}
+                    controls
+                    preload="metadata"
+                    src={audioPreviewUrl(active) ?? undefined}
+                    className="w-full"
+                  />
                 ) : (
                   <p className="flex items-center gap-2 text-sm text-brand-ink/50">
-                    <Volume2 className="h-4 w-4" /> No audio yet — upload below
+                    <Volume2 className="h-4 w-4" /> No file yet
                   </p>
                 )}
 
@@ -431,7 +469,7 @@ export function CourseStudioAudioCurriculum({
                   subfolder={`${course.id}/${active.id}`}
                   uploadUrl={`/api/studio/phrases/${active.id}/audio`}
                   accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,audio/mp4,audio/aac"
-                  label={active.audio_url ? "Drop or click to replace audio" : "Drop or click to upload audio"}
+                  label={active.audio_url ? "Replace audio" : "Upload audio"}
                   hint="MP3, WAV, OGG, or M4A"
                   compact
                   onSuccess={async () => {
@@ -442,18 +480,18 @@ export function CourseStudioAudioCurriculum({
                 />
 
                 <label className="block">
-                  <span className={studioLabelClass}>Or paste audio URL</span>
+                  <span className={studioLabelClass}>Or paste an audio link</span>
                   <input
                     value={audioLink}
                     onChange={(e) => setAudioLink(e.target.value)}
-                    placeholder="https://…/phrase.mp3"
+                    placeholder="https://example.com/phrase.mp3"
                     className={studioFieldClass}
                   />
                 </label>
               </div>
 
               <label className="block">
-                <span className={studioLabelClass}>Source text</span>
+                <span className={studioLabelClass}>English</span>
                 <input
                   value={editSource}
                   onChange={(e) => setEditSource(e.target.value)}
@@ -464,7 +502,7 @@ export function CourseStudioAudioCurriculum({
                 />
               </label>
               <label className="block">
-                <span className={studioLabelClass}>Target text</span>
+                <span className={studioLabelClass}>German</span>
                 <input
                   value={editTarget}
                   onChange={(e) => setEditTarget(e.target.value)}
@@ -482,8 +520,8 @@ export function CourseStudioAudioCurriculum({
               </button>
             </div>
           ) : (
-            <div className="flex min-h-[240px] items-center justify-center text-center text-sm text-brand-ink/55">
-              Select or add a phrase to edit.
+            <div className="flex min-h-[200px] items-center justify-center text-center text-sm text-brand-ink/55">
+              Add a phrase for this week to upload voice.
             </div>
           )}
         </StudioPanel>

@@ -23,7 +23,7 @@ export function CourseEnrollCta({ courseSlug }: Props) {
 
   if (authLoading) {
     return (
-      <div className="rounded-xl border border-brand-ink/10 bg-brand-muted/40 px-4 py-4 text-center text-sm text-brand-ink/60">
+      <div className="rounded-md border border-brand-ink/10 bg-brand-muted/40 px-4 py-4 text-center text-sm text-brand-ink/60">
         {t("checkingSession")}
       </div>
     );
@@ -31,7 +31,7 @@ export function CourseEnrollCta({ courseSlug }: Props) {
 
   if (user && user.role !== "student") {
     return (
-      <div className="space-y-3 rounded-xl border border-brand-ink/10 bg-brand-muted/40 px-4 py-4">
+      <div className="space-y-3 rounded-md border border-brand-ink/10 bg-brand-muted/40 px-4 py-4">
         <p className="text-sm font-semibold text-brand-ink">{t("studentOnlyTitle")}</p>
         <p className="text-sm leading-relaxed text-brand-ink/60">{t("studentOnlyBody")}</p>
         <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">

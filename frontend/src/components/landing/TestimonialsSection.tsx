@@ -99,7 +99,7 @@ export function TestimonialsSection({ initialReviews = [] }: { initialReviews?: 
                 }`}
               >
                 <StarRow rating={review.rating} />
-                <blockquote className="mt-5 flex-1 font-display text-lg font-medium leading-snug tracking-tight text-brand-ink">
+                <blockquote className="mt-5 flex-1 font-display text-lg font-medium leading-snug tracking-tighter text-brand-ink">
                   “{review.comment}”
                 </blockquote>
 

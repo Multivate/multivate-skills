@@ -14,6 +14,7 @@ class StudentLearningProfileOut(BaseModel):
     learning_goals: str | None
     preferred_formats: str | None
     weekly_hours: str | None
+    weekly_course_target: int = 1
     career_direction: str | None
     extra_notes: str | None
     updated_at: datetime | None = None
@@ -33,6 +34,7 @@ class StudentLearningProfileAdminRow(BaseModel):
     learning_goals: str | None
     preferred_formats: str | None
     weekly_hours: str | None
+    weekly_course_target: int = 1
     career_direction: str | None
     extra_notes: str | None
     updated_at: datetime

@@ -9,6 +9,13 @@ import {
   studioFieldClass,
   studioLabelClass,
 } from "@/components/studio/studio-ui";
+import {
+  nextWeekTitle,
+  readDoneWeekIds,
+  readStoredWeekId,
+  writeDoneWeekIds,
+  writeStoredWeekId,
+} from "@/lib/studio-weeks";
 
 type Section = { id: string; title: string; position: number };
 type Resource = { id: string; title: string; file_type: string; file_size_bytes: number };
@@ -109,9 +116,10 @@ export function CourseStudioCurriculum({
   showToast,
   onContinueToReview,
 }: Props) {
-  const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonSection, setNewLessonSection] = useState<string>("");
+  const [currentWeekId, setCurrentWeekId] = useState<string | null>(null);
+  const [doneWeekIds, setDoneWeekIds] = useState<string[]>([]);
   const [newItemKind, setNewItemKind] = useState<"lesson" | "assessment">("lesson");
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const dragLesson = useRef<string | null>(null);
@@ -191,34 +199,51 @@ export function CourseStudioCurriculum({
 
   const groupedLessons = useMemo(() => {
     const sections = [...course.sections].sort((a, b) => a.position - b.position);
-    const rows: { key: string; title: string; lessons: Lesson[] }[] = sections.map((s) => ({
+    return sections.map((s) => ({
       key: s.id,
       title: s.title,
       lessons: course.lessons.filter((l) => l.section_id === s.id).sort((a, b) => a.position - b.position),
     }));
-    const loose = course.lessons.filter((l) => !l.section_id).sort((a, b) => a.position - b.position);
-    if (loose.length) rows.unshift({ key: "loose", title: "Unsectioned", lessons: loose });
-    return rows;
   }, [course]);
 
+  useEffect(() => {
+    setDoneWeekIds(readDoneWeekIds(slug));
+    const stored = readStoredWeekId(slug);
+    const weeks = [...course.sections].sort((a, b) => a.position - b.position);
+    if (stored && weeks.some((w) => w.id === stored)) {
+      setCurrentWeekId(stored);
+      setNewLessonSection(stored);
+      return;
+    }
+    const done = new Set(readDoneWeekIds(slug));
+    const open = weeks.find((w) => !done.has(w.id)) ?? weeks[weeks.length - 1] ?? null;
+    setCurrentWeekId(open?.id ?? null);
+    if (open?.id) setNewLessonSection(open.id);
+  }, [slug, course.sections]);
+
   const addSection = async () => {
-    if (!newSectionTitle.trim()) return;
+    const title = nextWeekTitle(course.sections.map((s) => s.title));
     setBusy(true);
     try {
       const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/sections`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newSectionTitle.trim() }),
+        body: JSON.stringify({ title }),
       });
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(typeof data?.detail === "string" ? data.detail : "We couldn't add that section.");
+        setError(typeof data?.detail === "string" ? data.detail : "Could not add that week.");
         return;
       }
-      setNewSectionTitle("");
+      const created = data as { id?: string };
+      if (created?.id) {
+        setCurrentWeekId(created.id);
+        setNewLessonSection(created.id);
+        writeStoredWeekId(slug, created.id);
+      }
       await loadCourse(slug);
-      showToast("Section added");
+      showToast(`${title} is ready`);
     } finally {
       setBusy(false);
     }
@@ -228,7 +253,8 @@ export function CourseStudioCurriculum({
     if (!newLessonTitle.trim()) return;
     setBusy(true);
     try {
-      const sectionId = newLessonSection && newLessonSection !== "loose" ? newLessonSection : null;
+      const sectionId =
+        newLessonSection && newLessonSection !== "loose" ? newLessonSection : currentWeekId;
       const isAssessment = newItemKind === "assessment";
       const res = await fetch(`/api/studio/courses/${encodeURIComponent(slug)}/lessons`, {
         method: "POST",
@@ -368,47 +394,76 @@ export function CourseStudioCurriculum({
   };
 
   const sectionOptions = useMemo(() => {
-    const opts = course.sections.map((s) => ({ value: s.id, label: s.title }));
-    return [{ value: "loose", label: "Unsectioned" }, ...opts];
+    return course.sections.map((s) => ({ value: s.id, label: s.title }));
   }, [course.sections]);
+
+  const visibleGroups = groupedLessons.filter((g) => g.key === currentWeekId);
+  const hiddenWeeks = groupedLessons.filter((g) => doneWeekIds.includes(g.key) && g.key !== currentWeekId);
+  const currentGroup = groupedLessons.find((g) => g.key === currentWeekId);
+  const weekReady =
+    Boolean(currentGroup) &&
+    (currentGroup?.lessons.length ?? 0) > 0 &&
+    (currentGroup?.lessons.every((l) => (l.lesson_type === "quiz" ? Boolean(l.quiz_json) : Boolean(l.video_url))) ?? false);
+
+  const markWeekReady = () => {
+    if (!currentWeekId) return;
+    const nextDone = Array.from(new Set([...doneWeekIds, currentWeekId]));
+    setDoneWeekIds(nextDone);
+    writeDoneWeekIds(slug, nextDone);
+    const remaining = groupedLessons.filter((g) => !nextDone.includes(g.key) && g.key !== currentWeekId);
+    if (remaining[0]) {
+      setCurrentWeekId(remaining[0].key);
+      setNewLessonSection(remaining[0].key);
+      writeStoredWeekId(slug, remaining[0].key);
+      return;
+    }
+    void addSection();
+  };
 
   return (
     <div className="space-y-6">
-      <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
-        Add sections, lessons, and quizzes. Quizzes unlock after all lessons are done.
-      </p>
-
       <div className="grid gap-6 xl:grid-cols-12">
         <StudioPanel
-          title="Outline"
-          description="Drag to reorder"
+          title={currentGroup?.title ?? "Start with Week 1"}
+          description="One week at a time"
           className="xl:col-span-7"
         >
           <div className="space-y-5">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={newSectionTitle}
-                onChange={(e) => setNewSectionTitle(e.target.value)}
-                placeholder="New section title"
-                className={`min-w-0 flex-1 ${studioFieldClass} !mt-0`}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void addSection();
-                }}
-              />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {hiddenWeeks.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {hiddenWeeks.map((w) => (
+                    <button
+                      key={w.key}
+                      type="button"
+                      onClick={() => {
+                        setCurrentWeekId(w.key);
+                        setNewLessonSection(w.key);
+                        writeStoredWeekId(slug, w.key);
+                      }}
+                      className="rounded-full border border-brand-ink/10 bg-brand-muted/50 px-3 py-1 text-xs text-brand-ink/55"
+                    >
+                      {w.title} (done)
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span />
+              )}
               <button
                 type="button"
-                disabled={busy || !newSectionTitle.trim()}
+                disabled={busy}
                 onClick={() => void addSection()}
-                className="inline-flex shrink-0 items-center justify-center gap-1.5 border border-brand-ink bg-brand-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 disabled:opacity-50"
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 border border-brand-ink bg-brand-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" aria-hidden />
-                Section
+                New week
               </button>
             </div>
 
             <div className="border border-brand-ink/10 bg-brand-muted/30 p-4">
               <p className={studioLabelClass}>Add to outline</p>
-              <div className="mt-2 flex gap-1 border border-brand-ink/10 bg-white/70 p-1">
+              <div className="mt-2 flex gap-1 border border-brand-ink/10 bg-brand-surface/70 p-1">
                 {(
                   [
                     ["lesson", "Lesson"],
@@ -433,7 +488,7 @@ export function CourseStudioCurriculum({
                   onChange={(e) => setNewLessonSection(e.target.value)}
                   className={`lg:w-48 ${studioFieldClass} !mt-0`}
                 >
-                  <option value="">Section…</option>
+                  <option value="">This week</option>
                   {sectionOptions.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
@@ -461,22 +516,18 @@ export function CourseStudioCurriculum({
                 </button>
               </div>
               {newItemKind === "assessment" ? (
-                <p className="mt-2 text-xs text-brand-ink/50">
-                  Students see this only after completing all sessions in the course.
-                </p>
+                <p className="mt-2 text-xs text-brand-ink/50">Shown after students finish this week.</p>
               ) : null}
             </div>
 
             {groupedLessons.length === 0 ? (
               <div className="border border-dashed border-brand-ink/15 px-6 py-14 text-center">
-                <p className="font-display text-xl font-semibold text-brand-ink">Start the outline</p>
-                <p className="mx-auto mt-2 max-w-sm text-sm text-brand-ink/55">
-                  Add a section, then create your first lesson. You can reorder anytime.
-                </p>
+                <p className="font-display text-xl font-semibold text-brand-ink">Add Week 1</p>
+                <p className="mx-auto mt-2 max-w-sm text-sm text-brand-ink/55">Then add lessons for that week only.</p>
               </div>
             ) : (
               <div className="space-y-6">
-                {groupedLessons.map((group) => (
+                {(visibleGroups.length ? visibleGroups : groupedLessons.slice(0, 1)).map((group) => (
                   <div key={group.key}>
                     <div className="flex items-end justify-between gap-3 border-b border-brand-ink/10 pb-2">
                       <h3 className="font-display text-base font-semibold text-brand-ink">{group.title}</h3>
@@ -493,7 +544,7 @@ export function CourseStudioCurriculum({
                     </div>
                     <ul className="mt-2 divide-y divide-brand-ink/10">
                       {group.lessons.length === 0 ? (
-                        <li className="py-4 text-sm text-brand-ink/45">No lessons in this section yet.</li>
+                        <li className="py-4 text-sm text-brand-ink/45">No lessons in this week yet.</li>
                       ) : (
                         group.lessons.map((lesson) => {
                           const selected = (selectedLessonId ?? activeLesson?.id) === lesson.id;
@@ -551,6 +602,16 @@ export function CourseStudioCurriculum({
                 ))}
               </div>
             )}
+            {weekReady ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => markWeekReady()}
+                className="w-full border border-brand-ink bg-brand-surface py-2.5 text-sm font-semibold text-brand-ink"
+              >
+                This week is ready. Hide it and open the next.
+              </button>
+            ) : null}
           </div>
         </StudioPanel>
 
@@ -559,9 +620,9 @@ export function CourseStudioCurriculum({
           description={
             activeLesson
               ? activeLesson.lesson_type === "quiz"
-                ? "Questions unlock after students finish all sessions"
-                : "Video, notes, and preview settings"
-              : "Select an item from the outline"
+                ? "Questions for this week"
+                : "Video and notes"
+              : "Pick a lesson from this week"
           }
           action={
             activeLesson ? (
@@ -794,7 +855,7 @@ export function CourseStudioCurriculum({
                               }
                             }}
                             className={`inline-flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold transition ${
-                              active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
+                              active ? "bg-brand-surface text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
                             }`}
                           >
                             <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -872,7 +933,7 @@ export function CourseStudioCurriculum({
                     type="button"
                     disabled={busy}
                     onClick={() => void saveLessonDetails()}
-                    className="w-full border border-brand-ink/15 bg-white py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-muted/60 disabled:opacity-50"
+                    className="w-full border border-brand-ink/15 bg-brand-surface py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-muted/60 disabled:opacity-50"
                   >
                     Save lesson details
                   </button>

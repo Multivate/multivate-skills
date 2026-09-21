@@ -15,7 +15,7 @@ export default async function MentorSectionPage({ params }: Props) {
   if (!SECTIONS.has(section)) notFound();
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-xl font-extrabold tracking-tight text-brand-ink sm:text-2xl">
+      <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">
         {TITLES[section] ?? "Mentor"}
       </h1>
       <MentorSectionContent section={section} />

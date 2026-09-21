@@ -176,7 +176,7 @@ export function BookOneOnOneClient() {
 
   if (!user) {
     return (
-      <div className="rounded-xl border border-brand-ink/10 bg-brand-muted/40 p-6 text-sm">
+      <div className="rounded-md border border-brand-ink/10 bg-brand-muted/40 p-6 text-sm">
         <p className="font-semibold text-brand-ink">Sign in as a student to book a 1:1 session.</p>
         <Link href="/login" className="mt-3 inline-block text-brand-accent underline">
           Sign in
@@ -187,7 +187,7 @@ export function BookOneOnOneClient() {
 
   if (submitted || data?.payment?.status === "awaiting_review" || data?.payment?.status === "paid") {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-6">
         <CheckCircle2 className="h-8 w-8 text-emerald-700" />
         <h2 className="mt-3 font-display text-xl font-bold text-brand-ink">Request received</h2>
         <p className="mt-2 text-sm text-brand-ink/70">
@@ -224,8 +224,8 @@ export function BookOneOnOneClient() {
               key={t.tier}
               type="button"
               onClick={() => setTier(t.tier)}
-              className={`rounded-xl border p-4 text-left transition ${
-                active ? "border-brand-accent bg-brand-accent/5 shadow-sm" : "border-brand-ink/10 bg-white hover:border-brand-ink/25"
+              className={`rounded-md border p-4 text-left transition ${
+                active ? "border-brand-accent bg-brand-accent/5 shadow-sm" : "border-brand-ink/10 bg-brand-surface hover:border-brand-ink/25"
               }`}
             >
               <p className="text-sm font-bold text-brand-ink">{t.label}</p>
@@ -246,7 +246,7 @@ export function BookOneOnOneClient() {
           <select
             value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
-            className="mt-1.5 w-full rounded-lg border border-brand-ink/15 bg-white px-3 py-2.5 text-sm"
+            className="mt-1.5 w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-3 py-2.5 text-sm"
           >
             {[1, 2, 3, 4].map((n) => (
               <option key={n} value={n}>
@@ -261,7 +261,7 @@ export function BookOneOnOneClient() {
           <select
             value={mentorSlug}
             onChange={(e) => setMentorSlug(e.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-brand-ink/15 bg-white px-3 py-2.5 text-sm"
+            className="mt-1.5 w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-3 py-2.5 text-sm"
           >
             <option value="">Any available German speaker</option>
             {mentors.map((m) => (
@@ -280,11 +280,11 @@ export function BookOneOnOneClient() {
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           placeholder="e.g. Weekday evenings WAT, or Saturday morning"
-          className="mt-1.5 w-full rounded-lg border border-brand-ink/15 bg-white px-3 py-2.5 text-sm"
+          className="mt-1.5 w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-3 py-2.5 text-sm"
         />
       </label>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-ink/10 bg-brand-muted/30 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-brand-ink/10 bg-brand-muted/30 px-4 py-3">
         <div className="flex items-center gap-2 text-sm text-brand-ink/70">
           <Users className="h-4 w-4 text-brand-accent" />
           Total for {hours} × 45 min
@@ -307,7 +307,7 @@ export function BookOneOnOneClient() {
           Continue to payment
         </button>
       ) : (
-        <div className="space-y-4 rounded-xl border border-brand-ink/10 bg-white p-5">
+        <div className="space-y-4 rounded-md border border-brand-ink/10 bg-brand-surface p-5">
           <p className="text-sm text-brand-ink/70">{data.message}</p>
           {data.instructions ? (
             <>
@@ -352,13 +352,13 @@ export function BookOneOnOneClient() {
                   value={txnRef}
                   onChange={(e) => setTxnRef(e.target.value)}
                   placeholder="Bank transaction reference"
-                  className="rounded-lg border border-brand-ink/15 px-3 py-2.5 text-sm"
+                  className="rounded-sm border border-brand-ink/15 px-3 py-2.5 text-sm"
                 />
                 <input
                   value={amountSent}
                   onChange={(e) => setAmountSent(e.target.value)}
                   placeholder="Amount sent (e.g. 15000)"
-                  className="rounded-lg border border-brand-ink/15 px-3 py-2.5 text-sm"
+                  className="rounded-sm border border-brand-ink/15 px-3 py-2.5 text-sm"
                 />
               </div>
               <button
@@ -367,7 +367,7 @@ export function BookOneOnOneClient() {
                 onClick={() => void claimTransfer()}
                 className="btn-cta-accent disabled:opacity-50"
               >
-                {verifyBusy ? "Submitting…" : "I have paid — submit for review"}
+                {verifyBusy ? "Submitting…" : "I have paid. Submit for review"}
               </button>
             </>
           ) : null}

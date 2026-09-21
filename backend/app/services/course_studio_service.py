@@ -161,7 +161,29 @@ def _sync_duration_minutes(db: Session, course_id: UUID) -> None:
             )
             or 0
         )
-    c.duration_minutes = max(0, total_seconds // 60)
+    minutes = max(0, total_seconds // 60)
+    if minutes <= 0:
+        if _course_format(c) == CourseFormat.AUDIO:
+            phrase_count = int(
+                db.scalar(select(func.count()).select_from(AudioPhrase).where(AudioPhrase.course_id == course_id)) or 0
+            )
+            # About 45 seconds of practice per phrase when file length is unknown.
+            minutes = max(0, (phrase_count * 45) // 60)
+        else:
+            lesson_minutes = int(
+                db.scalar(
+                    select(func.coalesce(func.sum(Lesson.duration_minutes), 0)).where(Lesson.course_id == course_id)
+                )
+                or 0
+            )
+            if lesson_minutes > 0:
+                minutes = lesson_minutes
+            else:
+                lesson_count = int(
+                    db.scalar(select(func.count()).select_from(Lesson).where(Lesson.course_id == course_id)) or 0
+                )
+                minutes = lesson_count * 10
+    c.duration_minutes = minutes
     db.add(c)
 
 
@@ -725,6 +747,23 @@ def submit_for_review(db: Session, slug: str, actor: User) -> CourseStudioBasics
     _audit(db, course.id, actor.id, "submitted_for_review")
     db.commit()
     db.refresh(course)
+    from app.services import notification_service
+
+    notification_service.safe_notify(
+        db,
+        user_id=actor.id,
+        kind="course_submitted",
+        title="Course sent for review",
+        body=f"{course.title} is with an admin. We will let you know once it is published.",
+        link_href=f"/dashboard/instructor/studio/{course.slug}",
+    )
+    notification_service.notify_admins(
+        db,
+        kind="course_pending",
+        title="Course waiting for review",
+        body=f"{actor.name} submitted {course.title} for publishing.",
+        link_href="/dashboard/admin/courses",
+    )
     return _basics_out(course)
 
 
@@ -926,6 +965,17 @@ def admin_approve_course(db: Session, slug: str, admin: User) -> CourseStudioBas
     db.commit()
     db.refresh(course)
     invalidate_catalog_cache()
+    from app.services import notification_service
+
+    if course.instructor_id:
+        notification_service.safe_notify(
+            db,
+            user_id=course.instructor_id,
+            kind="course_approved",
+            title="Course published",
+            body=f"{course.title} is live. Students can enroll now.",
+            link_href=f"/dashboard/instructor/studio/{course.slug}",
+        )
     return _basics_out(course)
 
 
@@ -939,6 +989,17 @@ def admin_reject_course(db: Session, slug: str, reason: str, admin: User) -> Cou
     _audit(db, course.id, admin.id, "rejected", course.rejection_reason)
     db.commit()
     db.refresh(course)
+    from app.services import notification_service
+
+    if course.instructor_id:
+        notification_service.safe_notify(
+            db,
+            user_id=course.instructor_id,
+            kind="course_rejected",
+            title="Course needs changes",
+            body=f"{course.title} was sent back. {course.rejection_reason}",
+            link_href=f"/dashboard/instructor/studio/{course.slug}",
+        )
     return _basics_out(course)
 
 

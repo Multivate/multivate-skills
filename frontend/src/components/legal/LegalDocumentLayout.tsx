@@ -22,9 +22,9 @@ export function LegalDocumentLayout({
 }) {
   return (
     <div className="min-h-screen bg-brand-paper text-brand-ink">
-      <header className="border-b border-brand-ink/10 bg-brand-ink text-white">
+      <header className="border-b border-white/10 bg-brand-navy text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-          <Link href="/" className="font-display text-lg font-bold tracking-tight text-white">
+          <Link href="/" className="font-display text-lg font-bold tracking-tighter text-white">
             Multivate
           </Link>
           <Link
@@ -40,7 +40,7 @@ export function LegalDocumentLayout({
         <div className="max-w-3xl">
           <p className="tag-overline">Legal</p>
           <div className="marketing-rule mt-4" aria-hidden />
-          <h1 className="mt-6 font-display text-4xl font-bold tracking-tight sm:text-5xl">{title}</h1>
+          <h1 className="mt-6 font-display text-4xl font-bold tracking-tighter sm:text-5xl">{title}</h1>
           <p className="mt-3 text-sm text-brand-ink/50">Last updated: {updated}</p>
           <p className="mt-6 text-base leading-relaxed text-brand-ink/70">{intro}</p>
         </div>
@@ -66,7 +66,7 @@ export function LegalDocumentLayout({
           <div className="min-w-0 space-y-10 border-t border-brand-ink/10 pt-8 lg:border-t-0 lg:pt-0">
             {sections.map((section, i) => (
               <section key={section.id} id={section.id} className="scroll-mt-24">
-                <h2 className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
+                <h2 className="font-display text-2xl font-semibold tracking-tighter text-brand-ink">
                   <span className="mr-3 text-brand-accent/80">{String(i + 1).padStart(2, "0")}</span>
                   {section.title}
                 </h2>

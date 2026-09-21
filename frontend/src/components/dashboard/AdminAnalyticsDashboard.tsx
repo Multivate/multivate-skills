@@ -190,7 +190,7 @@ export function AdminAnalyticsDashboard({
               { label: "Conversations", value: mentorStats.total_conversations },
               { label: "Mentors replied", value: mentorStats.mentors_who_replied },
             ].map((item) => (
-              <div key={item.label} className="bg-white px-4 py-4">
+              <div key={item.label} className="bg-brand-surface px-4 py-4">
                 <dt
                   className={`text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${
                     item.accent ? "text-brand-accent" : "text-brand-ink/45"

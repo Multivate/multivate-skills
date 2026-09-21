@@ -41,26 +41,35 @@ type MyCourseItem = {
   status: string;
   instructor_name?: string | null;
   instructor_email?: string | null;
+  duration_minutes?: number;
+  weeks_total?: number;
+  current_week?: number;
+  current_week_title?: string;
+  current_week_lessons?: number;
+  current_week_done?: number;
 };
 
 export function StudentDashboardHome() {
-  const tProfile = useTranslations("dashboard.learningProfile");
   const tRec = useTranslations("dashboard.recommendations");
   const tRel = useTranslations("dashboard.relationships");
   const [items, setItems] = useState<MyCourseItem[] | null>(null);
   const [recommendations, setRecommendations] = useState<RecommendedCourse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [weeklyTarget, setWeeklyTarget] = useState(1);
+  const [targetBusy, setTargetBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [coursesRes, recRes] = await Promise.all([
+        const [coursesRes, recRes, targetRes] = await Promise.all([
           fetch("/api/learning/my-courses", { credentials: "include", cache: "no-store" }),
           fetch("/api/learning/recommendations", { credentials: "include", cache: "no-store" }),
+          fetch("/api/learning/weekly-target", { credentials: "include", cache: "no-store" }),
         ]);
         const coursesData = await coursesRes.json().catch(() => null);
         const recData = await recRes.json().catch(() => null);
+        const targetData = await targetRes.json().catch(() => null);
         if (cancelled) return;
         if (coursesRes.status === 401) {
           setError("Your session expired. Please sign in again.");
@@ -77,6 +86,9 @@ export function StudentDashboardHome() {
         setError(null);
         setItems(Array.isArray(coursesData) ? (coursesData as MyCourseItem[]) : []);
         setRecommendations(recRes.ok && Array.isArray(recData) ? (recData as RecommendedCourse[]) : []);
+        if (targetRes.ok && targetData && typeof targetData.weekly_course_target === "number") {
+          setWeeklyTarget(targetData.weekly_course_target);
+        }
       } catch {
         if (!cancelled) {
           setError("Connection problem. Please try again.");
@@ -121,7 +133,7 @@ export function StudentDashboardHome() {
       <DashboardPageHeader
         eyebrow="Student"
         title="Learning home"
-        description={`${tProfile("bannerTitle")}. ${tProfile("bannerBody")}`}
+        description="Your courses, this week's lessons, and what to study next."
       />
 
       <DashboardMetricStrip
@@ -139,11 +151,70 @@ export function StudentDashboardHome() {
           },
           {
             label: "Payments",
-            value: "-",
+            value: "Open",
             hint: <DashboardQuietLink href="/dashboard/payments">Open payments</DashboardQuietLink>,
           },
         ]}
       />
+
+      {items.length > 0 ? (
+        <DashboardPanel
+          title="This week"
+          description="Set how many courses you will work on. We show the current week and its lessons for each."
+          action={
+            <label className="inline-flex items-center gap-2 text-sm text-brand-ink/70">
+              Courses
+              <select
+                value={weeklyTarget}
+                disabled={targetBusy}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setWeeklyTarget(next);
+                  setTargetBusy(true);
+                  void fetch("/api/learning/weekly-target", {
+                    method: "PATCH",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ weekly_course_target: next }),
+                  }).finally(() => setTargetBusy(false));
+                }}
+                className="border border-brand-ink/15 bg-brand-surface px-2 py-1 text-sm"
+              >
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+          }
+        >
+          <ul className="divide-y divide-brand-ink/10">
+            {items.filter((c) => c.status !== "Completed").slice(0, weeklyTarget).map((row) => (
+              <li key={`week-${row.slug}`} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Link href={`/learn/${row.slug}`} className="font-display font-semibold text-brand-ink hover:text-brand-accent">
+                    {row.title}
+                  </Link>
+                  <p className="mt-1 text-sm text-brand-ink/60">
+                    {row.current_week_title ?? "Week 1"}
+                    {row.weeks_total ? ` of ${row.weeks_total}` : ""}
+                    {". "}
+                    {row.current_week_done ?? row.lesson_done} of {row.current_week_lessons || row.lessons} lessons this week
+                    {row.duration_minutes ? `. Course time ${formatCourseDuration(row.duration_minutes)}` : ""}
+                  </p>
+                </div>
+                <Link href={`/learn/${row.slug}`} className="text-sm font-semibold text-brand-ink underline">
+                  Open class
+                </Link>
+              </li>
+            ))}
+            {items.filter((c) => c.status !== "Completed").length === 0 ? (
+              <li className="py-3 text-sm text-brand-ink/60">You have finished your enrolled courses.</li>
+            ) : null}
+          </ul>
+        </DashboardPanel>
+      ) : null}
 
       <DashboardPanel
         title={tRec("title")}
@@ -164,7 +235,7 @@ export function StudentDashboardHome() {
                 <Link
                   key={course.slug}
                   href={`/courses/${course.slug}`}
-                  className="group w-[min(100%,18rem)] min-w-[16.5rem] shrink-0 border-y border-r border-brand-ink/10 first:border-l bg-brand-paper transition hover:bg-white"
+                  className="group w-[min(100%,18rem)] min-w-[16.5rem] shrink-0 border-y border-r border-brand-ink/10 first:border-l bg-brand-paper transition hover:bg-brand-surface"
                 >
                   <div className="relative aspect-[16/10] bg-brand-muted">
                     <CourseThumbnail src={course.image_url} alt={course.title} sizes="288px" className="object-cover" />
@@ -254,7 +325,8 @@ export function StudentDashboardHome() {
                       <span className="text-xs font-medium uppercase tracking-wide text-brand-ink/45">{row.status}</span>
                     </div>
                     <p className="mt-1 text-sm text-brand-ink/60">
-                      Lesson {row.lesson_done} of {row.lessons}
+                      {row.current_week_title ?? "Week 1"} · Lesson {row.lesson_done} of {row.lessons}
+                      {row.duration_minutes ? ` · ${formatCourseDuration(row.duration_minutes)}` : ""}
                     </p>
                     <div className="mt-3 flex items-center gap-3">
                       <div className="h-1 flex-1 bg-brand-muted">

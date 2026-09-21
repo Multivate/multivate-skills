@@ -302,6 +302,23 @@ def submit_self_profile(db: Session, user: User) -> MentorProfileSelfOut:
     db.commit()
     db.refresh(row)
     logger.info("Mentor submitted profile for review user_id=%s profile_id=%s", user.id, row.id)
+    from app.services import notification_service
+
+    notification_service.safe_notify(
+        db,
+        user_id=user.id,
+        kind="mentor_profile_submitted",
+        title="Profile sent for review",
+        body="An admin will review your mentor profile. We will notify you when it is published.",
+        link_href="/dashboard/mentor/profile",
+    )
+    notification_service.notify_admins(
+        db,
+        kind="mentor_profile_pending",
+        title="Mentor profile waiting for review",
+        body=f"{row.full_name} submitted a mentor profile.",
+        link_href="/dashboard/admin/mentors",
+    )
     return _self_from_orm(row)
 
 
@@ -334,6 +351,16 @@ def admin_approve(db: Session, mentor_id: UUID) -> MentorProfileAdminRow:
     db.commit()
     db.refresh(row)
     logger.info("Admin approved mentor profile id=%s", mentor_id)
+    from app.services import notification_service
+
+    notification_service.safe_notify(
+        db,
+        user_id=row.user_id,
+        kind="mentor_profile_approved",
+        title="Your mentor profile is live",
+        body="Students can now find you and book 1:1 sessions.",
+        link_href="/dashboard/mentor/profile",
+    )
     return _admin_row(db, row)
 
 
@@ -347,6 +374,17 @@ def admin_reject(db: Session, mentor_id: UUID, reason: str) -> MentorProfileAdmi
     db.commit()
     db.refresh(row)
     logger.info("Admin rejected mentor profile id=%s", mentor_id)
+    from app.services import notification_service
+
+    detail = (row.rejection_reason or "").strip() or "Please update your profile and submit again."
+    notification_service.safe_notify(
+        db,
+        user_id=row.user_id,
+        kind="mentor_profile_rejected",
+        title="Mentor profile needs changes",
+        body=detail,
+        link_href="/dashboard/mentor/profile",
+    )
     return _admin_row(db, row)
 
 
@@ -402,6 +440,19 @@ def start_conversation(
     db.add(msg)
     db.commit()
     logger.info("Started mentor conversation mentor_id=%s conversation_id=%s", mentor.id, conv.id)
+    from app.services import notification_service
+
+    preview = body.message.strip()
+    if len(preview) > 140:
+        preview = preview[:137] + "..."
+    notification_service.safe_notify(
+        db,
+        user_id=mentor.user_id,
+        kind="mentor_chat",
+        title=f"New message from {body.visitor_name.strip() or 'a student'}",
+        body=preview or "You have a new mentor chat.",
+        link_href="/dashboard/mentor/messages",
+    )
     return MentorConversationStartOut(
         conversation_id=conv.id,
         guest_token=token,
@@ -548,6 +599,35 @@ def post_message(
     db.refresh(msg)
     if sender_kind == "mentor" and conv.visitor_email:
         _notify_guest_of_mentor_reply(db, conv, msg.body.strip())
+    from app.services import notification_service
+
+    preview = body.strip()
+    if len(preview) > 140:
+        preview = preview[:137] + "..."
+    if sender_kind == "mentor":
+        if conv.visitor_user_id:
+            mentor = db.get(MentorProfile, conv.mentor_id)
+            chat_href = f"/mentors/{mentor.slug}" if mentor else "/dashboard"
+            notification_service.safe_notify(
+                db,
+                user_id=conv.visitor_user_id,
+                kind="mentor_chat",
+                title="New reply from your mentor",
+                body=preview or "Your mentor sent a message.",
+                link_href=chat_href,
+            )
+    else:
+        mentor = db.get(MentorProfile, conv.mentor_id)
+        if mentor:
+            visitor_label = conv.visitor_name or "a student"
+            notification_service.safe_notify(
+                db,
+                user_id=mentor.user_id,
+                kind="mentor_chat",
+                title=f"New message from {visitor_label}",
+                body=preview or "You have a new mentor chat.",
+                link_href="/dashboard/mentor/messages",
+            )
     return MentorMessageOut.model_validate(msg)
 
 

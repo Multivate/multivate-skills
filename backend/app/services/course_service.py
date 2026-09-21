@@ -16,10 +16,14 @@ from app.schemas.course import CourseCreate, CourseOut, CourseUpdate
 
 def course_to_out(course: Course) -> CourseOut:
     row = CourseOut.model_validate(course)
+    duration = course.duration_minutes
+    if duration <= 0 and course.lessons_count > 0:
+        duration = max(1, course.lessons_count)
     return row.model_copy(
         update={
             "level": course.level.value,
             "status": course.status.value,
+            "duration_minutes": duration,
         }
     )
 

@@ -6,7 +6,7 @@ async function LoginFallback() {
   const t = await getTranslations("common");
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-muted">
-      <p className="text-sm font-medium text-slate-600">{t("loading")}</p>
+      <p className="text-sm font-medium text-neutral-500">{t("loading")}</p>
     </div>
   );
 }

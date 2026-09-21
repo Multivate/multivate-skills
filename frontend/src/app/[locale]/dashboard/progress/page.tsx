@@ -38,7 +38,7 @@ export default function DashboardProgressPage() {
 
   if (items === null) {
     return (
-      <div className="mx-auto max-w-3xl border border-brand-ink/10 bg-white px-6 py-12 text-center">
+      <div className="mx-auto max-w-3xl border border-brand-ink/10 bg-brand-surface px-6 py-12 text-center">
         <p className="text-sm text-brand-ink/55">Loading progress…</p>
       </div>
     );
@@ -47,7 +47,7 @@ export default function DashboardProgressPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <header>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl">Progress</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tighter text-brand-ink sm:text-3xl">Progress</h1>
         <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">
           Updates as you finish lessons and quizzes.
         </p>
@@ -66,7 +66,7 @@ export default function DashboardProgressPage() {
       ) : (
         <ul className="space-y-4">
           {items.map((c) => (
-            <li key={c.slug} className="border border-brand-ink/10 bg-white p-5 sm:p-6">
+            <li key={c.slug} className="border border-brand-ink/10 bg-brand-surface p-5 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-display text-lg font-semibold text-brand-ink">{c.title}</p>

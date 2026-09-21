@@ -73,7 +73,7 @@ export function AssessmentPlayer({ lessonId, title, quizJson, alreadyCompleted, 
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 bg-white px-6 py-8">
+    <div className="mx-auto max-w-2xl space-y-6 bg-brand-surface px-6 py-8">
       <div>
         <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Assessment</p>
         <h2 className="mt-2 font-display text-2xl font-bold text-brand-ink">{title}</h2>
@@ -103,7 +103,7 @@ export function AssessmentPlayer({ lessonId, title, quizJson, alreadyCompleted, 
                       className={`w-full border px-3 py-2 text-left text-sm transition ${
                         selected
                           ? "border-brand-accent bg-brand-accent/10 font-semibold text-brand-ink"
-                          : "border-brand-ink/15 bg-white text-brand-ink/80 hover:border-brand-ink/30"
+                          : "border-brand-ink/15 bg-brand-surface text-brand-ink/80 hover:border-brand-ink/30"
                       }`}
                     >
                       {opt.text}

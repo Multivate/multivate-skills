@@ -14,6 +14,20 @@ class MyCourseItem(BaseModel):
     status: str = Field(description="In Progress | Not Started | Completed")
     instructor_name: str | None = None
     instructor_email: str | None = None
+    duration_minutes: int = 0
+    weeks_total: int = 1
+    current_week: int = 1
+    current_week_title: str = "Week 1"
+    current_week_lessons: int = 0
+    current_week_done: int = 0
+
+
+class WeeklyCourseTargetIn(BaseModel):
+    weekly_course_target: int = Field(ge=1, le=8)
+
+
+class WeeklyCourseTargetOut(BaseModel):
+    weekly_course_target: int
 
 
 class ProgressUpdate(BaseModel):

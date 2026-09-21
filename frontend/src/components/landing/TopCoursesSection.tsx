@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -57,15 +57,14 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
             className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-accent transition hover:text-brand-accent-dark"
           >
             {tCommon("viewAllCourses")}
-            <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
           </Link>
         </div>
 
         {loading ? (
-          <p className="mt-10 text-sm text-slate-500">{tExplore("viewDetails")}…</p>
+          <p className="mt-10 text-sm text-neutral-500">{tExplore("viewDetails")}…</p>
         ) : courses.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900/40">
-            <p className="text-sm leading-relaxed text-slate-600">{tExplore("empty")}</p>
+          <div className="mt-10 border border-dashed border-neutral-200 bg-brand-surface px-6 py-12">
+            <p className="max-w-prose text-sm leading-relaxed text-neutral-500">{tExplore("empty")}</p>
             <Link href="/courses" className="btn-outline-brand mt-5 inline-flex text-sm !py-2.5">
               {tExplore("viewAll")}
             </Link>
@@ -84,7 +83,7 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
               type="button"
               aria-label={tTop("scrollLeft")}
               onClick={() => scrollBy(-1)}
-              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-brand-surface text-zinc-700 shadow-sm transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
             >
               <ChevronLeft className="h-5 w-5" strokeWidth={2} />
             </button>
@@ -92,7 +91,7 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
               type="button"
               aria-label={tTop("scrollRight")}
               onClick={() => scrollBy(1)}
-              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-brand-surface text-zinc-700 shadow-sm transition hover:border-brand-accent/40 hover:bg-brand-accent/5 md:flex"
             >
               <ChevronRight className="h-5 w-5" strokeWidth={2} />
             </button>

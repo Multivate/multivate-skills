@@ -25,9 +25,9 @@ function formatDiscount(row: DiscountRow) {
   return `₦${(row.discount_value / 100).toLocaleString("en-NG")} off`;
 }
 
-const formLabelClass = "block text-sm font-semibold text-slate-800 dark:text-slate-200";
+const formLabelClass = "block text-sm font-semibold text-zinc-800 dark:text-neutral-200";
 const formInputClass =
-  "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-brand-ink outline-none placeholder:text-slate-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500";
+  "mt-1.5 w-full rounded-md border border-neutral-200 bg-brand-surface px-4 py-2.5 text-sm text-brand-ink outline-none placeholder:text-neutral-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 dark:border-neutral-500 dark:bg-zinc-800 dark:text-neutral-100 dark:placeholder:text-neutral-500";
 
 export function AdminDiscountCodes() {
   const [rows, setRows] = useState<DiscountRow[] | null>(null);
@@ -121,14 +121,14 @@ export function AdminDiscountCodes() {
   }
 
   if (rows === null) {
-    return <p className="text-sm text-slate-600">Loading discount codes…</p>;
+    return <p className="text-sm text-neutral-500">Loading discount codes…</p>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-xl">
-          <p className="rounded-xl border border-brand-accent/30 bg-brand-accent/5 px-4 py-3 text-sm text-slate-700 dark:border-brand-accent/25 dark:bg-brand-accent/10 dark:text-slate-300">
+          <p className="rounded-md border border-brand-accent/30 bg-brand-accent/5 px-4 py-3 text-sm text-zinc-700 dark:border-brand-accent/25 dark:bg-brand-accent/10 dark:text-neutral-300">
             Create codes students can use at checkout. Share the code by email, social, or campaigns.
           </p>
         </div>
@@ -143,12 +143,12 @@ export function AdminDiscountCodes() {
       </div>
 
       {msg ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
           {msg}
         </p>
       ) : null}
       {err ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+        <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
           {err}
         </p>
       ) : null}
@@ -156,9 +156,9 @@ export function AdminDiscountCodes() {
       {showForm ? (
         <form
           onSubmit={(e) => void createCode(e)}
-          className="rounded-md border border-slate-200/90 bg-white p-6 shadow-none dark:border-slate-800 "
+          className="rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-none dark:border-zinc-800 "
         >
-          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-ink dark:text-slate-100">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-ink dark:text-neutral-100">
             <Sparkles className="h-5 w-5 text-brand-accent" />
             Create a discount code
           </h2>
@@ -244,9 +244,9 @@ export function AdminDiscountCodes() {
         </form>
       ) : null}
 
-      <div className="overflow-x-auto rounded-md border border-slate-200/90 bg-white shadow-none dark:border-slate-800 ">
+      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface shadow-none dark:border-zinc-800 ">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs font-bold uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
             <tr>
               <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Discount</th>
@@ -258,31 +258,31 @@ export function AdminDiscountCodes() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={5} className="px-4 py-10 text-center text-neutral-500 dark:text-neutral-400">
                   No discount codes yet. Create one to get started.
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+                <tr key={row.id} className="border-b border-neutral-100 last:border-0 dark:border-zinc-800">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Tag className="h-4 w-4 text-brand-accent" />
                       <div>
-                        <p className="font-mono font-bold text-brand-ink dark:text-slate-100">{row.code}</p>
-                        {row.label ? <p className="text-xs text-slate-500 dark:text-slate-400">{row.label}</p> : null}
+                        <p className="font-mono font-bold text-brand-ink dark:text-neutral-100">{row.code}</p>
+                        {row.label ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{row.label}</p> : null}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{formatDiscount(row)}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                  <td className="px-4 py-3 font-semibold text-zinc-800 dark:text-neutral-200">{formatDiscount(row)}</td>
+                  <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">
                     {row.used_count}
                     {row.max_uses != null ? ` / ${row.max_uses}` : " / ∞"}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                        row.is_active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                        row.is_active ? "bg-emerald-100 text-emerald-800" : "bg-neutral-100 text-neutral-500"
                       }`}
                     >
                       {row.is_active ? "Active" : "Inactive"}
