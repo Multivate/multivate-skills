@@ -15,10 +15,10 @@ export async function HeroSection() {
           alt=""
           fill
           priority
-          className="animate-hero-zoom object-cover object-[center_28%] opacity-40"
+          className="animate-hero-zoom object-cover object-[center_28%] opacity-55"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-brand-navy/86" aria-hidden />
+        <div className="absolute inset-0 bg-brand-navy/70" aria-hidden />
       </div>
 
       <div className="container-page relative flex min-h-[min(88vh,46rem)] flex-col justify-end pb-16 pt-28 sm:pb-20 sm:pt-32 lg:justify-center lg:pb-24 lg:pt-28">
