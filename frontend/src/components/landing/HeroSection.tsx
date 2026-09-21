@@ -23,10 +23,11 @@ export async function HeroSection() {
 
       <div className="container-page relative flex min-h-[min(88vh,46rem)] flex-col justify-end pb-16 pt-28 sm:pb-20 sm:pt-32 lg:justify-center lg:pb-24 lg:pt-28">
         <div className="max-w-2xl">
-          <p className="tag-overline !text-neutral-300">{t("brand")}</p>
-          <div className="marketing-rule mt-5 animate-rule-grow sm:mt-6" aria-hidden />
+          <p className="font-mono text-sm font-semibold uppercase tracking-[0.22em] text-brand-paper sm:text-base">
+            {t("brand")}
+          </p>
 
-          <h1 className="animate-fade-up mt-7 max-w-[20ch] text-balance font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-semibold leading-[1.1] tracking-tighter text-brand-paper sm:mt-8">
+          <h1 className="animate-fade-up mt-6 max-w-[20ch] text-balance font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-semibold leading-[1.1] tracking-tighter text-brand-paper sm:mt-7">
             {t("title")}{" "}
             <span className="text-brand-accent">{t("titleHighlight")}</span>
           </h1>
