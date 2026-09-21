@@ -71,6 +71,8 @@ export function CourseStudioAudioCurriculum({
   const [editSource, setEditSource] = useState("");
   const [editTarget, setEditTarget] = useState("");
   const [audioLink, setAudioLink] = useState("");
+  /** Mobile: avoid scrolling past a long list to reach voice upload */
+  const [mobilePane, setMobilePane] = useState<"list" | "editor">("list");
 
   const active = useMemo(
     () => phrases.find((p) => p.id === selectedId) ?? phrases[0] ?? null,
@@ -90,6 +92,7 @@ export function CourseStudioAudioCurriculum({
     setEditSource(p.source_text);
     setEditTarget(p.target_text);
     setAudioLink(p.audio_source === "url" ? p.audio_url ?? "" : "");
+    setMobilePane("editor");
   };
 
   const addSection = async () => {
@@ -234,14 +237,36 @@ export function CourseStudioAudioCurriculum({
   return (
     <div className="space-y-6">
       <p className="max-w-3xl text-sm leading-relaxed text-brand-ink/65">
-        Add phrases and audio. Students practice them in the classroom.
+        Add phrases and audio. Students practice them in the classroom. Select a phrase, then upload voice in the editor
+        — it stays in view while you work.
       </p>
 
-      <div className="grid gap-6 xl:grid-cols-12">
+      <div className="flex rounded-lg border border-brand-ink/10 bg-brand-muted/40 p-1 xl:hidden">
+        <button
+          type="button"
+          onClick={() => setMobilePane("list")}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+            mobilePane === "list" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55"
+          }`}
+        >
+          Phrase list
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane("editor")}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+            mobilePane === "editor" ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55"
+          }`}
+        >
+          Voice &amp; edit
+        </button>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-12 xl:items-start">
         <StudioPanel
           title="Phrase list"
           description={`${course.source_language?.toUpperCase() ?? "EN"} to ${course.target_language?.toUpperCase() ?? "DE"}`}
-          className="xl:col-span-7"
+          className={`xl:col-span-7 ${mobilePane === "editor" ? "hidden xl:block" : ""}`}
         >
           <div className="space-y-5">
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -345,7 +370,11 @@ export function CourseStudioAudioCurriculum({
 
         <StudioPanel
           title="Phrase editor"
-          description="Text and pronunciation audio"
+          description={
+            active
+              ? `${active.source_text.slice(0, 40)}${active.source_text.length > 40 ? "…" : ""} → voice`
+              : "Text and pronunciation audio"
+          }
           action={
             active ? (
               <button
@@ -357,29 +386,13 @@ export function CourseStudioAudioCurriculum({
               </button>
             ) : undefined
           }
-          className="xl:col-span-5"
+          className={`xl:col-span-5 xl:sticky xl:top-24 xl:self-start ${
+            mobilePane === "list" ? "hidden xl:block" : ""
+          }`}
         >
           {active ? (
             <div className="space-y-5">
-              <label className="block">
-                <span className={studioLabelClass}>Source text</span>
-                <input
-                  value={editSource}
-                  onChange={(e) => setEditSource(e.target.value)}
-                  className={studioFieldClass}
-                  onFocus={() => syncEdit(active)}
-                />
-              </label>
-              <label className="block">
-                <span className={studioLabelClass}>Target text</span>
-                <input
-                  value={editTarget}
-                  onChange={(e) => setEditTarget(e.target.value)}
-                  className={studioFieldClass}
-                />
-              </label>
-
-              <div className="space-y-3">
+              <div className="space-y-3 rounded-lg border border-brand-accent/25 bg-brand-accent/5 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className={studioLabelClass}>Voice / audio</span>
                   {active.audio_url ? (
@@ -408,7 +421,7 @@ export function CourseStudioAudioCurriculum({
                   </div>
                 ) : (
                   <p className="flex items-center gap-2 text-sm text-brand-ink/50">
-                    <Volume2 className="h-4 w-4" /> No audio yet
+                    <Volume2 className="h-4 w-4" /> No audio yet — upload below
                   </p>
                 )}
 
@@ -420,20 +433,41 @@ export function CourseStudioAudioCurriculum({
                   accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,audio/mp4,audio/aac"
                   label={active.audio_url ? "Drop or click to replace audio" : "Drop or click to upload audio"}
                   hint="MP3, WAV, OGG, or M4A"
+                  compact
                   onSuccess={async () => {
                     await loadCourse(slug);
                     showToast(active.audio_url ? "Voice replaced" : "Audio uploaded");
                   }}
                   onError={(msg) => setError(msg)}
                 />
+
+                <label className="block">
+                  <span className={studioLabelClass}>Or paste audio URL</span>
+                  <input
+                    value={audioLink}
+                    onChange={(e) => setAudioLink(e.target.value)}
+                    placeholder="https://…/phrase.mp3"
+                    className={studioFieldClass}
+                  />
+                </label>
               </div>
 
               <label className="block">
-                <span className={studioLabelClass}>Or paste audio URL</span>
+                <span className={studioLabelClass}>Source text</span>
                 <input
-                  value={audioLink}
-                  onChange={(e) => setAudioLink(e.target.value)}
-                  placeholder="https://…/phrase.mp3"
+                  value={editSource}
+                  onChange={(e) => setEditSource(e.target.value)}
+                  className={studioFieldClass}
+                  onFocus={() => {
+                    setSelectedId(active.id);
+                  }}
+                />
+              </label>
+              <label className="block">
+                <span className={studioLabelClass}>Target text</span>
+                <input
+                  value={editTarget}
+                  onChange={(e) => setEditTarget(e.target.value)}
                   className={studioFieldClass}
                 />
               </label>

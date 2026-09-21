@@ -591,6 +591,49 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         )
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_mfa_otp_challenges_user_id ON mfa_otp_challenges (user_id)")
 
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS mentor_session_bookings (
+                id UUID PRIMARY KEY,
+                student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                mentor_profile_id UUID REFERENCES mentor_profiles(id) ON DELETE SET NULL,
+                tier VARCHAR(32) NOT NULL,
+                status VARCHAR(32) NOT NULL DEFAULT 'pending_payment',
+                duration_minutes INTEGER NOT NULL DEFAULT 45,
+                billed_hours INTEGER NOT NULL DEFAULT 1,
+                amount_cents INTEGER NOT NULL,
+                currency VARCHAR(3) NOT NULL DEFAULT 'NGN',
+                course_slug VARCHAR(128),
+                preferred_time_note TEXT,
+                scheduled_at TIMESTAMPTZ,
+                meeting_url VARCHAR(512),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_mentor_session_bookings_student_id ON mentor_session_bookings (student_id)",
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_mentor_session_bookings_mentor_profile_id ON mentor_session_bookings (mentor_profile_id)",
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_mentor_session_bookings_status ON mentor_session_bookings (status)",
+        )
+        _run(
+            conn,
+            "ALTER TABLE payments ADD COLUMN IF NOT EXISTS mentor_session_id UUID REFERENCES mentor_session_bookings(id) ON DELETE SET NULL",
+        )
+        _run(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_payments_mentor_session_id ON payments (mentor_session_id)",
+        )
+
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(

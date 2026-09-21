@@ -2,6 +2,7 @@
 
 import { MapPin, MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { resolveAvatarUrl } from "@/lib/avatar-url";
 import { MentorChatPanel } from "@/components/mentors/MentorChatPanel";
 import { MentorAvatarWithCount } from "@/components/mentors/MentorPeopleCountDot";
@@ -46,14 +47,22 @@ export function MentorProfileClient({ mentor }: { mentor: MentorDetail }) {
                 {mentor.origin_country ? ` · from ${mentor.origin_country}` : ""}
               </p>
             ) : null}
-            <button
-              type="button"
-              onClick={() => setChatOpen(true)}
-              className="btn-cta-accent mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition active:scale-[0.98]"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Ask {mentor.full_name.split(" ")[0]} a question
-            </button>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setChatOpen(true)}
+                className="btn-cta-accent inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition active:scale-[0.98]"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Ask {mentor.full_name.split(" ")[0]} a question
+              </button>
+              <Link
+                href={`/dashboard/book-1on1?mentor=${encodeURIComponent(mentor.slug)}`}
+                className="inline-flex items-center gap-2 rounded-xl border border-brand-ink/15 bg-white px-5 py-3 text-sm font-semibold text-brand-ink transition hover:border-brand-accent hover:text-brand-accent"
+              >
+                Book 1:1 session
+              </Link>
+            </div>
           </div>
         </div>
       </section>

@@ -191,14 +191,32 @@ def _payment_out(
     *,
     include_user: bool = False,
 ) -> StudentPaymentOut:
+    course_slug = course.slug if course else None
+    course_title = course.title if course else None
+    if payment.mentor_session_id and not course_title:
+        from app.models.mentor_session import MentorSessionBooking, MentorSessionTier
+        from app.models.mentor_profile import MentorProfile
+
+        booking = db.get(MentorSessionBooking, payment.mentor_session_id)
+        if booking:
+            labels = {
+                MentorSessionTier.STANDARD: "Standard",
+                MentorSessionTier.PROFESSIONAL: "Professional",
+                MentorSessionTier.NATIVE_PROFESSIONAL: "Native Professional",
+            }
+            label = labels.get(booking.tier, "1:1")
+            mentor = db.get(MentorProfile, booking.mentor_profile_id) if booking.mentor_profile_id else None
+            course_title = f"1:1 {label}" + (f" · {mentor.full_name}" if mentor else " German session")
+            course_slug = booking.course_slug or (mentor.slug if mentor else "mentor-session")
+
     return StudentPaymentOut(
         id=payment.id,
         user_id=payment.user_id,
         user_name=user.name if include_user else None,
         user_email=str(user.email) if include_user else None,
         course_id=payment.course_id,
-        course_slug=course.slug if course else None,
-        course_title=course.title if course else None,
+        course_slug=course_slug,
+        course_title=course_title,
         student_code=user.student_code,
         payment_reference=payment.payment_reference,
         transaction_reference=payment.transaction_reference,
@@ -613,6 +631,11 @@ def _complete_payment(
         payment.enrollment_id = enrollment.id
         db.add(payment)
 
+    if payment.mentor_session_id:
+        from app.services.mentor_session_service import mark_booking_paid
+
+        mark_booking_paid(db, payment)
+
     _audit(
         db,
         payment.id,
@@ -886,6 +909,11 @@ def admin_reject_payment(db: Session, admin: User, payment_id: UUID, reason: str
         # Never leave access open after a reject.
         enrollment.status = EnrollmentStatus.CANCELLED
         db.add(enrollment)
+
+    if payment.mentor_session_id:
+        from app.services.mentor_session_service import mark_booking_cancelled
+
+        mark_booking_cancelled(db, payment)
 
     _audit(db, payment.id, admin.id, "payment_rejected", reason or "rejected")
     db.commit()

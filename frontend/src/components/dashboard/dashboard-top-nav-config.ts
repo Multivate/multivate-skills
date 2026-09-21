@@ -67,6 +67,7 @@ export const studentNavGroups: DashboardNavGroup[] = [
       { href: "/dashboard/courses", id: "myCourses" },
       { href: "/dashboard/progress", id: "progress" },
       { href: "/dashboard/certificates", id: "certificates" },
+      { href: "/dashboard/book-1on1", id: "bookOneOnOne" },
     ],
   },
   {

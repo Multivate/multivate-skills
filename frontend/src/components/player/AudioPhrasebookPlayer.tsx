@@ -778,7 +778,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           })}
         </div>
 
-        <div className="cr-accent-soft m-2 rounded-xl border px-3 py-2.5">
+        <div className="cr-accent-soft m-2 space-y-2 rounded-xl border px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <Flame className="cr-accent h-4 w-4 shrink-0" />
             <div className="min-w-0">
@@ -790,6 +790,15 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
               </p>
             </div>
           </div>
+          {!preview ? (
+            <Link
+              href={`/dashboard/book-1on1?course=${encodeURIComponent(slug)}`}
+              onClick={() => stopPlayback()}
+              className="cr-accent-bg flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition hover:opacity-95"
+            >
+              Book 1:1 mentor
+            </Link>
+          ) : null}
         </div>
       </aside>
 
@@ -827,6 +836,16 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           >
             {theme === "dark" ? <Sun className="cr-yellow h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+
+          {!preview ? (
+            <Link
+              href={`/dashboard/book-1on1?course=${encodeURIComponent(slug)}`}
+              onClick={() => stopPlayback()}
+              className="cr-accent-bg hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold sm:inline-flex"
+            >
+              Book 1:1
+            </Link>
+          ) : null}
 
           <div className="cr-accent-soft flex rounded-2xl border p-1">
             <button

@@ -85,6 +85,21 @@ class Settings(BaseSettings):
     bank_account_number: str = Field(default="0125918288")
     bank_transfer_currency: str = Field(default="NGN", min_length=3, max_length=3)
 
+    # 1:1 mentor sessions — 1 billed hour = 45 minutes. Amounts in kobo (NGN * 100).
+    mentor_session_currency: str = Field(default="NGN", min_length=3, max_length=3)
+    mentor_tier_standard_cents: int = Field(
+        default=1500000,
+        description="Standard 1:1 rate per billed hour (45 min). Default ₦15,000.",
+    )
+    mentor_tier_professional_cents: int = Field(
+        default=2500000,
+        description="Professional 1:1 rate per billed hour (45 min). Default ₦25,000.",
+    )
+    mentor_tier_native_professional_cents: int = Field(
+        default=4000000,
+        description="Native Professional 1:1 rate per billed hour (45 min). Default ₦40,000.",
+    )
+
     platform_public_url: str = Field(
         default="https://www.multivateskills.com",
         description="Public site URL for payment return and webhook links.",

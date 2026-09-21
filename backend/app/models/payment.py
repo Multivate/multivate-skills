@@ -53,6 +53,12 @@ class Payment(Base):
         nullable=True,
         index=True,
     )
+    mentor_session_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("mentor_session_bookings.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     verification_response: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     coupon_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
     discount_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
