@@ -203,16 +203,9 @@ export function BookOneOnOneClient() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-ink/45">1:1 German practice</p>
-        <h1 className="mt-1 font-display text-3xl font-bold text-brand-ink">Book an instructor</h1>
+        <h1 className="font-display text-3xl font-bold text-brand-ink">Book an instructor</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-ink/65">
           Choose a tier. Each billed hour is <strong>45 minutes</strong> live. Prices are per hour.
-          {courseSlug ? (
-            <>
-              {" "}
-              Linked to course <span className="font-semibold text-brand-ink">{courseSlug}</span>.
-            </>
-          ) : null}
         </p>
       </div>
 
