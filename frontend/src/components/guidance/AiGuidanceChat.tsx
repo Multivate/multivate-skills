@@ -74,12 +74,11 @@ export function AiGuidanceChat() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-md bg-brand-ink px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primary active:scale-[0.98] sm:bottom-6 sm:right-6"
+          className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand-navy text-white shadow-[0_8px_20px_rgba(12,27,74,0.28)] transition hover:bg-brand-accent active:scale-[0.98] sm:bottom-6 sm:right-6"
           aria-expanded={false}
           aria-label={t("openAria")}
         >
-          <MessageCircle className="h-5 w-5 text-brand-accent" />
-          <span className="hidden sm:inline">{t("name")}</span>
+          <MessageCircle className="h-6 w-6" />
         </button>
       ) : null}
 
@@ -87,8 +86,8 @@ export function AiGuidanceChat() {
         <div className="fixed bottom-4 right-4 z-50 flex h-[min(32rem,calc(100vh-2rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-brand-ink/10 bg-brand-paper shadow-sm sm:bottom-6 sm:right-6">
           <header className="flex shrink-0 items-center justify-between border-b border-brand-ink/10 bg-brand-surface px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-ink font-display text-sm font-bold text-brand-accent">
-                V
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-sm font-semibold text-white">
+                L
               </div>
               <div>
                 <p className="font-display text-sm font-bold text-brand-ink">{t("name")}</p>

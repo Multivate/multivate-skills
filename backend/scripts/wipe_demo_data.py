@@ -39,6 +39,7 @@ OPTIONAL_TABLES = (
     "inbox_messages",
     "course_reviews",
     "instructor_reviews",
+    "support_tickets",
 )
 
 

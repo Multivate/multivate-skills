@@ -2,12 +2,10 @@
 
 import { Link } from "@/i18n/navigation";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-  StudioPageHeader,
-  StudioQuietLink,
-  StudioStatusPill,
-} from "@/components/studio/studio-ui";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { StudentSurface } from "@/components/dashboard/StudentPageHero";
+import { StudioQuietLink, StudioStatusPill } from "@/components/studio/studio-ui";
 import { resolveCourseImageUrl } from "@/lib/course-image";
 
 type Row = {
@@ -33,6 +31,22 @@ function formatUpdated(iso: string) {
 }
 
 export default function InstructorStudioListPage() {
+  return (
+    <Suspense
+      fallback={
+        <StudentSurface>
+          <div className="min-h-[40vh] animate-pulse rounded-[5px] bg-brand-ink/10" />
+        </StudentSurface>
+      }
+    >
+      <StudioList />
+    </Suspense>
+  );
+}
+
+function StudioList() {
+  const searchParams = useSearchParams();
+  const q = (searchParams.get("q") ?? "").trim().toLowerCase();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
@@ -55,6 +69,12 @@ export default function InstructorStudioListPage() {
     };
   }, []);
 
+  const visible = useMemo(() => {
+    const list = rows ?? [];
+    if (!q) return list;
+    return list.filter((row) => row.title.toLowerCase().includes(q) || row.slug.toLowerCase().includes(q));
+  }, [q, rows]);
+
   const deleteCourse = async (row: Row) => {
     const statusLabel =
       row.status === "published" ? "live" : row.status === "pending_review" ? "in review" : "draft";
@@ -74,132 +94,117 @@ export default function InstructorStudioListPage() {
         setErr(typeof data?.detail === "string" ? data.detail : "We couldn't delete that course.");
         return;
       }
-      setRows((prev) => (prev ? prev.filter((r) => r.slug !== row.slug) : prev));
+      setRows((prev) => (prev ? prev.filter((item) => item.slug !== row.slug) : prev));
     } finally {
       setDeletingSlug(null);
     }
   };
 
   return (
-    <div className="mx-auto max-w-[90rem] space-y-10">
-      <StudioPageHeader
-        eyebrow="Instructor"
-        title="Course studio"
-        description="Create and publish courses."
-        action={
+    <StudentSurface>
+      <div className="space-y-8">
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm text-[#011B33]/50">Teach</p>
+            <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight">Course studio</h1>
+            <p className="mt-2 text-sm text-[#011B33]/60">Create, edit, and publish the courses you instruct.</p>
+          </div>
           <Link
-            href="/dashboard/instructor/studio/new"
-            className="btn-cta-accent inline-flex !min-h-0 items-center gap-2 !px-5 !py-2.5 text-sm"
+            href="/instructor/studio/new"
+            className="inline-flex h-11 items-center gap-2 rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
           >
             <Plus className="h-4 w-4" aria-hidden />
             New course
           </Link>
-        }
-      />
+        </header>
 
-      {err ? (
-        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
-          {err}
-        </div>
-      ) : null}
-
-      {rows === null ? (
-        <p className="text-sm text-brand-ink/50">Loading your courses…</p>
-      ) : null}
-
-      {rows && rows.length === 0 ? (
-        <div className="border border-brand-ink/10 bg-brand-surface px-6 py-16 text-center sm:px-10">
-          <p className="tag-overline">Empty studio</p>
-          <h2 className="mt-3 font-display text-2xl font-bold tracking-tighter text-brand-ink sm:text-3xl">
-            Build your first course
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-brand-ink/60">
-            Start a course, add a cover, then fill in the lessons.
-          </p>
-          <Link
-            href="/dashboard/instructor/studio/new"
-            className="btn-cta-accent mt-8 inline-flex !min-h-0 items-center gap-2 !px-5 !py-2.5 text-sm"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            Create course
-          </Link>
-        </div>
-      ) : null}
-
-      {rows && rows.length > 0 ? (
-        <div className="border border-brand-ink/10 bg-brand-surface">
-          <div className="hidden grid-cols-[minmax(0,1.4fr)_7rem_6rem_6rem_8rem_10rem] gap-4 border-b border-brand-ink/10 px-5 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45 sm:grid sm:px-6">
-            <span>Course</span>
-            <span>Status</span>
-            <span>Format</span>
-            <span>Items</span>
-            <span>Updated</span>
-            <span className="text-right">Actions</span>
+        {err ? (
+          <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+            {err}
           </div>
-          <ul className="divide-y divide-brand-ink/10">
-            {rows.map((row) => {
+        ) : null}
+
+        {q && rows ? (
+          <p className="text-sm text-[#011B33]/55">
+            {visible.length} {visible.length === 1 ? "match" : "matches"} for “{q}”
+          </p>
+        ) : null}
+
+        {rows === null ? (
+          <div className="grid animate-pulse gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="h-64 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-64 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-64 rounded-[5px] bg-brand-ink/10" />
+          </div>
+        ) : null}
+
+        {rows && rows.length === 0 ? (
+          <div className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-16 text-center">
+            <p className="text-lg font-extrabold">Build your first course</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-[#011B33]/60">Start a course, add a cover, then fill in the lessons.</p>
+            <Link
+              href="/instructor/studio/new"
+              className="mt-6 inline-flex h-11 items-center gap-2 rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Create course
+            </Link>
+          </div>
+        ) : null}
+
+        {rows && rows.length > 0 && visible.length === 0 ? (
+          <p className="rounded-[5px] border border-dashed border-brand-ink/20 px-4 py-10 text-center text-sm text-[#011B33]/55">
+            No courses match that search.
+          </p>
+        ) : null}
+
+        {visible.length > 0 ? (
+          <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {visible.map((row) => {
               const img = resolveCourseImageUrl(row.image_url);
               const isAudio = row.format === "audio";
               const deleting = deletingSlug === row.slug;
               return (
-                <li
-                  key={row.slug}
-                  className="grid grid-cols-1 gap-4 px-5 py-4 transition hover:bg-brand-muted/40 sm:grid-cols-[minmax(0,1.4fr)_7rem_6rem_6rem_8rem_10rem] sm:items-center sm:gap-4 sm:px-6"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <Link
-                      href={`/dashboard/instructor/studio/${row.slug}`}
-                      className="relative h-14 w-20 shrink-0 overflow-hidden bg-brand-muted"
-                    >
-                      {img ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={img} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-wide text-brand-ink/35">
-                          No cover
-                        </span>
-                      )}
-                    </Link>
-                    <div className="min-w-0">
-                      <Link
-                        href={`/dashboard/instructor/studio/${row.slug}`}
-                        className="block truncate font-display text-base font-semibold text-brand-ink hover:text-brand-accent"
-                      >
+                <li key={row.slug} className="flex flex-col overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white">
+                  <Link href={`/instructor/studio/${row.slug}`} className="relative block aspect-video bg-[#f4f6fb]">
+                    {img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={img} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full items-center justify-center text-xs font-semibold text-brand-ink/35">No cover</span>
+                    )}
+                  </Link>
+                  <div className="flex flex-1 flex-col p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <Link href={`/instructor/studio/${row.slug}`} className="line-clamp-2 font-extrabold leading-snug hover:text-brand-accent">
                         {row.title}
                       </Link>
-                      <p className="mt-0.5 truncate text-xs text-brand-ink/45">{row.slug}</p>
+                      <StudioStatusPill status={row.status} />
                     </div>
-                  </div>
-                  <div>
-                    <StudioStatusPill status={row.status} />
-                  </div>
-                  <p className="text-sm capitalize text-brand-ink/70">{isAudio ? "Audio" : "Video"}</p>
-                  <p className="text-sm tabular-nums text-brand-ink/70">
-                    {row.lessons_count} {isAudio ? "phrases" : "lessons"}
-                  </p>
-                  <p className="text-sm text-brand-ink/55">{formatUpdated(row.updated_at)}</p>
-                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-                    <StudioQuietLink href={`/dashboard/instructor/studio/${row.slug}`}>Edit</StudioQuietLink>
-                    <StudioQuietLink
-                      href={`/learn/${row.slug}?preview=1`}
-                    >
-                      {row.status === "published" ? "Open" : "Preview"}
-                    </StudioQuietLink>
-                    <button
-                      type="button"
-                      disabled={deleting || deletingSlug !== null}
-                      onClick={() => void deleteCourse(row)}
-                      className="text-sm font-semibold text-red-700 transition hover:text-red-900 disabled:opacity-50"
-                    >
-                      {deleting ? "Deleting…" : "Delete"}
-                    </button>
+                    <p className="mt-2 text-xs text-[#011B33]/50">
+                      {isAudio ? "Audio" : "Video"} · {row.lessons_count} {isAudio ? "phrases" : "lessons"} · {formatUpdated(row.updated_at)}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <StudioQuietLink href={`/instructor/studio/${row.slug}`}>Edit</StudioQuietLink>
+                      <StudioQuietLink href={`/learn/${row.slug}?preview=1`}>
+                        {row.status === "published" ? "Open" : "Preview"}
+                      </StudioQuietLink>
+                      <button
+                        type="button"
+                        disabled={deleting || deletingSlug !== null}
+                        onClick={() => void deleteCourse(row)}
+                        className="text-sm font-semibold text-red-700 hover:text-red-900 disabled:opacity-50"
+                      >
+                        {deleting ? "Deleting…" : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
             })}
           </ul>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    </StudentSurface>
   );
 }

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DocumentLang } from "@/components/i18n/DocumentLang";
 import { Providers } from "@/components/providers";
 import { routing, type AppLocale } from "@/i18n/routing";
+import { publicPageMetadata } from "@/lib/seo";
 
 type Props = {
   children: React.ReactNode;
@@ -21,10 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {};
   }
   const t = await getTranslations({ locale, namespace: "metadata" });
-  return {
-    title: t("title"),
-    description: t("description"),
-  };
+  return publicPageMetadata({
+    locale,
+    path: "/",
+    title: t("homeTitle"),
+    description: t("homeDescription"),
+  });
 }
 
 export default async function LocaleLayout({ children, params }: Props) {

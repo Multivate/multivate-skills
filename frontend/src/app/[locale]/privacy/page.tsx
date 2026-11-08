@@ -1,4 +1,20 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { LegalDocumentLayout, LegalList } from "@/components/legal/LegalDocumentLayout";
+import { publicPageMetadata } from "@/lib/seo";
+
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "metadata" });
+  return publicPageMetadata({
+    locale,
+    path: "/privacy",
+    title: t("privacyTitle"),
+    description: t("privacyDescription"),
+  });
+}
 
 export default function PrivacyPage() {
   return (
@@ -64,11 +80,11 @@ export default function PrivacyPage() {
         },
         {
           id: "kazzy",
-          title: "Kazzy and automated guidance",
+          title: "Lena and automated guidance",
           body: (
             <>
               <p>
-                Kazzy is Multivate’s in-product guide. Chat messages you send to Kazzy may be processed by our systems and
+                Lena is Multivate’s in-product guide. Chat messages you send to Lena may be processed by our systems and
                 third-party AI providers we configure to generate a response. Do not submit passwords, payment card numbers,
                 or government ID documents in chat.
               </p>

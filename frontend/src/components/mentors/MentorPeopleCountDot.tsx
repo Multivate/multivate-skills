@@ -59,7 +59,7 @@ export function MentorAvatarWithCount({
     >
       <div className="relative h-full w-full overflow-hidden rounded-full">
         {photo ? (
-          <Image src={photo} alt="" fill className="object-cover" sizes={imageSizes} priority={priority} />
+          <Image src={photo} alt={name} fill className="object-cover" sizes={imageSizes} priority={priority} />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-brand-primary/15 text-2xl font-bold text-brand-primary">
             {name.slice(0, 1)}

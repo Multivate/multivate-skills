@@ -20,7 +20,7 @@ def list_courses(db: Annotated[Session, Depends(get_db)]) -> list[CourseOut]:
 
 @router.get("/{slug}", response_model=CourseOut)
 def get_course(slug: str, db: Annotated[Session, Depends(get_db)]) -> CourseOut:
-    return course_service.course_to_out(course_service.get_course_or_404(db, slug))
+    return course_service.public_course_out(db, course_service.get_course_or_404(db, slug))
 
 
 @router.post("", response_model=CourseOut, status_code=status.HTTP_201_CREATED)

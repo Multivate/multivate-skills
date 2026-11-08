@@ -3,12 +3,15 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.cache_service import CATALOG_KEY, cache_get_json, cache_set_json, invalidate_catalog_cache
 from app.models.course import Course
+from app.models.course_review import CourseReview
 from app.models.course_status import CourseStatus
+from app.models.enrollment import Enrollment
+from app.models.enrollment_status import EnrollmentStatus
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.course import CourseCreate, CourseOut, CourseUpdate
@@ -28,6 +31,56 @@ def course_to_out(course: Course) -> CourseOut:
     )
 
 
+def _with_public_stats(db: Session, courses: list[Course]) -> list[CourseOut]:
+    if not courses:
+        return []
+    ids = [course.id for course in courses]
+    instructor_ids = {course.instructor_id for course in courses if course.instructor_id}
+    names: dict[UUID, str] = {}
+    if instructor_ids:
+        names = dict(db.execute(select(User.id, User.name).where(User.id.in_(instructor_ids))).all())
+
+    ratings = {
+        row[0]: (round(float(row[1] or 0), 1), int(row[2] or 0))
+        for row in db.execute(
+            select(CourseReview.course_id, func.avg(CourseReview.rating), func.count(CourseReview.id))
+            .where(CourseReview.course_id.in_(ids))
+            .group_by(CourseReview.course_id)
+        ).all()
+    }
+    published_ids = list(
+        db.scalars(select(Course.id).where(Course.status == CourseStatus.PUBLISHED)).all()
+    )
+    enrollments = {
+        row[0]: int(row[1] or 0)
+        for row in db.execute(
+            select(Enrollment.course_id, func.count(Enrollment.id))
+            .where(
+                Enrollment.course_id.in_(published_ids or ids),
+                Enrollment.status == EnrollmentStatus.ENROLLED,
+            )
+            .group_by(Enrollment.course_id)
+        ).all()
+    }
+    top = max(enrollments.values(), default=0)
+
+    enriched: list[CourseOut] = []
+    for course in courses:
+        average, count = ratings.get(course.id, (0.0, 0))
+        enrolled = enrollments.get(course.id, 0)
+        enriched.append(
+            course_to_out(course).model_copy(
+                update={
+                    "instructor_name": names.get(course.instructor_id) if course.instructor_id else None,
+                    "average_rating": average if count else None,
+                    "rating_count": count,
+                    "is_bestseller": top > 0 and enrolled == top,
+                }
+            )
+        )
+    return enriched
+
+
 def list_catalog(db: Session) -> list[CourseOut]:
     cached = cache_get_json(CATALOG_KEY)
     if isinstance(cached, list):
@@ -38,9 +91,13 @@ def list_catalog(db: Session) -> list[CourseOut]:
         .where(Course.status == CourseStatus.PUBLISHED)
         .order_by(Course.title.asc())
     ).scalars().all()
-    out = [course_to_out(c) for c in rows]
+    out = _with_public_stats(db, list(rows))
     cache_set_json(CATALOG_KEY, [item.model_dump(mode="json") for item in out], ttl_seconds=60)
     return out
+
+
+def public_course_out(db: Session, course: Course) -> CourseOut:
+    return _with_public_stats(db, [course])[0]
 
 
 def get_course_by_slug(db: Session, slug: str) -> Course | None:

@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CatalogCourseCard } from "@/components/courses/CatalogCourseCard";
 import { fetchBackendCatalog } from "@/lib/backend-courses";
+import { publicPageMetadata } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 
 type PageProps = {
@@ -23,10 +24,12 @@ function matchesSearch(query: string, title: string, description: string, slug: 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "coursesPage" });
-  return {
+  return publicPageMetadata({
+    locale,
+    path: "/courses",
     title: t("metaTitle"),
     description: t("metaDescription"),
-  };
+  });
 }
 
 export default async function CoursesIndexPage({ params, searchParams }: PageProps) {
@@ -38,7 +41,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
   const t = await getTranslations({ locale, namespace: "coursesPage" });
   const tTabs = await getTranslations({ locale, namespace: "topCourses.tabs" });
 
-  const courses = await fetchBackendCatalog();
+  const courses = await fetchBackendCatalog({ revalidate: 60 });
   const filtered = searchQ
     ? courses.filter((c) => matchesSearch(searchQ, c.title, c.description, c.slug))
     : courses;
@@ -46,7 +49,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
   return (
     <>
       <SiteHeader />
-      <main className="section-y surface-section">
+      <main className="bg-white py-12 sm:py-16">
         <div className="container-page">
           <nav className="text-sm text-neutral-500" aria-label="Breadcrumb">
             <Link
@@ -61,7 +64,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
             <span className="text-zinc-700">{t("breadcrumbCourses")}</span>
           </nav>
 
-          <h1 className="heading-section mt-6 text-2xl sm:text-3xl">{t("title")}</h1>
+          <h1 className="mt-6 text-3xl font-semibold tracking-[-0.02em] text-brand-ink sm:text-4xl">{t("title")}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-neutral-500 sm:text-base">
             {t("introLead")}{" "}
             <strong className="font-semibold text-zinc-800">{t("introHighlight")}</strong> {t("introTrail")}

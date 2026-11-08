@@ -2,9 +2,10 @@
 
 import { Suspense } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { BankTransferCheckoutPanel } from "@/components/dashboard/BankTransferCheckoutPanel";
+import { StudentPageHero, StudentSurface } from "@/components/dashboard/StudentPageHero";
+import { useAuth } from "@/contexts/auth-context";
 import { Clock3, Lock, CheckCircle2, XCircle } from "lucide-react";
 
 type PaymentRow = {
@@ -70,7 +71,7 @@ function PaymentsHistory() {
   );
 
   if (rows === null) {
-    return <p className="text-sm text-brand-ink/55">{t("loading")}</p>;
+    return <p className="admin-muted text-sm">{t("loading")}</p>;
   }
 
   function statusMeta(status: string) {
@@ -105,13 +106,13 @@ function PaymentsHistory() {
   function PaymentCard({ p, locked }: { p: PaymentRow; locked?: boolean }) {
     const meta = statusMeta(p.status);
     return (
-      <li className="rounded-md border border-brand-ink/10 bg-brand-surface p-5">
+      <li className="rounded border border-[#d1d7dc] p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-display text-base font-bold text-brand-ink">{p.course_title ?? "Course"}</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-brand-ink">{money(p.amount_cents, p.currency)}</p>
+            <p className="text-base font-semibold">{p.course_title ?? "Course"}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{money(p.amount_cents, p.currency)}</p>
             {p.payment_reference ? (
-              <p className="mt-1 font-mono text-xs text-brand-ink/50">{p.payment_reference}</p>
+              <p className="admin-muted mt-1 font-mono text-xs">{p.payment_reference}</p>
             ) : null}
           </div>
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase ${meta.className}`}>
@@ -125,7 +126,7 @@ function PaymentsHistory() {
             {t("accessLocked")}
           </p>
         ) : null}
-        <p className="mt-2 text-xs text-brand-ink/45">{new Date(p.created_at).toLocaleString()}</p>
+        <p className="admin-muted mt-2 text-xs">{new Date(p.created_at).toLocaleString()}</p>
       </li>
     );
   }
@@ -137,8 +138,8 @@ function PaymentsHistory() {
       {outstanding.length > 0 ? (
         <section className="space-y-3">
           <div>
-            <h2 className="font-display text-lg font-bold text-brand-ink">{t("outstandingTitle")}</h2>
-            <p className="mt-1 text-sm text-brand-ink/55">{t("outstandingHint")}</p>
+            <h2 className="text-lg font-semibold">{t("outstandingTitle")}</h2>
+            <p className="admin-muted mt-1 text-sm">{t("outstandingHint")}</p>
           </div>
           <ul className="space-y-3">
             {outstanding.map((p) => (
@@ -149,13 +150,13 @@ function PaymentsHistory() {
       ) : null}
 
       <section className="space-y-3">
-        <h2 className="font-display text-lg font-bold text-brand-ink">{t("historyTitle")}</h2>
+        <h2 className="text-lg font-semibold">{t("historyTitle")}</h2>
         {rows.length === 0 ? (
-          <div className="rounded-md border border-dashed border-brand-ink/15 bg-brand-muted/40 px-6 py-12 text-center">
-            <p className="text-sm text-brand-ink/55">{t("empty")}</p>
+          <div className="rounded border border-[#d1d7dc] px-6 py-12 text-center">
+            <p className="admin-muted text-sm">{t("empty")}</p>
           </div>
         ) : history.length === 0 ? (
-          <p className="text-sm text-brand-ink/50">No completed payments yet.</p>
+          <p className="admin-muted text-sm">No completed payments yet.</p>
         ) : (
           <ul className="space-y-3">
             {history.map((p) => (
@@ -170,29 +171,33 @@ function PaymentsHistory() {
 
 export default function DashboardPaymentsPage() {
   const t = useTranslations("dashboard.studentPayments");
+  const { user } = useAuth();
+  const desk = user?.role === "instructor" || user?.role === "mentor";
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <header>
-        <h1 className="font-display text-2xl font-bold tracking-tighter text-brand-ink sm:text-3xl">{t("title")}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">{t("intro")}</p>
-      </header>
-
-      <Suspense
-        fallback={
-          <section className="rounded-md border border-brand-ink/10 bg-brand-surface p-6">
-            <p className="text-sm text-brand-ink/55">{t("loadingCheckout")}</p>
-          </section>
-        }
-      >
-        <BankTransferCheckoutPanel />
-      </Suspense>
-
-      <PaymentsHistory />
-
-      <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-accent hover:underline">
-        {t("back")}
-      </Link>
-    </div>
+    <>
+      {desk ? null : <StudentPageHero title={t("title")} subtitle={t("intro")} />}
+      <StudentSurface>
+        <div className="space-y-6">
+          {desk ? (
+            <header>
+              <p className="text-sm text-[#011B33]/50">Account</p>
+              <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight">{t("title")}</h1>
+              <p className="mt-2 text-sm text-[#011B33]/60">{t("intro")}</p>
+            </header>
+          ) : null}
+          <Suspense
+            fallback={
+              <section className="rounded border border-[#d1d7dc] p-6">
+                <p className="text-sm text-[#6a6f73]">{t("loadingCheckout")}</p>
+              </section>
+            }
+          >
+            <BankTransferCheckoutPanel />
+          </Suspense>
+          <PaymentsHistory />
+        </div>
+      </StudentSurface>
+    </>
   );
 }

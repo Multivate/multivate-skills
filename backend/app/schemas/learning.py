@@ -30,6 +30,57 @@ class WeeklyCourseTargetOut(BaseModel):
     weekly_course_target: int
 
 
+class LearningVisitIn(BaseModel):
+    local_date: str = Field(min_length=10, max_length=10)
+
+
+class LearningHabitsPatch(BaseModel):
+    reminder_days: list[int] | None = None
+    reminder_time: str | None = Field(default=None, max_length=5)
+    reminder_minutes: int | None = Field(default=None, ge=15, le=180)
+    reminder_dismissed: bool | None = None
+
+
+class LibraryCourseOut(BaseModel):
+    slug: str
+    title: str
+    image_url: str
+    instructor_name: str | None = None
+    price_cents: int = 0
+    currency: str = "NGN"
+    is_free: bool = False
+
+
+class LibraryCourseIn(BaseModel):
+    course_slug: str = Field(min_length=1, max_length=128)
+
+
+class LearningListCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+
+
+class LearningListOut(BaseModel):
+    id: UUID
+    title: str
+    courses: list[LibraryCourseOut]
+
+
+class LearningHabitsOut(BaseModel):
+    local_date: str
+    week_start: str
+    week_end: str
+    streak_weeks: int
+    visits_this_week: int
+    visit_goal: int
+    visited_today: bool
+    minutes_this_week: int
+    minutes_goal: int
+    reminder_days: list[int]
+    reminder_time: str | None
+    reminder_dismissed: bool
+    reminder_enabled: bool
+
+
 class ProgressUpdate(BaseModel):
     lesson_done: int | None = Field(default=None, ge=0)
     progress_pct: int | None = Field(default=None, ge=0, le=100)

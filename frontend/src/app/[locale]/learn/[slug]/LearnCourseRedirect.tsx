@@ -95,7 +95,7 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
         <p className="text-sm leading-relaxed text-brand-ink/70">{error}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           {preview ? (
-            <Link href={`/dashboard/instructor/studio/${slug}`} className="btn-cta-accent !min-w-0 !px-4 !py-2.5 text-sm">
+            <Link href={`/instructor/studio/${slug}`} className="btn-cta-accent !min-w-0 !px-4 !py-2.5 text-sm">
               Back to Course Studio
             </Link>
           ) : (

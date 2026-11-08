@@ -28,8 +28,17 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     two_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    authenticator_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    authenticator_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     student_code: Mapped[str | None] = mapped_column(String(32), unique=True, index=True, nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    learn_topic: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    learn_with: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    preferred_locale: Mapped[str] = mapped_column(String(8), nullable=False, default="en")
+    profile_public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    public_slug: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
+    public_headline: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    public_bio: Mapped[str] = mapped_column(String(4000), nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -137,7 +137,7 @@ export function AdminMentorApprovals() {
       {msg ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{msg}</p> : null}
 
       {rejectId ? (
-        <form onSubmit={submitReject} className="rounded-md border border-neutral-200 bg-brand-surface p-5 dark:border-zinc-700 ">
+        <form onSubmit={submitReject} className="admin-card rounded-md p-5">
           <h3 className="font-bold text-brand-ink dark:text-white">Reason for return</h3>
           <p className="mt-1 text-sm text-neutral-500">The mentor will see this and can update their profile.</p>
           <textarea
@@ -226,7 +226,7 @@ function MentorReviewCard({
   const statusClass = statusStyles[row.approval_status] ?? statusStyles.draft;
 
   return (
-    <article className="rounded-md border border-neutral-200/90 bg-brand-surface p-5 shadow-none dark:border-zinc-700 ">
+    <article className="admin-card rounded-md p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-neutral-100 ring-2 ring-brand-accent/20">

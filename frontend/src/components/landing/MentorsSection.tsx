@@ -63,13 +63,12 @@ export function MentorsSection({ initialMentors = [] }: { initialMentors?: Publi
   const useGrid = mentors.length <= 4;
 
   return (
-    <section id="mentors" className="section-y border-y border-brand-ink/10 bg-brand-muted">
+    <section id="mentors" className="border-y border-brand-ink/10 bg-brand-muted py-16 sm:py-20 lg:py-24">
       <div className="container-page">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="max-w-3xl">
-            <p className="tag-overline">{t("eyebrow")}</p>
-            <h2 className="heading-section mt-4 text-3xl sm:text-4xl">{t("heading")}</h2>
-            <p className="mt-4 text-base leading-relaxed text-brand-ink/65">{t("subheading")}</p>
+            <h2 className="text-3xl font-semibold tracking-[-0.02em] text-brand-ink sm:text-4xl">{t("heading")}</h2>
+            <p className="mt-3 text-base leading-relaxed text-brand-ink/70">{t("subheading")}</p>
           </div>
           <Link
             href="/mentors"
@@ -83,12 +82,7 @@ export function MentorsSection({ initialMentors = [] }: { initialMentors?: Publi
         {loading ? (
           <p className="mt-10 text-sm text-neutral-500">{t("loading")}</p>
         ) : mentors.length === 0 ? (
-          <div className="mt-10 border border-dashed border-neutral-200 bg-brand-surface px-6 py-12">
-            <p className="max-w-prose text-sm leading-relaxed text-neutral-500">{t("empty")}</p>
-            <Link href="/mentors" className="btn-outline-brand mt-5 inline-flex text-sm !py-2.5">
-              {t("viewAll")}
-            </Link>
-          </div>
+          <p className="mt-8 max-w-prose text-sm leading-relaxed text-neutral-500">{t("empty")}</p>
         ) : useGrid ? (
           <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {mentors.map((mentor) => (

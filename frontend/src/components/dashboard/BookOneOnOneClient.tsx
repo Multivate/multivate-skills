@@ -4,7 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { CheckCircle2, Copy, Loader2, Users } from "lucide-react";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { CheckCircle2, Copy, Loader2 } from "lucide-react";
 
 type Tier = {
   tier: "standard" | "professional" | "native_professional";
@@ -21,6 +22,8 @@ type Mentor = {
   full_name: string;
   headline?: string;
   photo_url?: string | null;
+  city?: string;
+  origin_country?: string | null;
 };
 
 type Instructions = {
@@ -61,6 +64,14 @@ function money(cents: number, currency: string) {
   }).format(cents / 100);
 }
 
+function parseMentors(raw: unknown): Mentor[] {
+  if (Array.isArray(raw)) return raw as Mentor[];
+  if (raw && typeof raw === "object" && Array.isArray((raw as { mentors?: unknown }).mentors)) {
+    return (raw as { mentors: Mentor[] }).mentors;
+  }
+  return [];
+}
+
 export function BookOneOnOneClient() {
   const searchParams = useSearchParams();
   const courseSlug = (searchParams.get("course") ?? "").trim();
@@ -92,8 +103,7 @@ export function BookOneOnOneClient() {
       const tData = await tRes.json().catch(() => null);
       const mData = await mRes.json().catch(() => null);
       if (Array.isArray(tData)) setTiers(tData as Tier[]);
-      if (Array.isArray(mData)) setMentors(mData as Mentor[]);
-      else if (Array.isArray(mData?.mentors)) setMentors(mData.mentors as Mentor[]);
+      setMentors(parseMentors(mData));
     })();
   }, []);
 
@@ -101,7 +111,8 @@ export function BookOneOnOneClient() {
     if (mentorPref) setMentorSlug(mentorPref);
   }, [mentorPref]);
 
-  const selectedTier = tiers.find((t) => t.tier === tier);
+  const selectedTier = tiers.find((row) => row.tier === tier);
+  const selectedMentor = mentors.find((row) => row.slug === mentorSlug) ?? null;
   const totalCents = selectedTier ? selectedTier.amount_cents * hours : 0;
 
   const start = useCallback(async () => {
@@ -171,14 +182,20 @@ export function BookOneOnOneClient() {
   };
 
   if (authLoading) {
-    return <p className="text-sm text-brand-ink/55">Loading…</p>;
+    return (
+      <div className="min-h-[70vh] animate-pulse space-y-6">
+        <div className="h-8 w-56 rounded bg-brand-ink/10" />
+        <div className="h-40 rounded-[5px] bg-brand-ink/10" />
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div className="rounded-md border border-brand-ink/10 bg-brand-muted/40 p-6 text-sm">
-        <p className="font-semibold text-brand-ink">Sign in as a student to book a 1:1 session.</p>
-        <Link href="/login" className="mt-3 inline-block text-brand-accent underline">
+      <div className="mx-auto max-w-lg py-16 text-center">
+        <h1 className="text-[1.75rem] font-extrabold tracking-tight">Book a mentor</h1>
+        <p className="mt-3 text-sm text-[#011B33]/60">Sign in as a student to book a live session.</p>
+        <Link href="/login" className="mt-6 inline-flex h-11 items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white">
           Sign in
         </Link>
       </div>
@@ -187,185 +204,256 @@ export function BookOneOnOneClient() {
 
   if (submitted || data?.payment?.status === "awaiting_review" || data?.payment?.status === "paid") {
     return (
-      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-6">
-        <CheckCircle2 className="h-8 w-8 text-emerald-700" />
-        <h2 className="mt-3 font-display text-xl font-bold text-brand-ink">Request received</h2>
-        <p className="mt-2 text-sm text-brand-ink/70">
-          We’ll confirm payment and match you with a German speaker. You’ll get a message with the meeting link.
-        </p>
-        <Link href="/dashboard/payments" className="mt-4 inline-block text-sm font-semibold text-brand-accent underline">
-          View payments
-        </Link>
+      <div className="mx-auto max-w-lg py-10">
+        <p className="text-sm text-[#011B33]/50">Book a mentor</p>
+        <div className="mt-4 rounded-[5px] border border-emerald-200 bg-emerald-50 px-6 py-8">
+          <CheckCircle2 className="h-8 w-8 text-emerald-700" />
+          <h1 className="mt-3 text-2xl font-extrabold">Request received</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[#011B33]/70">
+            We’ll confirm payment and match you with a German speaker. You’ll get a message with the meeting link.
+          </p>
+          <Link href="/dashboard/payments" className="mt-6 inline-flex h-10 items-center text-sm font-semibold text-brand-accent hover:underline">
+            View payments
+          </Link>
+        </div>
       </div>
     );
   }
 
+  const payStep = Boolean(data);
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-brand-ink">Book an instructor</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-ink/65">
-          Choose a tier. Each billed hour is <strong>45 minutes</strong> live. Prices are per hour.
+    <div className="space-y-10">
+      <header className="max-w-2xl">
+        <p className="text-sm text-[#011B33]/50">1:1 session</p>
+        <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight text-[#011B33] sm:text-[2rem]">Book a mentor</h1>
+        <p className="mt-2 text-sm leading-relaxed text-[#011B33]/60">
+          Talk with someone already living in Germany. Each billed hour is 45 minutes live. You only pay after you start a booking.
         </p>
-      </div>
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {tiers.map((t) => {
-          const active = tier === t.tier;
-          return (
-            <button
-              key={t.tier}
-              type="button"
-              onClick={() => setTier(t.tier)}
-              className={`rounded-md border p-4 text-left transition ${
-                active ? "border-brand-accent bg-brand-accent/5 shadow-sm" : "border-brand-ink/10 bg-brand-surface hover:border-brand-ink/25"
-              }`}
-            >
-              <p className="text-sm font-bold text-brand-ink">{t.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-brand-ink/55">{t.description}</p>
-              <p className="mt-3 font-display text-xl font-bold text-brand-accent">
-                {money(t.amount_cents, t.currency)}
-                <span className="text-sm font-semibold text-brand-ink/45"> / hr</span>
-              </p>
-              <p className="mt-1 text-[0.65rem] text-brand-ink/45">{t.duration_minutes} min session</p>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wide text-brand-ink/45">Hours</span>
-          <select
-            value={hours}
-            onChange={(e) => setHours(Number(e.target.value))}
-            className="mt-1.5 w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-3 py-2.5 text-sm"
-          >
-            {[1, 2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n} × 45 min ({money((selectedTier?.amount_cents ?? 0) * n, selectedTier?.currency ?? "NGN")})
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wide text-brand-ink/45">Preferred mentor (optional)</span>
-          <select
-            value={mentorSlug}
-            onChange={(e) => setMentorSlug(e.target.value)}
-            className="mt-1.5 w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-3 py-2.5 text-sm"
-          >
-            <option value="">Any available German speaker</option>
-            {mentors.map((m) => (
-              <option key={m.slug} value={m.slug}>
-                {m.full_name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-wide text-brand-ink/45">Preferred times (optional)</span>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={3}
-          placeholder="e.g. Weekday evenings WAT, or Saturday morning"
-          className="mt-1.5 w-full rounded-sm border border-brand-ink/15 bg-brand-surface px-3 py-2.5 text-sm"
-        />
-      </label>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-brand-ink/10 bg-brand-muted/30 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-brand-ink/70">
-          <Users className="h-4 w-4 text-brand-accent" />
-          Total for {hours} × 45 min
-        </div>
-        <p className="font-display text-2xl font-bold text-brand-ink">
-          {money(totalCents, selectedTier?.currency ?? "NGN")}
-        </p>
-      </div>
-
-      {err ? <p className="text-sm font-medium text-red-700">{err}</p> : null}
-
-      {!data ? (
-        <button
-          type="button"
-          disabled={busy || !selectedTier}
-          onClick={() => void start()}
-          className="btn-cta-accent inline-flex items-center gap-2 disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Continue to payment
-        </button>
-      ) : (
-        <div className="space-y-4 rounded-md border border-brand-ink/10 bg-brand-surface p-5">
-          <p className="text-sm text-brand-ink/70">{data.message}</p>
-          {data.instructions ? (
-            <>
-              <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs text-brand-ink/45">Bank</dt>
-                  <dd className="font-semibold">{data.instructions.bank_name}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-brand-ink/45">Account name</dt>
-                  <dd className="font-semibold">{data.instructions.account_name}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-brand-ink/45">Account number</dt>
-                  <dd className="font-semibold">{data.instructions.account_number}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-brand-ink/45">Amount</dt>
-                  <dd className="font-semibold">
-                    {money(data.instructions.amount_cents, data.instructions.currency)}
-                  </dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs text-brand-ink/45">Payment reference</dt>
-                  <dd className="flex items-center gap-2 font-semibold">
-                    {data.instructions.payment_reference}
-                    <button
-                      type="button"
-                      className="text-brand-accent"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(data.instructions!.payment_reference);
-                        setCopied(true);
-                      }}
-                    >
-                      {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </button>
-                  </dd>
-                </div>
-              </dl>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  value={txnRef}
-                  onChange={(e) => setTxnRef(e.target.value)}
-                  placeholder="Bank transaction reference"
-                  className="rounded-sm border border-brand-ink/15 px-3 py-2.5 text-sm"
-                />
-                <input
-                  value={amountSent}
-                  onChange={(e) => setAmountSent(e.target.value)}
-                  placeholder="Amount sent (e.g. 15000)"
-                  className="rounded-sm border border-brand-ink/15 px-3 py-2.5 text-sm"
-                />
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(17rem,0.7fr)]">
+        <div className="space-y-10">
+          <section>
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-extrabold">Who do you want to meet?</h2>
+                <p className="mt-1 text-sm text-[#011B33]/55">
+                  {mentors.length > 0 ? "Pick a person, or let us match you." : "We’ll match you with an approved German speaker."}
+                </p>
               </div>
+              <Link href="/mentors" className="text-sm font-semibold text-brand-accent hover:underline">
+                Browse mentors
+              </Link>
+            </div>
+            <div className={`grid gap-3 ${mentors.length > 0 ? "sm:grid-cols-2" : ""}`}>
               <button
                 type="button"
-                disabled={verifyBusy || !txnRef.trim()}
-                onClick={() => void claimTransfer()}
-                className="btn-cta-accent disabled:opacity-50"
+                onClick={() => setMentorSlug("")}
+                className={`rounded-[5px] border p-4 text-left transition ${
+                  mentorSlug === "" ? "border-brand-accent bg-[#f4f7fd]" : "border-brand-ink/10 hover:border-brand-ink/25"
+                }`}
               >
-                {verifyBusy ? "Submitting…" : "I have paid. Submit for review"}
+                <p className="text-sm font-bold">Match me</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#011B33]/55">Any available German speaker on Multivate.</p>
               </button>
-            </>
-          ) : null}
+              {mentors.map((mentor) => {
+                const active = mentorSlug === mentor.slug;
+                const place = [mentor.city, mentor.origin_country ? `from ${mentor.origin_country}` : null].filter(Boolean).join(" · ");
+                return (
+                  <button
+                    key={mentor.slug}
+                    type="button"
+                    onClick={() => setMentorSlug(mentor.slug)}
+                    className={`flex gap-3 rounded-[5px] border p-4 text-left transition ${
+                      active ? "border-brand-accent bg-[#f4f7fd]" : "border-brand-ink/10 hover:border-brand-ink/25"
+                    }`}
+                  >
+                    <UserAvatar name={mentor.full_name} avatarUrl={mentor.photo_url} className="h-12 w-12 text-sm" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold">{mentor.full_name}</span>
+                      {mentor.headline ? <span className="mt-0.5 block line-clamp-2 text-xs text-[#011B33]/55">{mentor.headline}</span> : null}
+                      {place ? <span className="mt-1 block truncate text-[11px] text-[#011B33]/45">{place}</span> : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-extrabold">Session type</h2>
+            <p className="mt-1 text-sm text-[#011B33]/55">Prices are per 45-minute hour.</p>
+            <ul className="mt-4 divide-y divide-brand-ink/10 overflow-hidden rounded-[5px] border border-brand-ink/10">
+              {tiers.map((row) => {
+                const active = tier === row.tier;
+                return (
+                  <li key={row.tier}>
+                    <button
+                      type="button"
+                      onClick={() => setTier(row.tier)}
+                      className={`flex w-full items-start justify-between gap-4 px-4 py-4 text-left transition ${
+                        active ? "bg-[#f4f7fd]" : "bg-white hover:bg-[#f8f9fb]"
+                      }`}
+                    >
+                      <span>
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`mt-0.5 inline-block h-3.5 w-3.5 rounded-full border ${
+                              active ? "border-brand-accent bg-brand-accent" : "border-brand-ink/25 bg-white"
+                            }`}
+                            aria-hidden
+                          />
+                          <span className="text-sm font-bold">{row.label}</span>
+                        </span>
+                        <span className="mt-1 block pl-[1.375rem] text-xs leading-relaxed text-[#011B33]/55">{row.description}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-extrabold text-brand-accent">{money(row.amount_cents, row.currency)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-extrabold">How long?</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setHours(n)}
+                  className={`h-10 rounded-[5px] px-4 text-sm font-semibold ${
+                    hours === n ? "bg-brand-accent text-white" : "border border-brand-ink/15 text-[#011B33] hover:border-brand-ink/30"
+                  }`}
+                >
+                  {n} × 45 min
+                </button>
+              ))}
+            </div>
+            <label className="mt-6 block">
+              <span className="text-sm font-semibold">Preferred times</span>
+              <span className="ml-1 text-sm font-normal text-[#011B33]/45">(optional)</span>
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={3}
+                placeholder="Weekday evenings WAT, or Saturday morning"
+                className="mt-1.5 w-full rounded-[5px] border border-brand-ink/15 px-3 py-2.5 text-sm outline-none focus:border-brand-accent"
+              />
+            </label>
+          </section>
         </div>
-      )}
+
+        <aside className="rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-5 lg:sticky lg:top-24">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">Your booking</p>
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-[#011B33]/55">Mentor</span>
+              <span className="max-w-[12rem] text-right font-semibold">{selectedMentor?.full_name ?? "Any available speaker"}</span>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-[#011B33]/55">Type</span>
+              <span className="text-right font-semibold">{selectedTier?.label ?? "—"}</span>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-[#011B33]/55">Time</span>
+              <span className="text-right font-semibold">{hours} × 45 min</span>
+            </div>
+            {courseSlug ? (
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[#011B33]/55">Course</span>
+                <span className="max-w-[12rem] truncate text-right font-semibold">{courseSlug}</span>
+              </div>
+            ) : null}
+          </div>
+          <div className="mt-5 border-t border-brand-ink/10 pt-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-[#011B33]/55">Total</span>
+              <span className="text-xl font-extrabold">{money(totalCents, selectedTier?.currency ?? "NGN")}</span>
+            </div>
+          </div>
+
+          {err ? <p className="mt-4 text-sm font-medium text-red-700">{err}</p> : null}
+
+          {!payStep ? (
+            <button
+              type="button"
+              disabled={busy || !selectedTier}
+              onClick={() => void start()}
+              className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[5px] bg-brand-accent text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Continue to payment
+            </button>
+          ) : (
+            <div className="mt-5 space-y-4 rounded-[5px] border border-brand-ink/10 bg-white p-4">
+              {data?.message ? <p className="text-sm text-[#011B33]/70">{data.message}</p> : null}
+              {data?.instructions ? (
+                <>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-[#011B33]/45">Bank</dt>
+                      <dd className="font-semibold">{data.instructions.bank_name}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-[#011B33]/45">Account</dt>
+                      <dd className="text-right font-semibold">{data.instructions.account_name}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-[#011B33]/45">Number</dt>
+                      <dd className="font-semibold">{data.instructions.account_number}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-[#011B33]/45">Amount</dt>
+                      <dd className="font-semibold">{money(data.instructions.amount_cents, data.instructions.currency)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[#011B33]/45">Reference</dt>
+                      <dd className="mt-1 flex items-center justify-between gap-2 font-semibold">
+                        <span className="break-all">{data.instructions.payment_reference}</span>
+                        <button
+                          type="button"
+                          className="shrink-0 text-brand-accent"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(data.instructions!.payment_reference);
+                            setCopied(true);
+                          }}
+                        >
+                          {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </button>
+                      </dd>
+                    </div>
+                  </dl>
+                  <input
+                    value={txnRef}
+                    onChange={(event) => setTxnRef(event.target.value)}
+                    placeholder="Bank transaction reference"
+                    className="h-10 w-full rounded-[5px] border border-brand-ink/15 px-3 text-sm outline-none focus:border-brand-accent"
+                  />
+                  <input
+                    value={amountSent}
+                    onChange={(event) => setAmountSent(event.target.value)}
+                    placeholder="Amount sent"
+                    className="h-10 w-full rounded-[5px] border border-brand-ink/15 px-3 text-sm outline-none focus:border-brand-accent"
+                  />
+                  <button
+                    type="button"
+                    disabled={verifyBusy || !txnRef.trim()}
+                    onClick={() => void claimTransfer()}
+                    className="inline-flex h-11 w-full items-center justify-center rounded-[5px] bg-brand-accent text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {verifyBusy ? "Submitting…" : "I have paid"}
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm text-[#011B33]/60">Opening the payment page…</p>
+              )}
+            </div>
+          )}
+        </aside>
+      </div>
 
       {data?.remita ? (
         <form ref={remitaFormRef} method="POST" action={data.remita.payment_gateway_url} className="hidden">

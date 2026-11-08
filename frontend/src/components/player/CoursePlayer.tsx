@@ -14,6 +14,7 @@ import {
   Play,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CourseRatingPanel } from "@/components/dashboard/CourseRatingPanel";
 import { AssessmentPlayer } from "@/components/player/AssessmentPlayer";
 import { ProtectedVideoPlayer } from "@/components/player/ProtectedVideoPlayer";
 import { formTextareaClass } from "@/lib/form-styles";
@@ -233,6 +234,11 @@ export function CoursePlayer({ slug, lessonId, preview = false }: Props) {
             </div>
           ))}
         </div>
+        {!preview ? (
+          <div className="px-4 py-3">
+            <CourseRatingPanel courses={[{ slug, title: curriculum.course_title }]} defaultSlug={slug} />
+          </div>
+        ) : null}
       </aside>
 
       <main className="flex flex-1 flex-col">

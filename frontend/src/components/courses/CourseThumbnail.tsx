@@ -15,9 +15,9 @@ type Props = {
   fit?: "cover" | "contain";
 };
 
-function ThumbnailPlaceholder({ compact }: { compact?: boolean }) {
+function ThumbnailPlaceholder({ compact, alt }: { compact?: boolean; alt?: string }) {
   return (
-    <div className="flex h-full min-h-[10rem] w-full items-center justify-center bg-brand-muted">
+    <div className="flex h-full min-h-[10rem] w-full items-center justify-center bg-brand-muted" role="img" aria-label={alt || "Course cover"}>
       <div
         className={`flex items-center justify-center rounded-md border border-brand-accent/25 bg-brand-surface shadow-sm ${
           compact ? "h-10 w-10" : "h-12 w-12"
@@ -62,7 +62,7 @@ export function CourseThumbnail({
   const contain = fit === "contain";
 
   if (!resolved || failed) {
-    return <ThumbnailPlaceholder compact={compact} />;
+    return <ThumbnailPlaceholder compact={compact} alt={alt} />;
   }
 
   if (contain) {

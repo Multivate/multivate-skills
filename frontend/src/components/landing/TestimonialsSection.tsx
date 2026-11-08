@@ -68,16 +68,13 @@ export function TestimonialsSection({ initialReviews = [] }: { initialReviews?: 
   }
 
   return (
-    <section id="success-stories" className="section-y bg-brand-paper">
+    <section id="success-stories" className="bg-white py-16 sm:py-20 lg:py-24">
       <div className="container-page">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-3xl">
-            <div className="marketing-rule mb-5" aria-hidden />
-            <h2 className="heading-section text-3xl sm:text-4xl">{t("heading")}</h2>
-          </div>
+        <div className="max-w-3xl">
+          <h2 className="text-3xl font-semibold tracking-[-0.02em] text-brand-ink sm:text-4xl">{t("heading")}</h2>
         </div>
 
-        <div className="relative mt-12">
+        <div className="relative mt-10">
           <button
             type="button"
             aria-label={t("scrollRight")}
@@ -89,22 +86,20 @@ export function TestimonialsSection({ initialReviews = [] }: { initialReviews?: 
 
           <div
             ref={scrollerRef}
-            className="flex gap-0 overflow-x-auto pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] md:pr-14 [&::-webkit-scrollbar]:hidden"
+            className="flex gap-4 overflow-x-auto pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] md:pr-14 [&::-webkit-scrollbar]:hidden"
           >
-            {reviews.map((review, index) => (
+            {reviews.map((review) => (
               <article
                 key={review.id}
-                className={`flex w-[min(100%,22rem)] shrink-0 snap-start flex-col border-y border-r border-brand-ink/10 px-6 py-8 first:border-l sm:w-[20rem] lg:w-[22rem] ${
-                  index % 2 === 0 ? "bg-brand-paper" : "bg-brand-muted/60"
-                }`}
+                className="flex w-[min(100%,22rem)] shrink-0 snap-start flex-col rounded-xl border border-brand-ink/10 bg-white px-6 py-7 shadow-[0_8px_24px_rgba(12,27,74,0.04)] sm:w-[20rem]"
               >
                 <StarRow rating={review.rating} />
-                <blockquote className="mt-5 flex-1 font-display text-lg font-medium leading-snug tracking-tighter text-brand-ink">
+                <blockquote className="mt-5 flex-1 text-lg font-medium leading-snug text-brand-ink">
                   “{review.comment}”
                 </blockquote>
 
                 <div className="mt-8 flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-ink text-xs font-bold text-white">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-navy text-xs font-bold text-white">
                     {initials(review.reviewer_display_name)}
                   </span>
                   <div className="min-w-0">

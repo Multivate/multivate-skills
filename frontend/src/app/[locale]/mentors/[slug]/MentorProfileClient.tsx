@@ -60,7 +60,7 @@ export function MentorProfileClient({ mentor }: { mentor: MentorDetail }) {
                 href={`/dashboard/book-1on1?mentor=${encodeURIComponent(mentor.slug)}`}
                 className="inline-flex items-center gap-2 rounded-md border border-brand-ink/15 bg-brand-surface px-5 py-3 text-sm font-semibold text-brand-ink transition hover:border-brand-accent hover:text-brand-accent"
               >
-                Book 1:1 session
+                Book a mentor
               </Link>
             </div>
           </div>

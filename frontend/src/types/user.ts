@@ -7,7 +7,13 @@ export type AuthUser = {
   role: UserRole;
   is_active: boolean;
   two_factor_enabled?: boolean;
+  authenticator_enabled?: boolean;
   avatar_url?: string | null;
+  preferred_locale?: string | null;
+  profile_public?: boolean;
+  public_slug?: string | null;
+  public_headline?: string | null;
+  public_bio?: string | null;
   created_at: string;
 };
 

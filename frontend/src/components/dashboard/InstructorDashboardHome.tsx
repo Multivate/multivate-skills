@@ -1,16 +1,11 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useEffect, useState } from "react";
-import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
-import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
-import {
-  DashboardMetricStrip,
-  DashboardPageHeader,
-  DashboardPanel,
-  DashboardQuietLink,
-  DashboardState,
-} from "@/components/dashboard/dashboard-ui";
+import { useEffect, useMemo, useState } from "react";
+import { InstructorCourseGrid } from "@/components/dashboard/InstructorCourseGrid";
+import { InstructorKeyBoxes, instructorOverviewBoxes } from "@/components/dashboard/InstructorKeyBoxes";
+import { StudentSurface } from "@/components/dashboard/StudentPageHero";
+import { useAuth } from "@/contexts/auth-context";
 
 type InstructorDashboard = {
   totals: {
@@ -22,7 +17,15 @@ type InstructorDashboard = {
   courses: { slug: string; title: string; image_url: string; lessons_count: number; enrollment_count: number }[];
 };
 
+function greetingFor(name: string) {
+  const hour = new Date().getHours();
+  if (hour < 12) return `Good morning, ${name}`;
+  if (hour < 17) return `Good afternoon, ${name}`;
+  return `Good evening, ${name}`;
+}
+
 export function InstructorDashboardHome() {
+  const { user } = useAuth();
   const [data, setData] = useState<InstructorDashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,93 +55,100 @@ export function InstructorDashboardHome() {
     };
   }, []);
 
+  const ranked = useMemo(() => {
+    const list = data?.courses ?? [];
+    return [...list].sort((a, b) => b.enrollment_count - a.enrollment_count);
+  }, [data]);
+
+  const featured = ranked[0] ?? null;
+
   if (error) {
     return (
-      <DashboardState tone="error">
-        <p className="font-semibold">{error}</p>
-      </DashboardState>
+      <StudentSurface>
+        <p className="text-sm text-red-700">{error}</p>
+      </StudentSurface>
     );
   }
 
   if (!data) {
-    return <DashboardState>Loading your dashboard…</DashboardState>;
+    return (
+      <StudentSurface>
+        <div className="min-h-[70vh] animate-pulse space-y-8">
+          <div className="h-10 w-72 rounded bg-brand-ink/10" />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="h-36 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-36 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-36 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-36 rounded-[5px] bg-brand-ink/10" />
+          </div>
+          <div className="h-52 rounded-[5px] bg-brand-ink/10" />
+        </div>
+      </StudentSurface>
+    );
   }
 
-  const { totals, courses } = data;
+  const { totals } = data;
+  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const weekday = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 
   return (
-    <div className="mx-auto max-w-[90rem] space-y-10">
-      <DashboardPageHeader
-        eyebrow="Instructor"
-        title="Teaching overview"
-        description="Your courses, students, and earnings."
-        action={
-          <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand !min-h-0 !min-w-0 !px-5 !py-2.5 text-sm">
-            Create course
+    <StudentSurface>
+      <div className="space-y-10">
+        <header className="flex flex-col gap-5 animate-fade-up sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm text-[#011B33]/50 dark:text-[#eef4ff]/55">{weekday}</p>
+            <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight text-[#011B33] dark:text-[#eef4ff] sm:text-[2.15rem]">
+              {greetingFor(firstName)}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-[#011B33]/60">
+              {totals.total_courses === 0
+                ? "Create a course, then add lessons in Studio."
+                : "Studio, students, and completed payments — live from your account."}
+            </p>
+          </div>
+          <Link
+            href="/instructor/studio/new"
+            className="inline-flex h-11 w-fit items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white transition duration-200 hover:bg-[#0f4bb8] hover:shadow-[0_10px_24px_rgba(20,87,208,0.28)]"
+          >
+            New course
           </Link>
-        }
-      />
+        </header>
 
-      <DashboardMetricStrip
-        items={[
-          { label: "Courses", value: totals.total_courses },
-          { label: "Enrollments", value: totals.total_enrollments },
-          { label: "Learners", value: totals.unique_learners },
-          {
-            label: "Revenue",
-            value: formatMoneyCompact(totals.revenue_completed_cents),
-            hint: <span title={formatMoney(totals.revenue_completed_cents)}>Completed</span>,
-          },
-        ]}
-      />
+        <InstructorKeyBoxes items={instructorOverviewBoxes(totals)} />
 
-      <DashboardPanel
-        title="Courses you instruct"
-        action={<DashboardQuietLink href="/dashboard/instructor/studio/new">New course</DashboardQuietLink>}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-brand-ink/10 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-brand-ink/45">
-                <th className="pb-3 pr-4">Course</th>
-                <th className="pb-3 pr-4">Lessons</th>
-                <th className="pb-3 pr-4">Enrollments</th>
-                <th className="pb-3"> </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brand-ink/10">
-              {courses.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-10 text-center text-sm text-brand-ink/60">
-                    No courses yet. Create one to publish under your instructor account.
-                  </td>
-                </tr>
-              ) : (
-                courses.map((c) => (
-                  <tr key={c.slug}>
-                    <td className="py-4 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-14 w-20 shrink-0 overflow-hidden bg-brand-muted">
-                          <CourseThumbnail src={c.image_url} alt={c.title} sizes="80px" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-brand-ink">{c.title}</p>
-                          <p className="text-xs text-brand-ink/45">{c.slug}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 pr-4 font-semibold tabular-nums text-brand-ink">{c.lessons_count}</td>
-                    <td className="py-4 pr-4 font-semibold tabular-nums text-brand-ink">{c.enrollment_count}</td>
-                    <td className="py-4">
-                      <DashboardQuietLink href={`/courses/${c.slug}`}>Open</DashboardQuietLink>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DashboardPanel>
-    </div>
+        {featured ? (
+          <section className="animate-fade-up-delay">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-lg font-extrabold">Your courses</h2>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+                <Link href="/instructor/studio" className="text-brand-accent hover:underline">
+                  Open studio
+                </Link>
+                <Link href="/instructor/analytics" className="text-[#011B33]/60 hover:text-brand-accent">
+                  Analytics
+                </Link>
+                <Link href="/instructor/students" className="text-[#011B33]/60 hover:text-brand-accent">
+                  Students
+                </Link>
+              </div>
+            </div>
+            <InstructorCourseGrid courses={ranked} />
+          </section>
+        ) : (
+          <section className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-14 text-center animate-fade-up-delay">
+            <p className="text-lg font-extrabold">Your studio is empty</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-[#011B33]/60">
+              Start a course, add a cover and lessons, then submit it for review. Students see it after it goes live.
+            </p>
+            <Link
+              href="/instructor/studio/new"
+              className="mt-6 inline-flex h-11 items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white transition duration-200 hover:bg-[#0f4bb8]"
+            >
+              Create course
+            </Link>
+          </section>
+        )}
+      </div>
+    </StudentSurface>
   );
 }

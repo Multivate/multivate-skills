@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Plus, Sparkles, Tag } from "lucide-react";
+import { DonutChart } from "@/components/dashboard/admin-analytics-charts";
+import { Loader2, Plus, Tag } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { readApiError } from "@/lib/api-error";
 
@@ -25,9 +26,9 @@ function formatDiscount(row: DiscountRow) {
   return `₦${(row.discount_value / 100).toLocaleString("en-NG")} off`;
 }
 
-const formLabelClass = "block text-sm font-semibold text-zinc-800 dark:text-neutral-200";
+const formLabelClass = "block text-sm font-semibold admin-ink";
 const formInputClass =
-  "mt-1.5 w-full rounded-md border border-neutral-200 bg-brand-surface px-4 py-2.5 text-sm text-brand-ink outline-none placeholder:text-neutral-400 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 dark:border-neutral-500 dark:bg-zinc-800 dark:text-neutral-100 dark:placeholder:text-neutral-500";
+  "mt-1.5 w-full rounded-lg border border-[var(--admin-line)] bg-[var(--admin-bg)] px-4 py-2.5 text-sm admin-ink outline-none placeholder:text-[var(--admin-muted)] focus:border-[#1457D0] focus:ring-2 focus:ring-[#1457D0]/25";
 
 export function AdminDiscountCodes() {
   const [rows, setRows] = useState<DiscountRow[] | null>(null);
@@ -121,26 +122,73 @@ export function AdminDiscountCodes() {
   }
 
   if (rows === null) {
-    return <p className="text-sm text-neutral-500">Loading discount codes…</p>;
+    return <p className="admin-muted text-sm">Loading discount codes…</p>;
   }
 
+  const activeCount = rows.filter((row) => row.is_active).length;
+  const inactiveCount = rows.length - activeCount;
+  const usedTotal = rows.reduce((sum, row) => sum + row.used_count, 0);
+  const showStatus = activeCount > 0 && inactiveCount > 0;
+  const usedRows = rows.filter((row) => row.used_count > 0).sort((a, b) => b.used_count - a.used_count);
+  const usedMax = Math.max(...usedRows.map((row) => row.used_count), 1);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-xl">
-          <p className="rounded-md border border-brand-accent/30 bg-brand-accent/5 px-4 py-3 text-sm text-zinc-700 dark:border-brand-accent/25 dark:bg-brand-accent/10 dark:text-neutral-300">
-            Create codes students can use at checkout. Share the code by email, social, or campaigns.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="admin-muted text-sm">Students enter these at checkout.</p>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="btn-primary-brand inline-flex !min-w-0 items-center gap-2 !py-2.5 text-sm"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#1457D0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0E3F9E]"
         >
           <Plus className="h-4 w-4" />
           New code
         </button>
       </div>
+
+      {showStatus || usedRows.length > 0 ? (
+        <div className={`grid gap-4 ${showStatus && usedRows.length > 0 ? "xl:grid-cols-2" : ""}`}>
+          {showStatus ? (
+            <section className="admin-card rounded-2xl p-5 sm:p-6">
+              <h2 className="text-base font-semibold">Active and paused</h2>
+              <div className="mt-4">
+                <DonutChart
+                  segments={[
+                    { label: "Active", value: activeCount, color: "#1F8A4C" },
+                    { label: "Inactive", value: inactiveCount, color: "#A56B00" },
+                  ]}
+                  centerLabel={String(rows.length)}
+                />
+              </div>
+            </section>
+          ) : null}
+          {usedRows.length > 0 ? (
+            <section className="admin-card rounded-2xl p-5 sm:p-6">
+              <h2 className="text-base font-semibold">Codes that have been used</h2>
+              <p className="admin-muted mt-1 text-xs">{usedTotal} redemption{usedTotal === 1 ? "" : "s"}</p>
+              <ul className="mt-4 space-y-3">
+                {usedRows.map((row) => (
+                  <li key={row.id}>
+                    <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                      <span className="font-mono font-semibold">{row.code}</span>
+                      <span className="tabular-nums">
+                        {row.used_count}
+                        {row.max_uses != null ? ` / ${row.max_uses}` : ""}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-[var(--admin-soft)]">
+                      <div
+                        className="h-full rounded-full bg-[#1457D0]"
+                        style={{ width: `${Math.max(8, Math.round((row.used_count / usedMax) * 100))}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
 
       {msg ? (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
@@ -154,14 +202,8 @@ export function AdminDiscountCodes() {
       ) : null}
 
       {showForm ? (
-        <form
-          onSubmit={(e) => void createCode(e)}
-          className="rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-none dark:border-zinc-800 "
-        >
-          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-ink dark:text-neutral-100">
-            <Sparkles className="h-5 w-5 text-brand-accent" />
-            Create a discount code
-          </h2>
+        <form onSubmit={(e) => void createCode(e)} className="admin-card rounded-2xl p-6">
+          <h2 className="text-base font-semibold">Create a discount code</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className={formLabelClass}>
               Label (optional)
@@ -236,7 +278,7 @@ export function AdminDiscountCodes() {
           <button
             type="submit"
             disabled={busy}
-            className="btn-primary-brand mt-5 inline-flex !min-w-0 items-center gap-2 disabled:opacity-60"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1457D0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0E3F9E] disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Create code
@@ -244,56 +286,56 @@ export function AdminDiscountCodes() {
         </form>
       ) : null}
 
-      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface shadow-none dark:border-zinc-800 ">
+      <div className="admin-card overflow-x-auto rounded-2xl">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
-            <tr>
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Discount</th>
-              <th className="px-4 py-3">Uses</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
+          <thead>
+            <tr className="admin-muted border-b border-[var(--admin-line)] text-[11px] font-semibold uppercase tracking-[0.12em]">
+              <th className="px-5 py-3 font-semibold">Code</th>
+              <th className="px-3 py-3 font-semibold">Discount</th>
+              <th className="px-3 py-3 font-semibold">Uses</th>
+              <th className="px-3 py-3 font-semibold">Status</th>
+              <th className="px-5 py-3 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-neutral-500 dark:text-neutral-400">
-                  No discount codes yet. Create one to get started.
+                <td colSpan={5} className="admin-muted px-5 py-10 text-center">
+                  No discount codes yet.
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="border-b border-neutral-100 last:border-0 dark:border-zinc-800">
-                  <td className="px-4 py-3">
+                <tr key={row.id} className="border-b border-[var(--admin-line)] last:border-0">
+                  <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-brand-accent" />
+                      <Tag className="h-4 w-4 text-[#1457D0]" />
                       <div>
-                        <p className="font-mono font-bold text-brand-ink dark:text-neutral-100">{row.code}</p>
-                        {row.label ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{row.label}</p> : null}
+                        <p className="font-mono font-semibold">{row.code}</p>
+                        {row.label ? <p className="admin-muted text-xs">{row.label}</p> : null}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-zinc-800 dark:text-neutral-200">{formatDiscount(row)}</td>
-                  <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">
+                  <td className="px-3 py-3 font-semibold">{formatDiscount(row)}</td>
+                  <td className="admin-muted px-3 py-3">
                     {row.used_count}
                     {row.max_uses != null ? ` / ${row.max_uses}` : " / ∞"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                        row.is_active ? "bg-emerald-100 text-emerald-800" : "bg-neutral-100 text-neutral-500"
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        row.is_active ? "bg-[#E5F6EC] text-[#1F8A4C]" : "bg-[#FFF4DE] text-[#A56B00]"
                       }`}
                     >
                       {row.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => void toggleActive(row)}
-                      className="text-sm font-semibold text-brand-primary hover:underline disabled:opacity-60"
+                      className="text-sm font-semibold text-[#1457D0] disabled:opacity-60"
                     >
                       {row.is_active ? "Deactivate" : "Activate"}
                     </button>

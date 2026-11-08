@@ -1,4 +1,20 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { LegalDocumentLayout, LegalList } from "@/components/legal/LegalDocumentLayout";
+import { publicPageMetadata } from "@/lib/seo";
+
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "metadata" });
+  return publicPageMetadata({
+    locale,
+    path: "/terms",
+    title: t("termsTitle"),
+    description: t("termsDescription"),
+  });
+}
 
 export default function TermsPage() {
   return (
@@ -137,7 +153,7 @@ export default function TermsPage() {
           body: (
             <>
               <p>
-                Features such as Kazzy (our Multivate guide) and mentor messaging provide general educational and career
+                Features such as Lena (our Multivate guide) and mentor messaging provide general educational and career
                 information. They are not legal, immigration, visa, medical, or financial advice. Always verify official
                 requirements with the relevant authority before making decisions.
               </p>

@@ -12,6 +12,8 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/ .
+ARG NEXT_PUBLIC_SITE_URL=https://www.multivateskills.com
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN node scripts/strip-locale-bom.mjs && pnpm build
 

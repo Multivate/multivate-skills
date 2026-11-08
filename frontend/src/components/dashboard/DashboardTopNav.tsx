@@ -108,7 +108,8 @@ export function DashboardTopNav({
   const [mobileOpen, setMobileOpen] = useState(false);
   const groups = dashboardNavGroupsByWorkspace[workspace] ?? dashboardNavGroupsByWorkspace.student;
   const accent = dashboardAccent[workspace] ?? dashboardAccent.student;
-  const homeActive = navHrefActive(pathname, "/dashboard");
+  const homeHref = workspace === "admin" ? "/admin" : workspace === "instructor" ? "/instructor" : "/dashboard";
+  const homeActive = navHrefActive(pathname, homeHref);
   const settingsActive = navHrefActive(pathname, "/dashboard/settings");
 
   const tNavItem = (id: string) => tDash(`${navItemsNs}.${id}`);
@@ -131,13 +132,13 @@ export function DashboardTopNav({
             <Menu className="h-5 w-5" />
           </button>
 
-          <Link href="/dashboard" className="shrink-0" aria-label="Multivate">
+          <Link href={homeHref} className="shrink-0" aria-label="Multivate">
             <LogoMark className="max-w-[8.5rem]" />
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label={tDash("shell.mainNav")}>
             <Link
-              href="/dashboard"
+              href={homeHref}
               className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
                 homeActive ? accent.active : "text-brand-ink/70 hover:bg-brand-muted hover:text-brand-ink"
               }`}
@@ -186,7 +187,7 @@ export function DashboardTopNav({
               href="/dashboard/settings"
               className="hidden items-center gap-2 rounded-md border border-brand-ink/15 bg-brand-surface py-1.5 pl-1.5 pr-3 transition hover:border-brand-ink/30 sm:flex"
             >
-              <UserAvatar name={userName} avatarUrl={userAvatar} className="h-9 w-9 text-sm" fallbackClassName={accent.avatar} />
+              <UserAvatar name={userName} avatarUrl={userAvatar} className="h-9 w-9 text-sm" />
               <div className="min-w-0 text-left">
                 <p className="truncate text-sm font-bold text-brand-ink">{userName}</p>
                 <p className="text-xs font-medium text-neutral-500">{roleLabel}</p>
@@ -230,7 +231,7 @@ export function DashboardTopNav({
             </div>
             <nav className="min-h-0 flex-1 overflow-y-auto p-4">
               <Link
-                href="/dashboard"
+                href={homeHref}
                 onClick={() => setMobileOpen(false)}
                 className={`mb-4 block rounded-md px-3 py-2.5 text-sm font-semibold ${homeActive ? accent.active : "text-zinc-800"}`}
               >

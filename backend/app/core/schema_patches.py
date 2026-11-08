@@ -38,6 +38,11 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             conn,
             "UPDATE users SET two_factor_enabled = FALSE WHERE role <> 'admin' AND two_factor_enabled IS TRUE",
         )
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS authenticator_secret VARCHAR(64)")
+        _run(
+            conn,
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS authenticator_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+        )
 
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS price_cents INTEGER NOT NULL DEFAULT 990000")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS currency VARCHAR(3) NOT NULL DEFAULT 'NGN'")
@@ -703,8 +708,227 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         )
         _run(
             conn,
+            """
+            CREATE TABLE IF NOT EXISTS student_learning_profiles (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                education_level VARCHAR(64),
+                current_skills TEXT,
+                skills_to_learn TEXT,
+                learning_goals TEXT,
+                preferred_formats VARCHAR(255),
+                weekly_hours VARCHAR(32),
+                weekly_course_target INTEGER NOT NULL DEFAULT 1,
+                reminder_days VARCHAR(32),
+                reminder_time VARCHAR(5),
+                reminder_minutes INTEGER NOT NULL DEFAULT 30,
+                reminder_dismissed BOOLEAN NOT NULL DEFAULT FALSE,
+                career_direction TEXT,
+                extra_notes TEXT,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS education_level VARCHAR(64)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS current_skills TEXT")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS skills_to_learn TEXT")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS learning_goals TEXT")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS preferred_formats VARCHAR(255)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS weekly_hours VARCHAR(32)")
+        _run(
+            conn,
             "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS weekly_course_target INTEGER NOT NULL DEFAULT 1",
         )
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS learning_visits (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                visited_on DATE NOT NULL,
+                watch_seconds INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                CONSTRAINT uq_learning_visit_user_day UNIQUE (user_id, visited_on)
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_learning_visits_user_id ON learning_visits (user_id)")
+        _run(
+            conn,
+            "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS reminder_days VARCHAR(32)",
+        )
+        _run(
+            conn,
+            "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS reminder_time VARCHAR(5)",
+        )
+        _run(
+            conn,
+            "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS reminder_minutes INTEGER NOT NULL DEFAULT 30",
+        )
+        _run(
+            conn,
+            "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS reminder_dismissed BOOLEAN NOT NULL DEFAULT FALSE",
+        )
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS career_direction TEXT")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS extra_notes TEXT")
+        _run(
+            conn,
+            "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        )
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS course_wishlists (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                CONSTRAINT uq_course_wishlist_user_course UNIQUE (user_id, course_id)
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_course_wishlists_user_id ON course_wishlists (user_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_course_wishlists_course_id ON course_wishlists (course_id)")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS learning_lists (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                title VARCHAR(120) NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_learning_lists_user_id ON learning_lists (user_id)")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS learning_list_items (
+                id UUID PRIMARY KEY,
+                list_id UUID NOT NULL REFERENCES learning_lists(id) ON DELETE CASCADE,
+                course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                CONSTRAINT uq_learning_list_item UNIQUE (list_id, course_id)
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_learning_list_items_list_id ON learning_list_items (list_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_learning_list_items_course_id ON learning_list_items (course_id)")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS instructor_teaching_profiles (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                expertise_areas TEXT NOT NULL DEFAULT '',
+                teaching_bio TEXT NOT NULL DEFAULT '',
+                subjects_taught TEXT NOT NULL DEFAULT '',
+                years_experience VARCHAR(32),
+                teaching_formats VARCHAR(255),
+                credentials_notes TEXT,
+                professional_links TEXT,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS expertise_areas TEXT NOT NULL DEFAULT ''")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS teaching_bio TEXT NOT NULL DEFAULT ''")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS subjects_taught TEXT NOT NULL DEFAULT ''")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS years_experience VARCHAR(32)")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS teaching_formats VARCHAR(255)")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS credentials_notes TEXT")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS professional_links TEXT")
+        _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_topic VARCHAR(64)")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_with VARCHAR(8)")
+        _run(
+            conn,
+            """
+            UPDATE users AS u
+            SET learn_topic = p.skills_to_learn
+            FROM student_learning_profiles AS p
+            WHERE p.user_id = u.id
+              AND (u.learn_topic IS NULL OR u.learn_topic = '')
+              AND p.skills_to_learn IN ('German', 'Technology', 'German, Technology')
+            """,
+        )
+        _run(
+            conn,
+            """
+            UPDATE users AS u
+            SET learn_with = split_part(p.extra_notes, ':', 2)
+            FROM student_learning_profiles AS p
+            WHERE p.user_id = u.id
+              AND (u.learn_with IS NULL OR u.learn_with = '')
+              AND p.extra_notes LIKE 'learn_with:%'
+              AND split_part(p.extra_notes, ':', 2) IN ('en', 'fr', 'de', 'es')
+            """,
+        )
+        _run(
+            conn,
+            """
+            UPDATE users AS u
+            SET learn_topic = p.expertise_areas
+            FROM instructor_teaching_profiles AS p
+            WHERE p.user_id = u.id
+              AND (u.learn_topic IS NULL OR u.learn_topic = '')
+              AND p.expertise_areas IN ('German', 'Technology', 'German, Technology')
+            """,
+        )
+        _run(
+            conn,
+            """
+            UPDATE users AS u
+            SET learn_with = split_part(p.credentials_notes, ':', 2)
+            FROM instructor_teaching_profiles AS p
+            WHERE p.user_id = u.id
+              AND (u.learn_with IS NULL OR u.learn_with = '')
+              AND p.credentials_notes LIKE 'teach_with:%'
+              AND split_part(p.credentials_notes, ':', 2) IN ('en', 'fr', 'de', 'es')
+            """,
+        )
+
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_locale VARCHAR(8) NOT NULL DEFAULT 'en'")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_public BOOLEAN NOT NULL DEFAULT FALSE")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS public_slug VARCHAR(64)")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS public_headline VARCHAR(255) NOT NULL DEFAULT ''")
+        _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS public_bio VARCHAR(4000) NOT NULL DEFAULT ''")
+        _run(
+            conn,
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_public_slug ON users (public_slug) WHERE public_slug IS NOT NULL",
+        )
+        _run(
+            conn,
+            """
+            UPDATE users AS u
+            SET public_slug = lower(u.public_slug)
+            WHERE u.public_slug IS NOT NULL
+              AND u.public_slug <> lower(u.public_slug)
+              AND NOT EXISTS (
+                SELECT 1 FROM users AS o
+                WHERE o.id <> u.id
+                  AND o.public_slug IS NOT NULL
+                  AND lower(o.public_slug) = lower(u.public_slug)
+              )
+            """,
+        )
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS support_tickets (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                subject VARCHAR(200) NOT NULL,
+                body TEXT NOT NULL,
+                status VARCHAR(32) NOT NULL DEFAULT 'open',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_support_tickets_user_id ON support_tickets (user_id)")
 
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")

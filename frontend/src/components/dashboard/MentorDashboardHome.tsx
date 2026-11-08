@@ -1,19 +1,13 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { ArrowUpRight, CheckCircle2, Clock, ExternalLink, MessageSquare, UserRound } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { readApiError } from "@/lib/api-error";
 import { resolveAvatarUrl } from "@/lib/avatar-url";
-import {
-  DashboardMetricStrip,
-  DashboardPageHeader,
-  DashboardPanel,
-  DashboardQuietLink,
-  DashboardState,
-} from "@/components/dashboard/dashboard-ui";
+import { PersonMark } from "@/components/dashboard/PersonMark";
+import { StudentSurface } from "@/components/dashboard/StudentPageHero";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type Profile = {
   slug: string;
@@ -54,11 +48,53 @@ function profileCompletion(profile: Profile): number {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
-function statusLabel(status: string): string {
+function greetingFor(name: string) {
+  const hour = new Date().getHours();
+  if (hour < 12) return `Good morning, ${name}`;
+  if (hour < 17) return `Good afternoon, ${name}`;
+  return `Good evening, ${name}`;
+}
+
+function statusCopy(status: string) {
+  if (status === "approved") return "Your profile is live on the mentors page.";
+  if (status === "pending") return "Your profile is in review.";
+  if (status === "rejected") return "Your profile needs a few updates before it can go live.";
+  return "Finish your profile, then submit it for review.";
+}
+
+function statusPill(status: string) {
+  if (status === "approved") return "bg-emerald-50 text-emerald-800";
+  if (status === "pending") return "bg-amber-50 text-amber-900";
+  if (status === "rejected") return "bg-red-50 text-red-800";
+  return "bg-[#eef3fb] text-[#011B33]/70";
+}
+
+function statusLabel(status: string) {
   if (status === "approved") return "Live";
   if (status === "pending") return "In review";
   if (status === "rejected") return "Needs updates";
   return "Draft";
+}
+
+function relativeTime(iso: string) {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function expertiseChips(value: string) {
+  return value
+    .split(/[,·|;]/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 4);
 }
 
 export function MentorDashboardHome() {
@@ -96,233 +132,260 @@ export function MentorDashboardHome() {
 
   const stats = useMemo(() => {
     const list = conversations ?? [];
-    const unread = list.reduce((sum, c) => sum + c.unread_count, 0);
-    const waiting = list.filter((c) => c.unread_count > 0).length;
-    return { total: list.length, unread, waiting };
+    const unread = list.reduce((sum, row) => sum + row.unread_count, 0);
+    return { total: list.length, unread };
   }, [conversations]);
+
+  const nextReply = useMemo(
+    () => (conversations ?? []).find((row) => row.unread_count > 0) ?? (conversations ?? [])[0] ?? null,
+    [conversations],
+  );
 
   if (error) {
     return (
-      <DashboardState tone="error">
-        <p className="font-semibold">{error}</p>
-      </DashboardState>
+      <StudentSurface>
+        <p className="text-sm text-red-700">{error}</p>
+      </StudentSurface>
     );
   }
 
   if (!profile || conversations === null) {
-    return <DashboardState>Loading your workspace…</DashboardState>;
+    return (
+      <StudentSurface>
+        <div className="min-h-[70vh] animate-pulse space-y-8">
+          <div className="h-16 w-80 rounded bg-brand-ink/10" />
+          <div className="h-52 rounded-[5px] bg-brand-ink/10" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="h-24 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-24 rounded-[5px] bg-brand-ink/10" />
+            <div className="h-24 rounded-[5px] bg-brand-ink/10" />
+          </div>
+        </div>
+      </StudentSurface>
+    );
   }
 
   const completion = profileCompletion(profile);
-  const photo = resolveAvatarUrl(profile.photo_url);
-  const recent = conversations.slice(0, 5);
   const firstName = user?.name?.split(" ")[0] ?? profile.full_name.split(" ")[0] ?? "there";
+  const weekday = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const photo = resolveAvatarUrl(profile.photo_url);
+  const place = [profile.city, profile.origin_country ? `from ${profile.origin_country}` : null].filter(Boolean).join(" · ");
+  const chips = expertiseChips(profile.expertise_areas);
 
   return (
-    <div className="mx-auto max-w-[90rem] space-y-10">
-      <DashboardPageHeader
-        eyebrow="Mentor"
-        title={`Welcome back, ${firstName}`}
-        description={
-          profile.approval_status === "approved"
-            ? "Your profile is live."
-            : profile.approval_status === "pending"
-              ? "Your profile is in review."
-              : "Finish your profile to go live."
-        }
-        action={
-          profile.approval_status === "approved" ? (
-            <Link
-              href={`/mentors/${profile.slug}`}
-              className="inline-flex items-center gap-2 border border-brand-ink/15 px-4 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white"
-            >
-              Public profile
-              <ExternalLink className="h-4 w-4" aria-hidden />
-            </Link>
-          ) : null
-        }
-      />
+    <StudentSurface>
+      <div className="space-y-10">
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <UserAvatar name={profile.full_name} avatarUrl={photo} className="h-14 w-14 text-lg" />
+            <div>
+              <p className="text-sm text-[#011B33]/50">{weekday}</p>
+              <h1 className="mt-0.5 text-[1.75rem] font-extrabold tracking-tight text-[#011B33] sm:text-[2rem]">
+                {greetingFor(firstName)}
+              </h1>
+              <p className="mt-1 text-sm text-[#011B33]/60">{statusCopy(profile.approval_status)}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex h-8 items-center rounded-full px-3 text-xs font-bold ${statusPill(profile.approval_status)}`}>
+              {statusLabel(profile.approval_status)}
+            </span>
+            {profile.is_featured ? (
+              <span className="inline-flex h-8 items-center rounded-full bg-brand-sky px-3 text-xs font-bold text-brand-accent">
+                Featured
+              </span>
+            ) : null}
+          </div>
+        </header>
 
-      <StatusStrip status={profile.approval_status} reason={profile.rejection_reason} completion={completion} />
+        {profile.approval_status === "rejected" && profile.rejection_reason ? (
+          <p className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{profile.rejection_reason}</p>
+        ) : null}
 
-      <DashboardMetricStrip
-        items={[
-          { label: "Conversations", value: stats.total },
-          {
-            label: "Unread",
-            value: stats.unread,
-            hint: stats.unread > 0 ? <span className="text-brand-accent">Needs attention</span> : undefined,
-          },
-          { label: "Waiting", value: stats.waiting },
-          {
-            label: "Profile",
-            value: statusLabel(profile.approval_status),
-            hint: <span>{completion}% complete{profile.is_featured ? " · Featured" : ""}</span>,
-          },
-        ]}
-      />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <DashboardPanel
-          title="Recent messages"
-          action={<DashboardQuietLink href="/dashboard/mentor/messages">Open inbox</DashboardQuietLink>}
-        >
-          {recent.length === 0 ? (
-            <div className="border border-dashed border-brand-ink/15 px-6 py-10 text-center">
-              <MessageSquare className="mx-auto h-7 w-7 text-brand-accent" aria-hidden />
-              <p className="mt-3 text-sm font-semibold text-brand-ink">No messages yet</p>
-              <p className="mt-1 text-sm text-brand-ink/55">
-                {profile.approval_status === "approved"
-                  ? "When someone reaches out from your profile, it will show up here."
-                  : "Once your profile is live, visitors can message you from the mentors page."}
-              </p>
+        <section className="overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white">
+          {nextReply ? (
+            <div className="grid md:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+              <div className="flex flex-col justify-center p-6 sm:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">
+                  {nextReply.unread_count > 0 ? "Reply next" : "Latest message"}
+                </p>
+                <div className="mt-4 flex items-start gap-4">
+                  <PersonMark name={nextReply.visitor_name} className="h-12 w-12 text-sm" />
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-extrabold">{nextReply.visitor_name}</h2>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#011B33]/65">
+                      {nextReply.last_message_preview || "New conversation"}
+                    </p>
+                    <p className="mt-3 text-xs text-[#011B33]/40">{relativeTime(nextReply.last_message_at)}</p>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/mentor/messages"
+                  className="mt-7 inline-flex h-11 w-fit items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
+                >
+                  Open inbox
+                </Link>
+              </div>
+              <aside className="border-t border-brand-ink/10 bg-brand-sky/70 p-6 dark:bg-white/[0.04] md:border-l md:border-t-0 sm:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">This workspace</p>
+                <p className="mt-3 text-sm leading-relaxed text-[#011B33]/70">
+                  {stats.unread > 0
+                    ? `${stats.unread} unread ${stats.unread === 1 ? "message" : "messages"} waiting for you.`
+                    : "You’re caught up. Keep your profile current so the next person can find you."}
+                </p>
+                <ul className="mt-6 space-y-2 text-sm font-semibold">
+                  <li>
+                    <Link href="/dashboard/mentor/messages" className="text-brand-accent hover:underline">
+                      Messages
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/dashboard/mentor/profile" className="text-[#011B33]/75 hover:text-brand-accent">
+                      Edit profile
+                    </Link>
+                  </li>
+                  {profile.approval_status === "approved" ? (
+                    <li>
+                      <Link href={`/mentors/${profile.slug}`} className="text-[#011B33]/75 hover:text-brand-accent">
+                        View public page
+                      </Link>
+                    </li>
+                  ) : null}
+                </ul>
+              </aside>
             </div>
           ) : (
-            <ul className="divide-y divide-brand-ink/10">
-              {recent.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href="/dashboard/mentor/messages"
-                    className="group flex items-start justify-between gap-3 py-4 transition hover:bg-brand-muted/50 -mx-2 px-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-semibold text-brand-ink group-hover:text-brand-accent">{c.visitor_name}</p>
-                      <p className="mt-1 line-clamp-2 text-sm text-brand-ink/60">
-                        {c.last_message_preview ?? "New conversation"}
-                      </p>
-                      <time className="mt-1 block text-xs text-brand-ink/40">
-                        {new Date(c.last_message_at).toLocaleString()}
-                      </time>
-                    </div>
-                    {c.unread_count > 0 ? (
-                      <span className="shrink-0 bg-brand-accent px-2 py-0.5 text-xs font-bold text-white">
-                        {c.unread_count}
-                      </span>
-                    ) : null}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </DashboardPanel>
-
-        <DashboardPanel title="Your profile">
-          <div className="flex gap-4">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-brand-muted">
-              {photo ? (
-                <Image src={photo} alt="" fill className="object-cover" sizes="80px" />
-              ) : (
-                <div className="flex h-full items-center justify-center font-display text-2xl font-bold text-brand-ink">
-                  {profile.full_name.slice(0, 1) || "?"}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="font-display text-lg font-semibold text-brand-ink">{profile.full_name}</p>
-              <p className="mt-1 line-clamp-2 text-sm text-brand-ink/60">{profile.headline || "Add a headline"}</p>
-              {profile.city ? (
-                <p className="mt-2 text-xs text-brand-ink/45">
-                  {profile.city}
-                  {profile.origin_country ? ` · from ${profile.origin_country}` : ""}
+            <div className="grid md:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+              <div className="flex flex-col justify-center p-6 sm:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">Inbox</p>
+                <h2 className="mt-2 text-xl font-extrabold">No messages yet</h2>
+                <p className="mt-2 max-w-lg text-sm leading-relaxed text-[#011B33]/60">
+                  {profile.approval_status === "approved"
+                    ? "When someone writes from your public profile, it shows up here."
+                    : "Messages appear here after your profile is live."}
                 </p>
+                <Link
+                  href="/dashboard/mentor/profile"
+                  className="mt-7 inline-flex h-11 w-fit items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
+                >
+                  {profile.approval_status === "approved" ? "Edit profile" : "Finish profile"}
+                </Link>
+              </div>
+              <aside className="border-t border-brand-ink/10 bg-brand-sky/70 p-6 dark:bg-white/[0.04] md:border-l md:border-t-0 sm:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">Next step</p>
+                <p className="mt-3 text-sm leading-relaxed text-[#011B33]/70">
+                  {completion < 100
+                    ? `Your profile is ${completion}% complete. A full page helps people trust you.`
+                    : "Your profile is complete. Submit it if it is not live yet."}
+                </p>
+              </aside>
+            </div>
+          )}
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-3">
+          {[
+            { label: "Conversations", value: String(stats.total) },
+            { label: "Unread", value: String(stats.unread) },
+            { label: "Profile", value: `${completion}%` },
+          ].map((item) => (
+            <div key={item.label} className="rounded-[5px] border border-brand-ink/10 bg-white px-5 py-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#011B33]/45">{item.label}</p>
+              <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight">{item.value}</p>
+              {item.label === "Profile" ? (
+                <div className="mt-3 h-1 overflow-hidden rounded-full bg-brand-ink/10">
+                  <div className="h-full bg-brand-accent" style={{ width: `${completion}%` }} />
+                </div>
               ) : null}
             </div>
-          </div>
+          ))}
+        </section>
 
-          <div className="mt-6 grid gap-2 sm:grid-cols-2">
-            <Link
-              href="/dashboard/mentor/profile"
-              className="inline-flex items-center justify-center gap-2 bg-brand-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary"
-            >
-              <UserRound className="h-4 w-4" aria-hidden />
-              Edit profile
-            </Link>
-            <Link
-              href="/dashboard/mentor/messages"
-              className="inline-flex items-center justify-center gap-2 border border-brand-ink/15 px-4 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink"
-            >
-              <MessageSquare className="h-4 w-4" aria-hidden />
-              Messages
-            </Link>
-          </div>
-
-          {profile.approval_status !== "approved" && completion < 100 ? (
-            <div className="mt-6 border border-brand-accent/25 bg-brand-accent/5 p-4">
-              <p className="text-sm font-semibold text-brand-ink">Next step</p>
-              <p className="mt-1 text-sm text-brand-ink/65">
-                Your profile is {completion}% complete. Fill in the remaining details, then submit for review.
-              </p>
+        <section className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <div>
+            <div className="mb-4 flex items-end justify-between">
+              <h2 className="text-lg font-extrabold">Inbox</h2>
+              <Link href="/dashboard/mentor/messages" className="text-sm font-semibold text-brand-accent hover:underline">
+                See all
+              </Link>
             </div>
-          ) : null}
+            {conversations.length === 0 ? (
+              <div className="rounded-[5px] border border-dashed border-brand-ink/20 px-5 py-10 text-center">
+                <p className="text-sm font-semibold">Quiet for now</p>
+                <p className="mt-1 text-sm text-[#011B33]/55">New conversations will land here.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-brand-ink/10 overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white">
+                {conversations.slice(0, 6).map((row) => (
+                  <li key={row.id}>
+                    <Link
+                      href="/dashboard/mentor/messages"
+                      className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-[#f6f8fb]"
+                    >
+                      <PersonMark name={row.visitor_name} className="h-10 w-10 shrink-0 text-[11px]" />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="truncate text-sm font-bold">{row.visitor_name}</span>
+                          <span className="shrink-0 text-[11px] text-[#011B33]/40">{relativeTime(row.last_message_at)}</span>
+                        </span>
+                        <span className="mt-0.5 block line-clamp-1 text-xs text-[#011B33]/55">
+                          {row.last_message_preview || "New conversation"}
+                        </span>
+                      </span>
+                      {row.unread_count > 0 ? (
+                        <span className="shrink-0 rounded-full bg-brand-accent px-2 py-0.5 text-[11px] font-bold text-white">
+                          {row.unread_count}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-          {profile.approval_status === "approved" && profile.approved_at ? (
-            <p className="mt-6 text-xs text-brand-ink/45">
-              Live since {new Date(profile.approved_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
-            </p>
-          ) : null}
-        </DashboardPanel>
+          <div>
+            <h2 className="mb-4 text-lg font-extrabold">Public profile</h2>
+            <div className="rounded-[5px] border border-brand-ink/10 bg-white p-6">
+              <div className="flex gap-4">
+                <UserAvatar name={profile.full_name} avatarUrl={photo} className="h-16 w-16 text-lg" />
+                <div className="min-w-0">
+                  <p className="text-lg font-extrabold leading-snug">{profile.full_name}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-[#011B33]/60">{profile.headline || "Add a headline"}</p>
+                  {place ? <p className="mt-1 text-xs text-[#011B33]/45">{place}</p> : null}
+                </div>
+              </div>
+              {chips.length > 0 ? (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {chips.map((chip) => (
+                    <span key={chip} className="rounded-full bg-[#f4f7fd] px-3 py-1 text-xs font-semibold text-[#011B33]/70">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-5 text-sm text-[#011B33]/55">Add the topics you can advise on.</p>
+              )}
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/mentor/profile"
+                  className="inline-flex h-10 items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
+                >
+                  Edit profile
+                </Link>
+                {profile.approval_status === "approved" ? (
+                  <Link
+                    href={`/mentors/${profile.slug}`}
+                    className="inline-flex h-10 items-center rounded-[5px] border border-brand-ink/15 px-4 text-sm font-semibold hover:border-brand-accent hover:text-brand-accent"
+                  >
+                    View live page
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
-  );
-}
-
-function StatusStrip({
-  status,
-  reason,
-  completion,
-}: {
-  status: string;
-  reason: string | null;
-  completion: number;
-}) {
-  if (status === "approved") {
-    return (
-      <div className="flex items-start gap-3 border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
-        <div>
-          <p className="font-semibold">Your profile is live on Multivate</p>
-          <p className="mt-1 text-emerald-800">People can find you on the mentors page and send you a message anytime.</p>
-        </div>
-      </div>
-    );
-  }
-  if (status === "pending") {
-    return (
-      <div className="flex items-start gap-3 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" aria-hidden />
-        <div>
-          <p className="font-semibold">Your profile is under review</p>
-          <p className="mt-1">We will let you know once it is approved. You can still check your inbox in the meantime.</p>
-        </div>
-      </div>
-    );
-  }
-  if (status === "rejected") {
-    return (
-      <div className="flex items-start gap-3 border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center bg-red-100 text-xs font-bold text-red-700">
-          !
-        </div>
-        <div>
-          <p className="font-semibold">Your profile needs a few updates</p>
-          <p className="mt-1">{reason ?? "Update your profile and submit again when you are ready."}</p>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border border-brand-accent/25 bg-brand-accent/5 p-4 text-sm">
-      <div>
-        <p className="font-semibold text-brand-ink">Complete your public profile</p>
-        <p className="mt-1 text-brand-ink/65">You are {completion}% done. Submit for review when everything looks good.</p>
-      </div>
-      <Link
-        href="/dashboard/mentor/profile"
-        className="inline-flex shrink-0 items-center gap-2 bg-brand-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-accent-dark"
-      >
-        Continue setup
-        <ArrowUpRight className="h-4 w-4" aria-hidden />
-      </Link>
-    </div>
+    </StudentSurface>
   );
 }

@@ -16,6 +16,17 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const legacy = pathname.match(/^\/(en|fr|de|es)(\/dashboard\/(?:admin|instructor)(?:\/.*)?)$/);
+  if (legacy) {
+    const locale = legacy[1];
+    const rest = legacy[2]
+      .replace("/dashboard/admin", "/admin")
+      .replace("/dashboard/instructor", "/instructor");
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}${rest}`;
+    return NextResponse.redirect(url);
+  }
+
   const response = intlMiddleware(request);
 
   if (response.status >= 300 && response.status < 400) {
@@ -25,7 +36,7 @@ export default function middleware(request: NextRequest) {
     return response;
   }
 
-  const dash = pathname.match(/^\/(en|fr|de|es)\/dashboard(\/|$)/);
+  const dash = pathname.match(/^\/(en|fr|de|es)\/(dashboard|admin|instructor)(\/|$)/);
   if (dash && !request.cookies.get("access_token")) {
     const loc = dash[1];
     const login = new URL(`/${loc}/login`, request.url);

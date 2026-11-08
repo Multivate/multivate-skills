@@ -14,7 +14,7 @@ type NotificationRow = {
   created_at: string;
 };
 
-export function NotificationBell({ label }: { label: string }) {
+export function NotificationBell({ label, buttonClassName }: { label: string; buttonClassName?: string }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [unread, setUnread] = useState(0);
@@ -83,14 +83,25 @@ export function NotificationBell({ label }: { label: string }) {
   }
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div
+      className="relative"
+      ref={panelRef}
+      onMouseEnter={() => {
+        setOpen(true);
+        if (Date.now() - lastLoadedAt.current > 15000) void load();
+      }}
+      onMouseLeave={() => setOpen(false)}
+    >
       <button
         type="button"
         onClick={() => {
           setOpen((v) => !v);
           if (!open && Date.now() - lastLoadedAt.current > 15000) void load();
         }}
-        className="relative flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-brand-surface text-neutral-500 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:bg-zinc-700"
+        className={
+          buttonClassName ??
+          "admin-card relative flex h-10 w-10 items-center justify-center rounded-xl text-[#1457D0] transition hover:bg-[var(--admin-soft)]"
+        }
         aria-label={label}
         aria-expanded={open}
       >
@@ -103,14 +114,14 @@ export function NotificationBell({ label }: { label: string }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-md border border-neutral-200/95 bg-brand-surface shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-          <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 dark:border-zinc-800">
-            <p className="text-sm font-bold text-brand-ink dark:text-neutral-100">Notifications</p>
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff]">
+          <div className="flex items-center justify-between border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
+            <p className="text-sm font-semibold">Notifications</p>
             {unread > 0 ? (
               <button
                 type="button"
                 onClick={() => void markAllRead()}
-                className="text-xs font-semibold text-brand-secondary hover:underline"
+                className="text-xs font-semibold text-brand-accent hover:underline"
               >
                 Mark all read
               </button>
@@ -118,20 +129,20 @@ export function NotificationBell({ label }: { label: string }) {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {loading && items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-neutral-500">Loading…</p>
+              <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">Loading…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-neutral-500">You are all caught up.</p>
+              <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">You are all caught up.</p>
             ) : (
               items.map((n) => {
                 const inner = (
                   <div
-                    className={`border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60 ${
-                      n.read_at ? "opacity-75" : "bg-brand-secondary/5"
+                    className={`border-b border-brand-ink/10 px-4 py-3 transition hover:bg-[#f6f8fb] dark:border-white/10 dark:hover:bg-white/5 ${
+                      n.read_at ? "opacity-75" : "bg-brand-accent/5"
                     }`}
                   >
-                    <p className="text-sm font-bold text-brand-ink dark:text-neutral-100">{n.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">{n.body}</p>
-                    <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                    <p className="text-sm font-bold">{n.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#011B33]/60 dark:text-[#eef4ff]/60">{n.body}</p>
+                    <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#011B33]/40 dark:text-[#eef4ff]/40">
                       {new Date(n.created_at).toLocaleString()}
                     </p>
                   </div>

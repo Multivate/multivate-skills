@@ -44,6 +44,7 @@ from app.models.notification import Notification  # noqa: E402
 from app.models.payment import Payment  # noqa: E402
 from app.models.payment_audit_log import PaymentAuditLog  # noqa: E402
 from app.models.student_learning_profile import StudentLearningProfile  # noqa: E402
+from app.models.support_ticket import SupportTicket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.video_watch_history import VideoWatchHistory  # noqa: E402
 from app.services.media_storage_service import media_root  # noqa: E402
@@ -52,7 +53,14 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("wipe_fresh_start")
 
 KEEP_ADMIN_EMAIL = "admin@multivate.com.ng"
-OPTIONAL_TABLES = ("instructor_reviews",)
+OPTIONAL_TABLES = (
+    "instructor_reviews",
+    "support_tickets",
+    "course_wishlists",
+    "learning_list_items",
+    "learning_lists",
+    "learning_visits",
+)
 
 
 def _delete_all(db, model, label: str) -> int:
@@ -135,8 +143,9 @@ def main() -> None:
         _delete_all(db, MfaOtpChallenge, "mfa_otp_challenges")
         _delete_all(db, StudentLearningProfile, "student_learning_profiles")
         _delete_all(db, InstructorTeachingProfile, "instructor_teaching_profiles")
-        _delete_all(db, Course, "courses")
+        _delete_all(db, SupportTicket, "support_tickets")
         _delete_optional_tables(db)
+        _delete_all(db, Course, "courses")
 
         removed_users = db.execute(
             delete(User).where(User.email != KEEP_ADMIN_EMAIL)

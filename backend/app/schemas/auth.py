@@ -110,6 +110,13 @@ class ForgotPasswordStartResponse(BaseModel):
     dev_otp: str | None = None
 
 
+class LearningChoiceRequest(BaseModel):
+    """Answers from the sign-in and sign-up questions."""
+
+    topic: Literal["German", "Technology", "German, Technology"]
+    learn_with: Literal["en", "fr", "de", "es"]
+
+
 class ForgotPasswordResetRequest(BaseModel):
     reset_token: str
     code: str = Field(..., min_length=1, max_length=32)

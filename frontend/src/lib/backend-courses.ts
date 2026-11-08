@@ -18,6 +18,10 @@ export type BackendCourse = {
   currency?: string;
   is_free?: boolean;
   status?: string;
+  instructor_name?: string | null;
+  average_rating?: number | null;
+  rating_count?: number;
+  is_bestseller?: boolean;
 };
 
 export type BackendLesson = {
@@ -29,10 +33,13 @@ export type BackendLesson = {
   duration_minutes: number;
 };
 
-export async function fetchBackendCatalog(): Promise<BackendCourse[]> {
+export async function fetchBackendCatalog(opts?: { revalidate?: number }): Promise<BackendCourse[]> {
   try {
     const base = getInternalApiUrl();
-    const r = await fetch(`${base}/api/v1/courses`, { next: { revalidate: 60 } });
+    const revalidate = opts?.revalidate;
+    const r = await fetch(`${base}/api/v1/courses`, {
+      ...(revalidate != null ? { next: { revalidate } } : { cache: "no-store" as const }),
+    });
     if (!r.ok) return [];
     const data = (await r.json()) as unknown;
     return Array.isArray(data) ? (data as BackendCourse[]) : [];

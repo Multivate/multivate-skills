@@ -36,6 +36,14 @@ _logger = logging.getLogger(__name__)
 _SIGNUP_PREFIX = "multivate:signup:v1:"
 _SIGNUP_TTL_SEC = 300
 _SIGNUP_OTP_MINUTES = 5
+_LOCALES = {"en", "fr", "de", "es"}
+
+
+def _locale_tag(note: str | None, prefix: str) -> str | None:
+    if not note or not note.startswith(prefix):
+        return None
+    locale = note[len(prefix) :].strip()
+    return locale if locale in _LOCALES else None
 
 
 def _mask_email(email: str) -> str:
@@ -262,6 +270,8 @@ def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthRe
         role=UserRole.STUDENT,
         is_active=True,
         two_factor_enabled=False,
+        learn_topic=lp.get("skills_to_learn"),
+        learn_with=_locale_tag(lp.get("extra_notes"), "learn_with:"),
     )
     db.add(user)
     db.flush()
@@ -298,6 +308,8 @@ def _create_instructor_from_payload(db: Session, payload: dict[str, Any]) -> Aut
         role=UserRole.INSTRUCTOR,
         is_active=True,
         two_factor_enabled=False,
+        learn_topic=tp.get("expertise_areas"),
+        learn_with=_locale_tag(tp.get("credentials_notes"), "teach_with:"),
     )
     db.add(user)
     db.flush()

@@ -31,7 +31,7 @@ export function MentorCatalogCard({ mentor, layout = "grid", onMessage }: Props)
 
   return (
     <article
-      className={`group flex h-full flex-col overflow-hidden rounded-md border border-brand-accent/25 bg-brand-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-accent/45 hover:shadow-sm dark:border-brand-accent/30 dark:bg-zinc-900 ${shellClass}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-xl border border-brand-ink/10 bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(12,27,74,0.08)] ${shellClass}`}
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-brand-accent/[0.04] dark:bg-brand-accent/8">
         <div className="absolute inset-0 flex items-center justify-center">

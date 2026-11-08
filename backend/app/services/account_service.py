@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import secrets
 from typing import Any
 
@@ -22,6 +23,28 @@ _logger = logging.getLogger(__name__)
 
 _RESET_PREFIX = "multivate:reset:v1:"
 _RESET_TTL_SEC = 900
+_LOCALES = {"en", "fr", "de", "es"}
+
+
+def _slug_base(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", (name or "").strip().lower()).strip("-")
+    return (slug[:40] or "student")
+
+
+def ensure_public_slug(db: Session, user: User) -> str:
+    existing = (getattr(user, "public_slug", None) or "").strip().lower()
+    if existing:
+        if user.public_slug != existing:
+            user.public_slug = existing
+        return existing
+    base = _slug_base(user.name)
+    slug = base
+    n = 2
+    while db.scalar(select(User.id).where(User.public_slug == slug, User.id != user.id)):
+        slug = f"{base}-{n}"
+        n += 1
+    user.public_slug = slug
+    return slug
 
 
 def _mask_email(email: str) -> str:
@@ -42,10 +65,32 @@ def _normalize_otp(code: str) -> str:
 
 
 def update_profile(db: Session, user: User, payload: UpdateProfileRequest) -> UserPublic:
-    name = payload.name.strip()
-    if not name:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name is required")
-    user.name = name
+    changed = False
+    if payload.name is not None:
+        name = payload.name.strip()
+        if not name:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name is required")
+        user.name = name
+        changed = True
+    if payload.preferred_locale is not None:
+        loc = payload.preferred_locale.strip().lower()
+        if loc not in _LOCALES:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported language.")
+        user.preferred_locale = loc
+        changed = True
+    if payload.public_headline is not None:
+        user.public_headline = payload.public_headline.strip()[:255]
+        changed = True
+    if payload.public_bio is not None:
+        user.public_bio = payload.public_bio.strip()[:4000]
+        changed = True
+    if payload.profile_public is not None:
+        user.profile_public = payload.profile_public
+        if user.profile_public:
+            ensure_public_slug(db, user)
+        changed = True
+    if not changed:
+        return user_public_from_orm(user)
     db.add(user)
     db.commit()
     db.refresh(user)

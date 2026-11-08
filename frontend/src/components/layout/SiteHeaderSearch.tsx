@@ -5,7 +5,15 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { FormEvent, useState } from "react";
 
-export function SiteHeaderSearch({ className = "" }: { className?: string }) {
+export function SiteHeaderSearch({
+  className = "",
+  inputId = "site-header-search",
+  variant = "header",
+}: {
+  className?: string;
+  inputId?: string;
+  variant?: "header" | "hero";
+}) {
   const t = useTranslations("nav");
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -27,18 +35,26 @@ export function SiteHeaderSearch({ className = "" }: { className?: string }) {
       role="search"
       aria-label={t("searchAria")}
     >
-      <label htmlFor="site-header-search" className="sr-only">
+      <label htmlFor={inputId} className="sr-only">
         {t("searchLabel")}
       </label>
-      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" strokeWidth={2} aria-hidden />
+      <Search
+        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-brand-ink/45 ${variant === "hero" ? "left-4 h-5 w-5" : "left-2.5 h-3.5 w-3.5"}`}
+        strokeWidth={2}
+        aria-hidden
+      />
       <input
-        id="site-header-search"
+        id={inputId}
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={t("searchPlaceholder")}
         autoComplete="off"
-        className="h-9 w-[min(100%,11rem)] rounded-sm border border-neutral-200 bg-neutral-50/90 py-1.5 pl-8 pr-2 text-xs text-brand-ink outline-none transition placeholder:text-neutral-400 focus:border-brand-panel focus:ring-2 focus:ring-brand-panel/20 sm:w-44 dark:border-zinc-700 dark:bg-zinc-900/80"
+        className={
+          variant === "hero"
+            ? "h-[50px] w-full rounded-[5px] border border-brand-ink/15 bg-white py-2 pl-12 pr-4 text-base text-brand-ink outline-none transition duration-200 placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/15"
+            : "h-9 w-full rounded-md border border-brand-ink/15 bg-white py-1.5 pl-8 pr-2.5 text-[13px] text-brand-ink outline-none transition duration-200 placeholder:text-brand-ink/40 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/15"
+        }
       />
     </form>
   );

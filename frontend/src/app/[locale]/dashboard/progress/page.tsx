@@ -1,5 +1,6 @@
 "use client";
 
+import { StudentPageHero, StudentSurface } from "@/components/dashboard/StudentPageHero";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 
@@ -11,6 +12,11 @@ type MyCourseItem = {
   progress_pct: number;
   status?: string;
   instructor_name?: string | null;
+};
+
+const STATUS_PILL: Record<string, string> = {
+  Completed: "bg-[#E5F6EC] text-[#1F8A4C]",
+  "In Progress": "bg-[#E7F1FC] text-[#1457D0]",
 };
 
 export default function DashboardProgressPage() {
@@ -36,63 +42,55 @@ export default function DashboardProgressPage() {
     };
   }, []);
 
-  if (items === null) {
-    return (
-      <div className="mx-auto max-w-3xl border border-brand-ink/10 bg-brand-surface px-6 py-12 text-center">
-        <p className="text-sm text-brand-ink/55">Loading progress…</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <header>
-        <h1 className="font-display text-2xl font-bold tracking-tighter text-brand-ink sm:text-3xl">Progress</h1>
-        <p className="mt-2 text-sm leading-relaxed text-brand-ink/60">
-          Updates as you finish lessons and quizzes.
-        </p>
-      </header>
-      {error ? <p className="text-sm font-medium text-red-800">{error}</p> : null}
-      {items.length === 0 ? (
-        <div className="border border-dashed border-brand-ink/15 bg-brand-muted/40 px-6 py-12 text-center">
-          <p className="text-sm text-brand-ink/60">
-            You are not enrolled in any courses yet.{" "}
-            <Link href="/courses" className="font-semibold text-brand-accent hover:underline">
-              Browse the catalog
-            </Link>
-            .
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-4">
-          {items.map((c) => (
-            <li key={c.slug} className="border border-brand-ink/10 bg-brand-surface p-5 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-display text-lg font-semibold text-brand-ink">{c.title}</p>
-                  <p className="mt-1 text-xs text-brand-ink/45">
-                    {c.lesson_done} of {c.lessons} items completed
-                    {c.instructor_name ? ` · ${c.instructor_name}` : ""}
-                  </p>
-                </div>
-                <span className="text-sm font-semibold tabular-nums text-brand-ink">{c.progress_pct}%</span>
-              </div>
-              <div className="mt-4 h-2 overflow-hidden bg-brand-muted">
-                <div className="h-full bg-brand-accent transition-all" style={{ width: `${Math.min(100, c.progress_pct)}%` }} />
-              </div>
-              <Link
-                href={`/learn/${c.slug}`}
-                className="mt-4 inline-block text-sm font-semibold text-brand-accent hover:text-brand-accent-dark"
-              >
-                Continue learning
+    <>
+      <StudentPageHero title="Progress" subtitle="Lesson counts update when you finish videos and quizzes — nothing is estimated." />
+      <StudentSurface>
+        {items === null ? <p className="text-sm text-[#6a6f73]">Loading progress…</p> : null}
+        {error ? <p className="text-sm font-medium text-red-700">{error}</p> : null}
+        {items && items.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-sm text-[#6a6f73]">
+              You are not enrolled in any courses yet.{" "}
+              <Link href="/courses" className="font-bold text-[#1457D0]">
+                Browse the catalog
               </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Link href="/dashboard" className="inline-block text-sm font-semibold text-brand-accent hover:underline">
-        Back to dashboard
-      </Link>
-    </div>
+              .
+            </p>
+          </div>
+        ) : null}
+        {items && items.length > 0 ? (
+          <ul className="space-y-3">
+            {items.map((course) => (
+              <li key={course.slug} className="rounded border border-[#d1d7dc] p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-lg font-bold">{course.title}</p>
+                    <p className="mt-1 text-xs text-[#6a6f73]">
+                      {course.lesson_done} of {course.lessons} items completed
+                      {course.instructor_name ? ` · ${course.instructor_name}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {course.status ? (
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_PILL[course.status] ?? "bg-[#FFF4DE] text-[#A56B00]"}`}>
+                        {course.status}
+                      </span>
+                    ) : null}
+                    <span className="text-sm font-bold tabular-nums">{course.progress_pct}%</span>
+                  </div>
+                </div>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#d1d7dc]">
+                  <div className="h-full rounded-full bg-[#1457D0]" style={{ width: `${Math.min(100, course.progress_pct)}%` }} />
+                </div>
+                <Link href={`/learn/${course.slug}`} className="mt-4 inline-block text-sm font-bold text-[#1457D0]">
+                  Continue learning
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </StudentSurface>
+    </>
   );
 }

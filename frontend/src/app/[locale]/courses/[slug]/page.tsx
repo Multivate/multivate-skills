@@ -8,6 +8,10 @@ import { CourseEnrollCta } from "@/components/courses/CourseEnrollCta";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { fetchBackendCourse, fetchBackendLessons } from "@/lib/backend-courses";
 import { formatCourseDuration, formatCoursePrice } from "@/lib/course-price";
+import { resolveCourseImageUrl } from "@/lib/course-image";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { publicPageMetadata, SITE_NAME, truncateMeta } from "@/lib/seo";
+import { absoluteAssetUrl, absoluteUrl, getSiteUrl } from "@/lib/site-url";
 import { Link } from "@/i18n/navigation";
 
 type Props = {
@@ -37,15 +41,20 @@ function categoryLabel(
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const course = await fetchBackendCourse(slug);
   if (!course) {
-    return { title: "Course - Multivate" };
+    return { title: "Course" };
   }
-  return {
-    title: `${course.title} - Multivate`,
-    description: course.description,
-  };
+  const image = absoluteAssetUrl(resolveCourseImageUrl(course.image_url));
+  const description = truncateMeta(course.subtitle || course.description || course.title);
+  return publicPageMetadata({
+    locale,
+    path: `/courses/${course.slug}`,
+    title: course.title,
+    description,
+    image,
+  });
 }
 
 export default async function CourseDetailPage({ params }: Props) {
@@ -68,10 +77,61 @@ export default async function CourseDetailPage({ params }: Props) {
   const durationLabel = formatCourseDuration(course.duration_minutes ?? 0);
   const levelLabel = course.level ? course.level.charAt(0).toUpperCase() + course.level.slice(1) : "All levels";
 
+  const courseUrl = absoluteUrl(locale, `/courses/${course.slug}`);
+  const image = absoluteAssetUrl(resolveCourseImageUrl(course.image_url));
+  const price = ((course.price_cents ?? 0) / 100).toFixed(2);
+  const courseLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: course.description,
+    url: courseUrl,
+    inLanguage: course.language || locale,
+    provider: {
+      "@type": "EducationalOrganization",
+      name: SITE_NAME,
+      url: getSiteUrl(),
+    },
+    offers: {
+      "@type": "Offer",
+      url: courseUrl,
+      price,
+      priceCurrency: course.currency || "NGN",
+      availability: "https://schema.org/InStock",
+    },
+  };
+  if (image) courseLd.image = image;
+  if (course.instructor_name) {
+    courseLd.instructor = { "@type": "Person", name: course.instructor_name };
+  }
+  if ((course.rating_count ?? 0) > 0 && course.average_rating) {
+    courseLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: course.average_rating,
+      ratingCount: course.rating_count,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
+
   return (
     <>
+      <JsonLd
+        data={[
+          courseLd,
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: tCourses("breadcrumbHome"), item: absoluteUrl(locale, "/") },
+              { "@type": "ListItem", position: 2, name: tCourses("breadcrumbCourses"), item: absoluteUrl(locale, "/courses") },
+              { "@type": "ListItem", position: 3, name: course.title, item: courseUrl },
+            ],
+          },
+        ]}
+      />
       <SiteHeader />
-      <main className="section-y surface-section">
+      <main className="bg-white py-10 sm:py-14">
         <div className="container-page">
           <nav className="text-sm text-neutral-500" aria-label="Breadcrumb">
             <Link
@@ -150,7 +210,7 @@ export default async function CourseDetailPage({ params }: Props) {
               ) : null}
             </div>
 
-            <aside className="overflow-hidden rounded-md border border-brand-ink/10 bg-brand-surface shadow-sm lg:sticky lg:top-24">
+            <aside className="overflow-hidden rounded-2xl border border-brand-ink/10 bg-white shadow-[0_16px_40px_rgba(12,27,74,0.06)] lg:sticky lg:top-24">
               <div className="w-full bg-brand-muted">
                 <CourseThumbnail
                   src={course.image_url}
@@ -161,7 +221,7 @@ export default async function CourseDetailPage({ params }: Props) {
                 />
               </div>
               <div className="space-y-4 p-6">
-                <p className="font-display text-2xl font-bold tracking-tighter text-brand-ink">{priceLabel}</p>
+                <p className="text-2xl font-semibold tracking-[-0.02em] text-brand-navy">{priceLabel}</p>
                 <CourseEnrollCta courseSlug={course.slug} />
                 <div className="space-y-2 border-t border-brand-ink/10 pt-4">
                   <Link

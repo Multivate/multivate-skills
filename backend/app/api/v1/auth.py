@@ -23,6 +23,7 @@ from app.schemas.auth import (
     OAuthCompleteRequest,
     OAuthCompleteResponse,
     OAuthStartResponse,
+    LearningChoiceRequest,
     RegisterStartResponse,
     RegisterVerifyRequest,
     StudentRegisterRequest,
@@ -84,6 +85,16 @@ def register_mentor_verify(
     db: Annotated[Session, Depends(get_db)],
 ) -> AuthResponse:
     return signup_otp_service.verify_mentor_signup(db, data.signup_token, data.code)
+
+
+@router.post("/learning-choice", status_code=204)
+def save_learning_choice(
+    data: LearningChoiceRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    """Persist the sign-in answers: what to learn, and which language to learn with."""
+    auth_service.record_learning_choice(db, user, data.topic, data.learn_with)
 
 
 @router.post("/login")

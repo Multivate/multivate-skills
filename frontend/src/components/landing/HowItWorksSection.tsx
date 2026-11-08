@@ -11,25 +11,27 @@ export async function HowItWorksSection() {
   ];
 
   return (
-    <section className="section-y bg-brand-muted text-brand-ink">
+    <section className="bg-brand-muted py-16 sm:py-20 lg:py-24">
       <div className="container-page">
         <div className="max-w-2xl">
-          <div className="marketing-rule" aria-hidden />
-          <h2 className="mt-6 heading-display text-3xl sm:text-4xl">{t("heading")}</h2>
-          <p className="mt-4 max-w-prose text-base leading-relaxed text-brand-ink/60">{t("sub")}</p>
+          <h2 className="text-3xl font-semibold tracking-[-0.02em] text-brand-ink sm:text-4xl">{t("heading")}</h2>
+          <p className="mt-3 max-w-prose text-base leading-relaxed text-brand-ink/70">{t("sub")}</p>
         </div>
 
-        <ol className="mt-14 grid gap-0 border-t border-brand-ink/10 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, i) => (
-            <li
-              key={step.title}
-              className="border-b border-brand-ink/10 px-0 py-8 sm:border-b-0 sm:px-6 sm:py-10 sm:first:pl-0 lg:border-r lg:border-brand-ink/10 lg:last:border-r-0"
-            >
-              <span className="font-mono text-sm font-semibold tabular-nums tracking-widest text-brand-accent">
-                {String(i + 1).padStart(2, "0")}
+        <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, index) => (
+            <li key={step.title} className="relative">
+              {index < steps.length - 1 ? (
+                <span
+                  className="absolute left-5 top-5 hidden h-px w-[calc(100%-1.25rem)] bg-brand-accent/25 lg:block"
+                  aria-hidden
+                />
+              ) : null}
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-brand-navy text-sm font-semibold text-white">
+                {index + 1}
               </span>
-              <h3 className="mt-5 font-display text-xl font-semibold leading-[1.1] tracking-tighter text-brand-ink">{step.title}</h3>
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-brand-ink/60">{step.body}</p>
+              <h3 className="mt-4 text-lg font-semibold text-brand-ink">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-brand-ink/70">{step.body}</p>
             </li>
           ))}
         </ol>

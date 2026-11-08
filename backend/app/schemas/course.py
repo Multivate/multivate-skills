@@ -25,6 +25,10 @@ class CourseOut(BaseModel):
     is_free: bool = False
     status: str = "draft"
     promo_video_url: str | None = None
+    instructor_name: str | None = None
+    average_rating: float | None = None
+    rating_count: int = 0
+    is_bestseller: bool = False
 
     model_config = {"from_attributes": True}
 

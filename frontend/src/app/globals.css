@@ -4,12 +4,12 @@
 
 :root {
   color-scheme: light;
-  --brand-ink: #07091c;
-  --brand-paper: #fffdf6;
+  --brand-ink: #10244f;
+  --brand-paper: #ffffff;
   --brand-surface: #ffffff;
-  --brand-muted: #fff8eb;
-  --brand-accent: #a16207;
-  --brand-line: rgba(7, 9, 28, 0.12);
+  --brand-muted: #f4f7fb;
+  --brand-accent: #1457d0;
+  --brand-line: rgba(16, 36, 79, 0.12);
 }
 
 html {
@@ -19,6 +19,161 @@ html {
 body {
   @apply bg-brand-paper text-brand-ink antialiased;
   text-rendering: optimizeLegibility;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #070e22;
+  color: #eef4ff;
+}
+
+/* Student / mentor / instructor desks: hardcoded light cards and navy copy */
+html.dark .desk-root {
+  color: #eef4ff;
+}
+
+html.dark .desk-root .bg-white {
+  background-color: #10192f;
+}
+
+html.dark .desk-root .bg-white\/95 {
+  background-color: rgba(16, 25, 47, 0.95);
+}
+
+html.dark .desk-root .bg-white\/70 {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .desk-root .bg-neutral-100 {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .desk-root [class*="bg-[#f"],
+html.dark .desk-root [class*="bg-[#eef"],
+html.dark .desk-root [class*="bg-[#E7"] {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .desk-root [class*="bg-brand-ink/"] {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .desk-root [class*="text-[#011B33]"] {
+  color: #eef4ff;
+}
+
+html.dark .desk-root [class*="text-[#011B33]/"] {
+  color: color-mix(in srgb, #eef4ff 58%, transparent);
+}
+
+html.dark .desk-root [class*="text-brand-ink"] {
+  color: #eef4ff;
+}
+
+html.dark .desk-root [class*="text-brand-ink/"] {
+  color: color-mix(in srgb, #eef4ff 62%, transparent);
+}
+
+html.dark .desk-root [class*="text-[#71758e]"],
+html.dark .desk-root [class*="text-[#6a6f73]"] {
+  color: rgba(238, 244, 255, 0.55);
+}
+
+html.dark .desk-root [class*="border-brand-ink/"],
+html.dark .desk-root [class*="border-[#d1"],
+html.dark .desk-root [class*="border-[#e9"] {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html.dark .desk-root [class*="divide-brand-ink/"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html.dark .desk-root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.dark .desk-root textarea,
+html.dark .desk-root select {
+  color: #eef4ff;
+  background-color: #0c1833;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+html.dark .desk-root input::placeholder,
+html.dark .desk-root textarea::placeholder {
+  color: rgba(238, 244, 255, 0.42);
+}
+
+.admin-console,
+.student-console {
+  --admin-bg: #f3f6fb;
+  --admin-card: #ffffff;
+  --admin-ink: #10244f;
+  --admin-muted: rgba(16, 36, 79, 0.58);
+  --admin-line: #e3ebf5;
+  --admin-soft: #e7f1fc;
+  --admin-series-a: #7c6bf2;
+  --admin-series-b: #2f9fe0;
+  color: var(--admin-ink);
+  background: var(--admin-bg);
+}
+
+.admin-console.dark,
+.student-console.dark {
+  --admin-bg: #070e22;
+  --admin-card: #10192f;
+  --admin-ink: #eef4ff;
+  --admin-muted: rgba(238, 244, 255, 0.62);
+  --admin-line: rgba(159, 208, 255, 0.14);
+  --admin-soft: rgba(20, 87, 208, 0.22);
+  --admin-series-a: #c4b8ff;
+  --admin-series-b: #7ec8ff;
+  color-scheme: dark;
+}
+
+.admin-ink {
+  color: var(--admin-ink, var(--brand-ink));
+}
+
+.admin-muted {
+  color: var(--admin-muted, rgba(16, 36, 79, 0.58));
+}
+
+.admin-card {
+  background-color: var(--admin-card, #ffffff);
+  border: 1px solid var(--admin-line, #e3ebf5);
+  color: var(--admin-ink, #10244f);
+}
+
+.admin-console .admin-summary-card:hover,
+.student-console .admin-summary-card:hover {
+  background-color: #eff8ff;
+}
+
+.admin-console.dark .admin-summary-card:hover,
+.student-console.dark .admin-summary-card:hover {
+  background-color: #142541;
+}
+
+.admin-console.dark .admin-card,
+.student-console.dark .admin-card {
+  background-color: #10192f;
+  border-color: rgba(159, 208, 255, 0.14);
+  color: #eef4ff;
+}
+
+.admin-alert {
+  background: #fff7e8;
+  border: 1px solid #f0d7a2;
+  color: #6b4a12;
+}
+
+.admin-console.dark .admin-alert,
+.student-console.dark .admin-alert {
+  background: #2a2416;
+  border-color: #8a6a2f;
+  color: #f3e2b8;
 }
 
 /* Hide spinner arrows on number fields - type the value only */
@@ -44,31 +199,31 @@ input[type="number"] {
   }
 
   .heading-display {
-    @apply font-display text-balance font-semibold leading-[1.1] tracking-tighter text-brand-ink;
+    @apply font-sans text-balance font-semibold leading-[1.12] tracking-[-0.02em] text-brand-ink;
   }
 
   .heading-section {
-    @apply font-display text-balance font-semibold leading-[1.1] tracking-tighter text-brand-ink;
+    @apply font-sans text-balance font-semibold leading-[1.15] tracking-[-0.02em] text-brand-ink;
   }
 
   .body-copy {
-    @apply max-w-prose text-base leading-relaxed text-neutral-500;
+    @apply max-w-prose text-base leading-relaxed text-brand-ink/70;
   }
 
   .btn-primary-brand {
-    @apply inline-flex min-h-[3rem] min-w-[10rem] items-center justify-center gap-2 rounded-sm bg-brand-accent px-7 py-3 text-sm font-semibold text-brand-paper transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-brand-accent px-5 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent;
   }
 
   .btn-outline-brand {
-    @apply inline-flex min-h-[3rem] items-center justify-center rounded-sm border border-brand-ink/15 bg-transparent px-7 py-3 text-sm font-semibold text-brand-ink transition hover:border-brand-ink hover:bg-brand-ink hover:text-white;
+    @apply inline-flex min-h-11 items-center justify-center rounded-md border border-brand-ink/20 bg-white px-5 py-2.5 text-sm font-semibold text-brand-ink transition duration-200 hover:border-brand-accent hover:text-brand-accent;
   }
 
   .btn-outline-light {
-    @apply inline-flex min-h-[3rem] items-center justify-center rounded-sm border border-neutral-400 bg-transparent px-7 py-3 text-sm font-semibold text-brand-paper transition hover:border-brand-paper hover:bg-brand-paper hover:text-zinc-900;
+    @apply inline-flex min-h-11 items-center justify-center rounded-md border border-white/40 bg-transparent px-5 py-2.5 text-sm font-semibold text-white transition duration-200 hover:border-white hover:bg-white hover:text-brand-navy;
   }
 
   .btn-cta-accent {
-    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-sm bg-brand-accent px-7 py-3 text-sm font-semibold text-brand-paper shadow-sm transition hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-brand-accent px-5 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-brand-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-auth-social {
@@ -80,7 +235,7 @@ input[type="number"] {
   }
 
   .tag-overline {
-    @apply font-mono text-xs font-semibold uppercase tracking-widest text-neutral-500;
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-brand-accent;
   }
 
   .float-widget {
@@ -110,7 +265,18 @@ input[type="number"] {
   .animate-fade-up-delay-2,
   .animate-fade-in,
   .animate-hero-zoom,
-  .animate-rule-grow {
+  .animate-rule-grow,
+  .animate-bob,
+  .animate-bob-slow,
+  .animate-pop,
+  .animate-marquee,
+  .animate-shimmer,
+  .animate-floaty,
+  .animate-floaty-slow,
+  .animate-twinkle,
+  .animate-map-pan,
+  .animate-route-flow,
+  .animate-chart-draw {
     animation: none !important;
   }
 }
@@ -125,21 +291,21 @@ input[type="number"] {
   }
 }
 
-/* Audio classroom: light cream background, navy + yellow text */
+/* Audio classroom: white canvas, logo navy + blue */
 .classroom-room {
   color-scheme: light;
-  --cr-bg: #fffdf6;
+  --cr-bg: #f4f7fb;
   --cr-surface: #ffffff;
-  --cr-surface-soft: #fff8eb;
-  --cr-text: #07091c;
-  --cr-muted: rgba(7, 9, 28, 0.62);
-  --cr-faint: rgba(7, 9, 28, 0.42);
-  --cr-border: rgba(7, 9, 28, 0.12);
-  --cr-accent: #a16207;
+  --cr-surface-soft: #e7f1fc;
+  --cr-text: #10244f;
+  --cr-muted: rgba(16, 36, 79, 0.68);
+  --cr-faint: rgba(16, 36, 79, 0.46);
+  --cr-border: rgba(16, 36, 79, 0.12);
+  --cr-accent: #1457d0;
   --cr-accent-text: #ffffff;
-  --cr-yellow: #a16207;
-  --cr-blue: #07091c;
-  --cr-overlay: rgba(7, 9, 28, 0.4);
+  --cr-yellow: #1457d0;
+  --cr-blue: #0c1b4a;
+  --cr-overlay: rgba(12, 27, 74, 0.45);
   color: var(--cr-text);
   background: var(--cr-bg);
 }

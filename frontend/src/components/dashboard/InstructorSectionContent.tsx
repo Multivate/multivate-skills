@@ -1,12 +1,17 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
-import { DashboardLiveBadge } from "@/components/dashboard/DashboardLiveBadge";
+import {
+  InstructorEnrollmentColumns,
+  InstructorEnrollmentShare,
+  InstructorLessonMix,
+} from "@/components/dashboard/InstructorAnalyticsCharts";
+import { InstructorKeyBoxes, instructorOverviewBoxes } from "@/components/dashboard/InstructorKeyBoxes";
+import { PersonMark } from "@/components/dashboard/PersonMark";
 import { NotConfiguredNotice } from "@/components/dashboard/NotConfiguredNotice";
 import { useRealtimePoll } from "@/hooks/useRealtimePoll";
+import { formatMoney, formatMoneyCompact } from "@/lib/format-money";
 
 type StudentRow = {
   user_id: string;
@@ -40,159 +45,32 @@ type ReviewRow = {
   created_at: string;
 };
 
-
-function InstructorContentUpload() {
-  const [dash, setDash] = useState<InstructorDashboard | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [courseSlug, setCourseSlug] = useState("");
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [duration, setDuration] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [saveMsg, setSaveMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/instructor/dashboard", { credentials: "include", cache: "no-store" });
-        const data = await res.json().catch(() => null);
-        if (cancelled) return;
-        if (!res.ok) {
-          setErr(typeof data?.detail === "string" ? data.detail : "We couldn't load your courses.");
-          setDash(null);
-          return;
-        }
-        setErr(null);
-        const typed = data as InstructorDashboard;
-        setDash(typed);
-        const courses = typed.courses ?? [];
-        if (courses.length) {
-          setCourseSlug((prev) => (prev ? prev : courses[0].slug));
-        }
-      } catch {
-        if (!cancelled) setErr("Connection problem. Please try again.");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const submit = async () => {
-    setSaveMsg(null);
-    if (!courseSlug.trim() || !title.trim()) {
-      setSaveMsg("Choose a course and enter a lesson title.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/courses/${encodeURIComponent(courseSlug)}/lessons`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          body: body.trim() || null,
-          duration_minutes: Math.max(0, duration),
-        }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setSaveMsg(typeof data?.detail === "string" ? data.detail : "We couldn't save the lesson. Try again.");
-        return;
-      }
-      setSaveMsg("Lesson saved. It will show on the public course page.");
-      setTitle("");
-      setBody("");
-      setDuration(0);
-    } catch {
-      setSaveMsg("Connection problem. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (err) return <p className="text-sm text-red-800">{err}</p>;
-  if (!dash) return <p className="text-sm text-neutral-500">Loading your courses…</p>;
-  if (dash.courses.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-10 text-center dark:border-zinc-700 /50">
-        <p className="text-sm leading-relaxed text-neutral-500">
-          Create a course first, then add lessons and media here.
-        </p>
-        <Link
-          href="/dashboard/instructor/create-course"
-          className="btn-primary-brand mt-5 inline-flex !no-underline"
-        >
-          Create course
-        </Link>
-      </div>
-    );
-  }
-
+function PageIntro({ kicker, title, body }: { kicker: string; title: string; body: string }) {
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <p className="text-sm leading-relaxed text-neutral-500">
-        Add structured lessons to a course you own. Each lesson appears in the public curriculum for that course.
-      </p>
-      <div className="space-y-4 rounded-md border border-neutral-200/90 bg-brand-surface  p-6 shadow-none">
-        <label className="block text-sm font-semibold text-zinc-800">
-          Course
-          <select
-            value={courseSlug}
-            onChange={(e) => setCourseSlug(e.target.value)}
-            className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100"
-          >
-            {dash.courses.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.title} ({c.slug})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-sm font-semibold text-zinc-800">
-          Lesson title
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100"
-          />
-        </label>
-        <label className="block text-sm font-semibold text-zinc-800">
-          Body (optional)
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100" />
-        </label>
-        <label className="block text-sm font-semibold text-zinc-800">
-          Duration (minutes)
-          <input
-            type="number"
-            min={0}
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value) || 0)}
-            className="mt-1 w-full rounded-sm border border-neutral-200 bg-brand-surface px-3 py-2 text-sm dark:border-neutral-500 dark:bg-zinc-950 dark:text-neutral-100"
-          />
-        </label>
-        {saveMsg ? <p className="text-sm text-zinc-700">{saveMsg}</p> : null}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void submit()}
-          className="btn-primary-brand w-full !py-3 disabled:opacity-60"
-        >
-          {busy ? "Saving…" : "Add lesson"}
-        </button>
-      </div>
-    </div>
+    <header className="mb-8">
+      <p className="text-sm text-[#011B33]/50">{kicker}</p>
+      <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight">{title}</h1>
+      <p className="mt-2 max-w-2xl text-sm text-[#011B33]/60">{body}</p>
+    </header>
+  );
+}
+
+function Stars({ rating }: { rating: number }) {
+  return (
+    <span className="inline-flex gap-0.5 text-brand-accent" aria-label={`${rating} out of 5`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} className={i < rating ? "opacity-100" : "opacity-25"}>
+          ★
+        </span>
+      ))}
+    </span>
   );
 }
 
 export function InstructorSectionContent({ section }: { section: string }) {
-  const tRel = useTranslations("dashboard.relationships");
   const [students, setStudents] = useState<StudentRow[] | null>(null);
   const [dash, setDash] = useState<InstructorDashboard | null>(null);
   const [reviews, setReviews] = useState<ReviewRow[] | null>(null);
-  const [dashUpdatedAt, setDashUpdatedAt] = useState<Date | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -232,7 +110,6 @@ export function InstructorSectionContent({ section }: { section: string }) {
         return;
       }
       setDash(data as InstructorDashboard);
-      setDashUpdatedAt(new Date());
       setErr(null);
     } catch {
       setErr("Connection problem. Please try again.");
@@ -265,198 +142,179 @@ export function InstructorSectionContent({ section }: { section: string }) {
     };
   }, [section]);
 
-  if (section === "create-course") {
+  if (section === "create-course" || section === "content-upload") {
     return (
-      <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-8 text-center shadow-none">
-        <p className="text-sm text-neutral-500">Course creation now lives in the full studio experience.</p>
-        <Link href="/dashboard/instructor/studio/new" className="btn-primary-brand mt-4 inline-flex !min-w-0 text-sm">
-          Open course studio
-        </Link>
-      </div>
-    );
-  }
-
-  if (section === "content-upload") {
-    return (
-      <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-8 text-center shadow-none dark:border-zinc-800 ">
-        <p className="text-sm leading-relaxed text-neutral-500">
-          Add lessons and videos in Course Studio.
+      <div className="rounded-[5px] border border-brand-ink/10 bg-white px-6 py-14 text-center shadow-[0_8px_24px_rgba(16,36,79,0.04)]">
+        <p className="text-lg font-extrabold">Course studio</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-[#011B33]/60">
+          Create courses, covers, and lessons in one place.
         </p>
-        <Link href="/dashboard/instructor/studio" className="btn-primary-brand mt-5 inline-flex !min-w-0 text-sm !no-underline">
-          Open course studio
+        <Link
+          href={section === "create-course" ? "/instructor/studio/new" : "/instructor/studio"}
+          className="mt-6 inline-flex h-11 items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
+        >
+          Open studio
         </Link>
       </div>
     );
   }
 
   if (section === "students") {
-    if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (students === null) return <p className="text-sm text-neutral-500">Loading enrollments…</p>;
-    if (students.length === 0) {
+    if (err) return <p className="text-sm text-red-700">{err}</p>;
+    if (students === null) {
       return (
-        <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-12 text-center dark:border-zinc-700 /50">
-          <p className="text-sm leading-relaxed text-neutral-500">
-            Enrolled students will show up here.
-          </p>
-          <Link href="/courses" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
-            View public catalog
-          </Link>
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 rounded bg-brand-ink/10" />
+          <div className="h-40 rounded-[5px] bg-brand-ink/10" />
         </div>
       );
     }
     return (
-      <div className="space-y-4">
-        <p className="max-w-3xl text-sm leading-relaxed text-zinc-700 dark:text-neutral-300">{tRel("instructorRosterBlurb")}</p>
-        <p>
-          <Link href="/courses" className="text-sm font-bold text-brand-accent hover:underline">
-            {tRel("browseCatalogCta")}
-          </Link>
-        </p>
-        <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
-        <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
-            <tr>
-              <th className="px-4 py-3">Enrolled</th>
-              <th className="px-4 py-3">Learner</th>
-              <th className="px-4 py-3">Course</th>
-              <th className="px-4 py-3">Lessons done</th>
-              <th className="px-4 py-3">Progress</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100">
-            {students.map((s) => (
-              <tr key={`${s.user_id}-${s.course_slug}-${s.enrolled_at}`}>
-                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(s.enrolled_at).toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-brand-ink">{s.user_name}</p>
-                  <p className="text-xs text-neutral-500">{s.user_email}</p>
-                </td>
-                <td className="px-4 py-3">
-                  <Link href={`/courses/${s.course_slug}`} className="font-semibold text-brand-accent hover:underline">
-                    {s.course_title}
+      <div>
+        <PageIntro
+          kicker="Audience"
+          title="Students"
+          body="People enrolled in courses you instruct, with the progress they have actually completed."
+        />
+        {students.length === 0 ? (
+          <div className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-12 text-center">
+            <p className="font-semibold">No enrollments yet</p>
+            <p className="mt-1 text-sm text-[#011B33]/55">They appear here after a student joins one of your courses.</p>
+            <Link href="/instructor/studio" className="mt-5 inline-block text-sm font-semibold text-brand-accent hover:underline">
+              Open studio
+            </Link>
+          </div>
+        ) : (
+          <ul className="divide-y divide-brand-ink/10 overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white">
+            {students.map((row) => (
+              <li key={`${row.user_id}-${row.course_slug}-${row.enrolled_at}`} className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+                <PersonMark name={row.user_name} className="h-11 w-11 text-[12px]" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold">{row.user_name}</p>
+                  <p className="truncate text-xs text-[#011B33]/50">{row.user_email}</p>
+                  <Link href={`/courses/${row.course_slug}`} className="mt-1 inline-block text-sm font-semibold text-brand-accent hover:underline">
+                    {row.course_title}
                   </Link>
-                </td>
-                <td className="px-4 py-3 tabular-nums text-zinc-700">{s.lesson_done ?? 0}</td>
-                <td className="px-4 py-3 tabular-nums font-semibold text-brand-ink">{s.progress_pct ?? 0}%</td>
-              </tr>
+                </div>
+                <div className="w-full sm:w-48">
+                  <div className="flex justify-between text-xs text-[#011B33]/50">
+                    <span>{row.lesson_done} lessons done</span>
+                    <span className="font-semibold tabular-nums text-[#011B33]">{row.progress_pct ?? 0}%</span>
+                  </div>
+                  <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-brand-ink/10">
+                    <div className="h-full bg-brand-accent" style={{ width: `${Math.min(100, row.progress_pct ?? 0)}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-[#011B33]/40">{new Date(row.enrolled_at).toLocaleDateString()}</p>
+                </div>
+              </li>
             ))}
-          </tbody>
-        </table>
-        </div>
+          </ul>
+        )}
       </div>
     );
   }
 
   if (section === "analytics") {
-    if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (!dash) return <p className="text-sm text-brand-ink/60">Loading analytics…</p>;
+    if (err) return <p className="text-sm text-red-700">{err}</p>;
+    if (!dash) {
+      return (
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 rounded bg-brand-ink/10" />
+          <div className="h-28 rounded-[5px] bg-brand-ink/10" />
+        </div>
+      );
+    }
     const { totals, courses } = dash;
     return (
-      <div className="space-y-8">
-        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-6">
-          <div>
-            <p className="tag-overline">Instructor</p>
-            <h1 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink">Analytics</h1>
-            <p className="mt-2 text-sm text-brand-ink/60">Enrollment and learner activity across your courses.</p>
+      <div>
+        <PageIntro kicker="Insights" title="Analytics" body="Enrollment and learner activity across the courses you instruct." />
+        <InstructorKeyBoxes items={instructorOverviewBoxes(totals)} />
+        {courses.length === 0 ? (
+          <p className="mt-8 rounded-[5px] border border-dashed border-brand-ink/20 px-4 py-8 text-center text-sm text-[#011B33]/55">No courses yet.</p>
+        ) : (
+          <div className="mt-8 grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+            <section className="rounded-[5px] border border-brand-ink/10 bg-white p-5 shadow-[0_10px_30px_rgba(16,36,79,0.05)] sm:p-6">
+              <h2 className="text-lg font-extrabold">Enrollments by course</h2>
+              <p className="mt-1 text-sm text-[#011B33]/55">How many learners joined each course you instruct.</p>
+              <div className="mt-5">
+                <InstructorEnrollmentColumns courses={courses} />
+              </div>
+            </section>
+            <section className="rounded-[5px] border border-brand-ink/10 bg-white p-5 shadow-[0_10px_30px_rgba(16,36,79,0.05)] sm:p-6">
+              <h2 className="text-lg font-extrabold">Share of enrollments</h2>
+              <p className="mt-1 text-sm text-[#011B33]/55">Which course holds the most of your audience.</p>
+              <div className="mt-5">
+                <InstructorEnrollmentShare courses={courses} />
+              </div>
+            </section>
+            <section className="rounded-[5px] border border-brand-ink/10 bg-white p-5 shadow-[0_10px_30px_rgba(16,36,79,0.05)] xl:col-span-2 sm:p-6">
+              <h2 className="text-lg font-extrabold">Lessons and enrollments</h2>
+              <p className="mt-1 text-sm text-[#011B33]/55">Navy is lesson count. Blue is enrollments. Same scale, real numbers.</p>
+              <div className="mt-5">
+                <InstructorLessonMix courses={courses} />
+              </div>
+            </section>
           </div>
-          <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
-        </header>
-
-        <section className="grid grid-cols-1 gap-px overflow-hidden border border-brand-ink/10 bg-brand-ink/10 sm:grid-cols-3">
-          <div className="bg-brand-surface px-5 py-5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Courses</p>
-            <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.total_courses}</p>
-          </div>
-          <div className="bg-brand-surface px-5 py-5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Enrollments</p>
-            <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.total_enrollments}</p>
-          </div>
-          <div className="bg-brand-surface px-5 py-5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Unique learners</p>
-            <p className="mt-3 font-display text-3xl font-bold tabular-nums text-brand-ink">{totals.unique_learners}</p>
-          </div>
-        </section>
-
-        <p className="text-sm text-brand-ink/55">
-          Revenue lives on{" "}
-          <Link href="/dashboard/instructor/earnings" className="font-semibold text-brand-accent hover:text-brand-accent-dark">
-            Earnings
-          </Link>
-          .
-        </p>
-
-        <section className="border border-brand-ink/10 bg-brand-surface">
-          <div className="border-b border-brand-ink/10 px-5 py-4 sm:px-6">
-            <h2 className="font-display text-lg font-semibold text-brand-ink">Per-course enrollments</h2>
-            <p className="mt-1 text-sm text-brand-ink/55">How each course is performing</p>
-          </div>
-          <div className="overflow-x-auto px-5 py-2 sm:px-6">
-            <table className="w-full min-w-[480px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-brand-ink/10 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-brand-ink/45">
-                  <th className="py-3 pr-4">Course</th>
-                  <th className="py-3 pr-4">Lessons</th>
-                  <th className="py-3">Enrollments</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-ink/10">
-                {courses.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-brand-ink/55">
-                      No courses yet.
-                    </td>
-                  </tr>
-                ) : (
-                  courses.map((c) => (
-                    <tr key={c.slug}>
-                      <td className="py-3.5 pr-4 font-semibold text-brand-ink">{c.title}</td>
-                      <td className="py-3.5 pr-4 tabular-nums text-brand-ink/70">{c.lessons_count}</td>
-                      <td className="py-3.5 tabular-nums text-brand-ink/70">{c.enrollment_count}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        )}
       </div>
     );
   }
 
   if (section === "earnings") {
-    if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (!dash) return <p className="text-sm text-brand-ink/60">Loading earnings…</p>;
+    if (err) return <p className="text-sm text-red-700">{err}</p>;
+    if (!dash) {
+      return (
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-40 rounded bg-brand-ink/10" />
+          <div className="h-40 rounded-[5px] bg-brand-ink/10" />
+        </div>
+      );
+    }
     return (
-      <div className="space-y-8">
-        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-6">
-          <div>
-            <p className="tag-overline">Instructor</p>
-            <h1 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink">Earnings</h1>
-            <p className="mt-2 text-sm text-brand-ink/60">Completed payment volume from your courses.</p>
-          </div>
-          <DashboardLiveBadge lastUpdated={dashUpdatedAt} />
-        </header>
-
-        <section className="border border-brand-ink/10 bg-brand-surface px-5 py-8 sm:px-8">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">
-            Completed course revenue
-          </p>
-          <p
-            className="mt-4 font-display text-4xl font-bold tabular-nums tracking-tighter text-brand-ink"
-            title={formatMoney(dash.totals.revenue_completed_cents)}
-          >
-            {formatMoneyCompact(dash.totals.revenue_completed_cents)}
-          </p>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-brand-ink/60">
-            Paid earnings from your courses. Your own purchases are in Billing.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-4">
-            <Link href="/dashboard/payments" className="text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
-              Open billing
-            </Link>
-            <Link href="/dashboard/instructor/analytics" className="text-sm font-semibold text-brand-ink/55 hover:text-brand-ink">
-              View enrollment analytics
-            </Link>
+      <div>
+        <PageIntro kicker="Insights" title="Earnings" body="Completed payment volume from your courses." />
+        <section className="overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white">
+          <div className="grid md:grid-cols-[minmax(0,1.2fr)_minmax(14rem,0.8fr)]">
+            <div className="p-7 sm:p-9">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">Completed course revenue</p>
+              <p className="mt-4 text-4xl font-extrabold tabular-nums tracking-tight" title={formatMoney(dash.totals.revenue_completed_cents)}>
+                {formatMoneyCompact(dash.totals.revenue_completed_cents)}
+              </p>
+              <p className="mt-4 max-w-lg text-sm leading-relaxed text-[#011B33]/60">
+                Paid earnings from students who completed checkout on your courses. Purchases you make as a learner are in Billing.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/payments"
+                  className="inline-flex h-10 items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
+                >
+                  Open billing
+                </Link>
+                <Link
+                  href="/instructor/analytics"
+                  className="inline-flex h-10 items-center rounded-[5px] border border-brand-ink/15 px-4 text-sm font-semibold hover:border-brand-accent hover:text-brand-accent"
+                >
+                  View analytics
+                </Link>
+              </div>
+            </div>
+            <aside className="border-t border-brand-ink/10 bg-brand-sky/70 p-7 md:border-l md:border-t-0 sm:p-9">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">Snapshot</p>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-[#011B33]/55">Courses</dt>
+                  <dd className="font-semibold tabular-nums">{dash.totals.total_courses}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-[#011B33]/55">Enrollments</dt>
+                  <dd className="font-semibold tabular-nums">{dash.totals.total_enrollments}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-[#011B33]/55">Learners</dt>
+                  <dd className="font-semibold tabular-nums">{dash.totals.unique_learners}</dd>
+                </div>
+              </dl>
+            </aside>
           </div>
         </section>
       </div>
@@ -464,51 +322,47 @@ export function InstructorSectionContent({ section }: { section: string }) {
   }
 
   if (section === "reviews") {
-    if (err) return <p className="text-sm text-red-800">{err}</p>;
-    if (reviews === null) return <p className="text-sm text-neutral-500">Loading reviews…</p>;
-    if (reviews.length === 0) {
+    if (err) return <p className="text-sm text-red-700">{err}</p>;
+    if (reviews === null) {
       return (
-        <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-12 text-center dark:border-zinc-700 /50">
-          <p className="text-sm leading-relaxed text-neutral-500">
-            Reviews from your students appear here.
-          </p>
-          <Link href="/dashboard/instructor/analytics" className="mt-4 inline-block text-sm font-bold text-brand-accent hover:underline">
-            View analytics
-          </Link>
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-40 rounded bg-brand-ink/10" />
+          <div className="h-40 rounded-[5px] bg-brand-ink/10" />
         </div>
       );
     }
     return (
-      <div className="overflow-x-auto rounded-md border border-neutral-200/90 bg-brand-surface  shadow-none">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-neutral-200 text-xs font-bold uppercase text-neutral-500 dark:border-zinc-700 dark:text-neutral-400">
-            <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Course</th>
-              <th className="px-4 py-3">Learner</th>
-              <th className="px-4 py-3">Rating</th>
-              <th className="px-4 py-3">Comment</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100">
-            {reviews.map((r) => (
-              <tr key={r.id}>
-                <td className="px-4 py-3 text-xs text-neutral-500">{new Date(r.created_at).toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <Link href={`/courses/${r.course_slug}`} className="font-semibold text-brand-accent hover:underline">
-                    {r.course_title}
-                  </Link>
-                </td>
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-brand-ink">{r.reviewer_name}</p>
-                  <p className="text-xs text-neutral-500">{r.reviewer_email}</p>
-                </td>
-                <td className="px-4 py-3 font-bold tabular-nums text-brand-ink">{r.rating} / 5</td>
-                <td className="max-w-xs px-4 py-3 text-zinc-700">{r.comment ? r.comment : "-"}</td>
-              </tr>
+      <div>
+        <PageIntro kicker="Audience" title="Reviews" body="Ratings and comments students left on courses you instruct." />
+        {reviews.length === 0 ? (
+          <div className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-12 text-center">
+            <p className="font-semibold">No reviews yet</p>
+            <p className="mt-1 text-sm text-[#011B33]/55">They appear here after a student rates one of your courses.</p>
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {reviews.map((row) => (
+              <li key={row.id} className="rounded-[5px] border border-brand-ink/10 bg-white p-5">
+                <div className="flex items-start gap-3">
+                  <PersonMark name={row.reviewer_name} className="h-10 w-10 text-[11px]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-bold">{row.reviewer_name}</p>
+                      <Stars rating={row.rating} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-[#011B33]/45">
+                      {new Date(row.created_at).toLocaleDateString()} ·{" "}
+                      <Link href={`/courses/${row.course_slug}`} className="font-semibold text-brand-accent hover:underline">
+                        {row.course_title}
+                      </Link>
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-[#011B33]/75">{row.comment || "No written comment."}</p>
+                  </div>
+                </div>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+        )}
       </div>
     );
   }

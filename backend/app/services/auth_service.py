@@ -174,6 +174,44 @@ def disable_mfa(db: Session, user: User, data: MfaDisableRequest) -> None:
     mfa_service.disable_2fa(db, user, data.password)
 
 
+def record_learning_choice(db: Session, user: User, topic: str, learn_with: str) -> None:
+    """Store the sign-in questions on the account and on the role profile."""
+    user.learn_topic = topic
+    user.learn_with = learn_with
+    if user.role == UserRole.STUDENT:
+        row = db.execute(
+            select(StudentLearningProfile).where(StudentLearningProfile.user_id == user.id)
+        ).scalar_one_or_none()
+        if row is None:
+            row = StudentLearningProfile(
+                user_id=user.id,
+                education_level="other",
+                skills_to_learn=topic,
+                learning_goals=f"Learn with {learn_with}",
+                preferred_formats="Online (self-paced)",
+                weekly_hours="5to10",
+                extra_notes=f"learn_with:{learn_with}",
+            )
+            db.add(row)
+        else:
+            row.skills_to_learn = topic
+            row.learning_goals = f"Learn with {learn_with}"
+            notes = (row.extra_notes or "").strip()
+            if not notes or notes.startswith("learn_with:"):
+                row.extra_notes = f"learn_with:{learn_with}"
+    elif user.role == UserRole.INSTRUCTOR:
+        row = db.execute(
+            select(InstructorTeachingProfile).where(InstructorTeachingProfile.user_id == user.id)
+        ).scalar_one_or_none()
+        if row is not None:
+            row.expertise_areas = topic
+            row.subjects_taught = f"Teach with {learn_with}"
+            notes = (row.credentials_notes or "").strip()
+            if not notes or notes.startswith("teach_with:"):
+                row.credentials_notes = f"teach_with:{learn_with}"
+    db.commit()
+
+
 def get_user_by_id(db: Session, user_id: UUID) -> User | None:
     return db.execute(
         select(User)
@@ -185,8 +223,12 @@ def get_user_by_id(db: Session, user_id: UUID) -> User | None:
                 User.role,
                 User.is_active,
                 User.two_factor_enabled,
+                User.authenticator_secret,
+                User.authenticator_enabled,
                 User.student_code,
                 User.avatar_url,
+                User.learn_topic,
+                User.learn_with,
             )
         )
         .where(User.id == user_id)

@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 
-export const studioLabelClass =
-  "block font-mono text-xs font-semibold uppercase tracking-widest text-neutral-500";
+export const studioLabelClass = "block text-sm font-semibold text-[#011B33]";
 
 export const studioFieldClass =
-  "mt-2 w-full border border-brand-ink/15 bg-brand-surface px-3.5 py-2.5 text-sm text-brand-ink placeholder:text-brand-ink/35 transition focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent/30";
+  "mt-1.5 w-full rounded-[5px] border border-brand-ink/15 bg-white px-3.5 py-2.5 text-sm text-brand-ink placeholder:text-brand-ink/35 outline-none transition focus:border-brand-accent";
 
 export const studioTextareaClass = `${studioFieldClass} min-h-[7rem] resize-y leading-relaxed`;
 
@@ -23,13 +22,13 @@ export function StudioPageHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-ink/10 pb-8">
+    <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0 max-w-3xl">
-        {eyebrow ? <p className="tag-overline">{eyebrow}</p> : null}
-        <h1 className={`heading-display text-3xl sm:text-4xl ${eyebrow ? "mt-3" : ""}`}>
+        {eyebrow ? <p className="text-sm text-[#011B33]/50">{eyebrow}</p> : null}
+        <h1 className={`text-[1.75rem] font-extrabold tracking-tight sm:text-[2rem] ${eyebrow ? "mt-1" : ""}`}>
           {title}
         </h1>
-        {description ? <p className="mt-3 max-w-prose text-sm leading-relaxed text-neutral-500 sm:text-base">{description}</p> : null}
+        {description ? <p className="mt-2 max-w-prose text-sm leading-relaxed text-[#011B33]/60">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
@@ -50,12 +49,12 @@ export function StudioPanel({
   className?: string;
 }) {
   return (
-    <section className={`border border-brand-ink/10 bg-brand-surface ${className}`}>
+    <section className={`overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white shadow-[0_8px_24px_rgba(16,36,79,0.04)] ${className}`}>
       {title ? (
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-brand-ink/10 px-5 py-4 sm:px-6">
           <div>
-            <h2 className="font-display text-lg font-semibold leading-[1.1] tracking-tighter text-zinc-900 sm:text-xl">{title}</h2>
-            {description ? <p className="mt-1 max-w-prose text-sm leading-relaxed text-neutral-500">{description}</p> : null}
+            <h2 className="text-lg font-extrabold text-[#011B33]">{title}</h2>
+            {description ? <p className="mt-1 max-w-prose text-sm leading-relaxed text-[#011B33]/55">{description}</p> : null}
           </div>
           {action}
         </div>
@@ -78,12 +77,12 @@ export function StudioStatusPill({ status }: { status: string }) {
     status === "published" ? "Live" : status === "pending_review" ? "In review" : status === "archived" ? "Archived" : "Draft";
   const tone =
     status === "published"
-      ? "bg-emerald-50 text-emerald-900"
+      ? "bg-emerald-50 text-emerald-800"
       : status === "pending_review"
-        ? "bg-amber-50 text-amber-950"
-        : "bg-brand-muted text-brand-ink/70";
+        ? "bg-amber-50 text-amber-900"
+        : "bg-[#eef3fb] text-[#011B33]/70";
   return (
-    <span className={`inline-flex rounded-sm px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-widest ${tone}`}>
+    <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${tone}`}>
       {label}
     </span>
   );
@@ -99,23 +98,23 @@ export function StudioStepNav({
   onChange: (index: number) => void;
 }) {
   return (
-    <nav aria-label="Studio steps" className="border-y border-brand-ink/10">
-      <ol className="grid grid-cols-2 sm:grid-cols-4">
+    <nav aria-label="Studio steps" className="rounded-[5px] border border-brand-ink/10 bg-white p-2">
+      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {steps.map((label, index) => {
           const active = index === current;
           const done = index < current;
           return (
-            <li key={label} className="border-brand-ink/10 sm:border-r sm:last:border-r-0 [&:nth-child(odd)]:border-r max-sm:border-b max-sm:[&:nth-child(n+3)]:border-b-0">
+            <li key={label}>
               <button
                 type="button"
                 onClick={() => onChange(index)}
-                className={`flex w-full items-center gap-3 px-4 py-4 text-left transition sm:px-5 ${
-                  active ? "bg-brand-ink text-white" : "bg-transparent text-brand-ink hover:bg-brand-muted/70"
+                className={`flex w-full items-center gap-3 rounded-[5px] px-3 py-3 text-left transition ${
+                  active ? "bg-brand-accent text-white" : "text-brand-ink hover:bg-brand-sky"
                 }`}
               >
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center font-display text-sm font-bold tabular-nums ${
-                    active ? "bg-brand-accent text-white" : done ? "bg-brand-ink text-white" : "border border-brand-ink/20 text-brand-ink/50"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums ${
+                    active ? "bg-white text-brand-accent" : done ? "bg-brand-ink text-white" : "border border-brand-ink/20 text-brand-ink/50"
                   }`}
                 >
                   {index + 1}

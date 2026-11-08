@@ -1,65 +1,39 @@
+import { Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 export async function TeachOnMultivateSection() {
   const t = await getTranslations("landing.teach");
+  const points = [t("panelLi1"), t("panelLi2"), t("panelLi3")];
 
   return (
-    <section id="teach" className="section-y border-t border-brand-ink/10 bg-brand-muted">
-      <div className="container-page">
-        <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:gap-20">
-          <div>
-            <p className="tag-overline">{t("kicker")}</p>
-            <h2 className="heading-section mt-4 text-3xl sm:text-4xl">{t("title")}</h2>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-brand-ink/65">{t("body")}</p>
-
-            <div className="mt-10 grid gap-8 sm:grid-cols-2">
-              <div>
-                <h3 className="font-display text-lg font-semibold text-brand-ink">{t("bullet1Title")}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">{t("bullet1Body")}</p>
-              </div>
-              <div>
-                <h3 className="font-display text-lg font-semibold text-brand-ink">{t("bullet2Title")}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-brand-ink/65">{t("bullet2Body")}</p>
-              </div>
-            </div>
-
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link
-                href="/register?intent=instructor"
-                className="btn-primary-brand inline-flex items-center justify-center gap-2 sm:w-auto"
-              >
-                {t("ctaInstructor")}
-              </Link>
-              <Link href="/login?from=%2Fdashboard%2Finstructor%2Fstudio" className="btn-outline-brand sm:w-auto">
-                {t("ctaStudio")}
-              </Link>
-            </div>
-          </div>
-
-          <aside className="border-t border-brand-ink/15 pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
-            <p className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-brand-ink/45">
-              {t("panelTitle")}
-            </p>
-            <p className="mt-4 text-sm leading-relaxed text-brand-ink/65">{t("panelBody")}</p>
-            <ul className="mt-6 space-y-4 text-sm text-brand-ink/80">
-              <li className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-accent" aria-hidden />
-                {t("panelLi1")}
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-accent" aria-hidden />
-                {t("panelLi2")}
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-accent" aria-hidden />
-                {t("panelLi3")}
-              </li>
-            </ul>
-            <Link href="/courses" className="mt-8 inline-flex text-sm font-semibold text-brand-accent hover:text-brand-accent-dark">
-              {t("ctaBrowse")}
-            </Link>
-          </aside>
+    <section id="teach" className="bg-brand-sky">
+      <div className="container-page py-16 sm:py-20 lg:py-24">
+        <h2 className="max-w-4xl text-[2.75rem] font-extrabold leading-[0.95] tracking-tight text-[#011B33] sm:text-6xl lg:text-7xl">
+          {`${t("title")}.`}
+        </h2>
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#011B33]/70">{t("body")}</p>
+        <ul className="mt-8 max-w-xl space-y-3">
+          {points.map((point) => (
+            <li key={point} className="flex gap-3 text-sm leading-6 text-[#011B33]">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" strokeWidth={2.5} aria-hidden />
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/register?intent=instructor"
+            className="inline-flex h-[50px] items-center justify-center rounded-[5px] bg-brand-accent px-8 text-[16px] font-medium text-white hover:bg-brand-accent-dark"
+          >
+            {t("ctaInstructor")}
+          </Link>
+          <Link
+            href="/instructor"
+            className="inline-flex h-[50px] items-center justify-center rounded-[5px] border border-[#011B33]/20 bg-white px-8 text-[16px] font-medium text-[#011B33] hover:border-brand-accent hover:text-brand-accent"
+          >
+            {t("ctaStudio")}
+          </Link>
         </div>
       </div>
     </section>

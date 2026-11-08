@@ -5,10 +5,14 @@ export function formatCoursePrice(
 ): string {
   if (isFree || priceCents <= 0) return "Free";
   const code = currency.trim().toUpperCase() || "NGN";
+  const amount = priceCents / 100;
+  const whole = Number.isInteger(amount);
   return new Intl.NumberFormat(code === "NGN" ? "en-NG" : undefined, {
     style: "currency",
     currency: code,
-  }).format(priceCents / 100);
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(amount);
 }
 
 export function formatCourseDuration(minutes: number): string {

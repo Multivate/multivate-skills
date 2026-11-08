@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import type { CartLine } from "@/lib/cart-types";
 
-type Variant = "primary" | "outline" | "compact";
+type Variant = "primary" | "outline" | "compact" | "inline";
 
 export function AddToCartButton({
   item,
@@ -39,16 +39,21 @@ export function AddToCartButton({
       ? "btn-primary-brand inline-flex items-center justify-center gap-2 !py-2.5 text-sm"
       : variant === "compact"
         ? "inline-flex items-center gap-1.5 rounded-sm border border-neutral-200 bg-brand-surface px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary"
-        : "inline-flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 bg-brand-surface py-2.5 text-sm font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary";
+        : variant === "inline"
+          ? "inline-flex h-10 w-auto shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-brand-accent px-3 text-sm font-bold transition"
+          : "inline-flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 bg-brand-surface py-2.5 text-sm font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary";
+  const inlineState = inCart
+    ? "border-brand-accent bg-brand-accent text-white hover:bg-brand-accent-dark"
+    : "bg-transparent text-brand-accent hover:bg-brand-accent hover:text-white";
 
   if (inCart) {
     return (
       <button
         type="button"
         onClick={() => removeItem(item.slug)}
-        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 ${className}`}
+        className={`${base} ${variant === "inline" ? inlineState : "border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"} ${className}`}
       >
-        <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
+        {variant === "inline" ? null : <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />}
         {removeText}
       </button>
     );
@@ -58,9 +63,9 @@ export function AddToCartButton({
     <button
       type="button"
       onClick={() => addItem(item)}
-      className={`${base} ${className}`}
+      className={`${base} ${variant === "inline" ? inlineState : ""} ${className}`}
     >
-      <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />
+      {variant === "inline" ? null : <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden />}
       {addText}
     </button>
   );

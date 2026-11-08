@@ -46,6 +46,10 @@ from app.models.mentor_message import MentorMessage  # noqa: F401
 from app.models.mentor_profile import MentorProfile  # noqa: F401
 from app.models.mentor_session import MentorSessionBooking  # noqa: F401
 from app.models.student_learning_profile import StudentLearningProfile  # noqa: F401
+from app.models.learning_visit import LearningVisit  # noqa: F401
+from app.models.course_wishlist import CourseWishlist  # noqa: F401
+from app.models.learning_list import LearningList, LearningListItem  # noqa: F401
+from app.models.support_ticket import SupportTicket  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.media_file import MediaFile  # noqa: F401
 

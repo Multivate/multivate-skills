@@ -1,17 +1,16 @@
 import { resolveAvatarUrl } from "@/lib/avatar-url";
+import { avatarFontSize, personAvatarStyle } from "@/lib/person-avatar";
 
 type UserAvatarProps = {
   name: string;
   avatarUrl?: string | null;
   className?: string;
-  fallbackClassName?: string;
 };
 
 export function UserAvatar({
   name,
   avatarUrl,
   className = "h-10 w-10 text-sm",
-  fallbackClassName = "bg-neutral-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100",
 }: UserAvatarProps) {
   const src = resolveAvatarUrl(avatarUrl);
   const initial = (name.trim()[0] ?? "?").toUpperCase();
@@ -19,16 +18,19 @@ export function UserAvatar({
   if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt="" className={`shrink-0 rounded-full object-cover ${className}`} />
+      <img src={src} alt={name} className={`shrink-0 rounded-full object-cover ${className}`} />
     );
   }
 
   return (
-    <div
-      className={`flex shrink-0 items-center justify-center rounded-full font-bold ${className} ${fallbackClassName}`}
-      aria-hidden
-    >
-      {initial}
-    </div>
+    <span className={`inline-flex shrink-0 ${className}`}>
+      <span
+        className="inline-flex h-full w-full items-center justify-center rounded-full font-sans font-bold text-white"
+        style={{ ...personAvatarStyle(name), color: "#FFFFFF", fontSize: avatarFontSize(className) }}
+        aria-hidden
+      >
+        {initial}
+      </span>
+    </span>
   );
 }

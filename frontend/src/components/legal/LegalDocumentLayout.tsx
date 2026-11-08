@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Link } from "@/i18n/navigation";
+import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteHeader } from "@/components/layout/SiteHeader";
 
 export type LegalSection = {
   id: string;
@@ -21,22 +22,10 @@ export function LegalDocumentLayout({
   contactEmail?: string;
 }) {
   return (
-    <div className="min-h-screen bg-brand-paper text-brand-ink">
-      <header className="border-b border-white/10 bg-brand-navy text-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-          <Link href="/" className="font-display text-lg font-bold tracking-tighter text-white">
-            Multivate
-          </Link>
-          <Link
-            href="/"
-            className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70 transition hover:text-white"
-          >
-            Back to site
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white text-[#011B33]">
+      <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <main className="container-page py-10 sm:py-14">
         <div className="max-w-3xl">
           <p className="tag-overline">Legal</p>
           <div className="marketing-rule mt-4" aria-hidden />
@@ -46,7 +35,7 @@ export function LegalDocumentLayout({
         </div>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-14">
-          <nav className="lg:sticky lg:top-8 lg:self-start" aria-label="On this page">
+          <nav className="lg:sticky lg:top-24 lg:self-start" aria-label="On this page">
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brand-ink/45">Contents</p>
             <ol className="mt-4 space-y-2 border-l border-brand-ink/10">
               {sections.map((section, i) => (
@@ -84,13 +73,11 @@ export function LegalDocumentLayout({
                 </a>
                 .
               </p>
-              <p className="mt-6 text-xs text-brand-ink/45">
-                You can close this tab and return to registration. Your form entries on the other tab stay as you left them.
-              </p>
             </footer>
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

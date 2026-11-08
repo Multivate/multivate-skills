@@ -236,7 +236,7 @@ export function CourseStudio({ initialSlug }: Props) {
       const saved = data as { slug: string };
       if (isNew) {
         setSlug(saved.slug);
-        router.replace(`/dashboard/instructor/studio/${saved.slug}`);
+        router.replace(`/instructor/studio/${saved.slug}`);
       }
       await loadCourse(saved.slug);
       showToast("Saved");
@@ -310,7 +310,7 @@ export function CourseStudio({ initialSlug }: Props) {
         setError(typeof data?.detail === "string" ? data.detail : "We couldn't delete that course.");
         return;
       }
-      router.push("/dashboard/instructor/studio");
+      router.push("/instructor/studio");
       router.refresh();
     } finally {
       setBusy(false);
@@ -354,23 +354,23 @@ export function CourseStudio({ initialSlug }: Props) {
     : [];
 
   return (
-    <div className="mx-auto max-w-[90rem] space-y-8">
+    <div className="mx-auto max-w-[84rem] space-y-8 px-4 py-8 sm:px-6">
       {toast ? (
-        <div className="fixed bottom-6 right-6 z-50 border border-brand-ink bg-brand-ink px-4 py-3 text-sm font-semibold text-white shadow-sm">
+        <div className="fixed bottom-6 right-6 z-50 rounded-[5px] bg-brand-accent px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(16,36,79,0.18)]">
           {toast}
         </div>
       ) : null}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <StudioQuietLink href="/dashboard/instructor/studio">
+          <StudioQuietLink href="/instructor/studio">
             <span className="inline-flex items-center gap-1.5">
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
               All courses
             </span>
           </StudioQuietLink>
-          <p className="tag-overline mt-5">Course studio</p>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-tighter text-brand-ink sm:text-4xl">
+          <p className="mt-4 text-sm text-[#011B33]/50">Course studio</p>
+          <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight text-[#011B33] sm:text-[2rem]">
             {slug ? title || "Untitled course" : "New course"}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -387,7 +387,7 @@ export function CourseStudio({ initialSlug }: Props) {
         {slug ? (
           <Link
             href={`/learn/${slug}?preview=1`}
-            className="inline-flex items-center gap-2 border border-brand-ink/15 bg-brand-surface px-4 py-2.5 text-sm font-semibold text-brand-ink transition hover:border-brand-ink/30 hover:bg-brand-muted/50"
+            className="inline-flex h-11 items-center gap-2 rounded-[5px] border border-brand-ink/15 bg-white px-4 text-sm font-semibold hover:border-brand-accent hover:text-brand-accent"
           >
             <Play className="h-4 w-4" aria-hidden />
             Preview
@@ -396,7 +396,7 @@ export function CourseStudio({ initialSlug }: Props) {
       </div>
 
       {course?.rejection_reason ? (
-        <div className="border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-950">
+        <div className="rounded-[5px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-950">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-amber-800">Revision needed</p>
           <p className="mt-2">{course.rejection_reason}</p>
         </div>
@@ -405,7 +405,7 @@ export function CourseStudio({ initialSlug }: Props) {
       <StudioStepNav steps={STEPS} current={step} onChange={setStep} />
 
       {error ? (
-        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+        <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
           {error}
         </div>
       ) : null}
@@ -466,7 +466,7 @@ export function CourseStudio({ initialSlug }: Props) {
             <div className="space-y-5">
               <div>
                 <p className={studioLabelClass}>Course format</p>
-                <div className="mt-2 grid grid-cols-2 gap-1 border border-brand-ink/10 bg-brand-muted/40 p-1">
+                <div className="mt-2 grid grid-cols-2 gap-1 rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-1">
                   {(
                     [
                       ["video", "Video course"],
@@ -481,8 +481,8 @@ export function CourseStudio({ initialSlug }: Props) {
                         type="button"
                         disabled={Boolean(locked) && !active}
                         onClick={() => setCourseFormat(value)}
-                        className={`px-3 py-2.5 text-sm font-semibold transition ${
-                          active ? "bg-brand-surface text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
+                        className={`rounded-[5px] px-3 py-2.5 text-sm font-semibold transition ${
+                          active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                       >
                         {label}
@@ -565,7 +565,7 @@ export function CourseStudio({ initialSlug }: Props) {
                 />
               </Field>
 
-              <div className="border border-brand-ink/10 bg-brand-muted/40 px-4 py-4">
+              <div className="rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] px-4 py-4">
                 <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-brand-ink">
                   <input
                     type="checkbox"
@@ -687,7 +687,7 @@ export function CourseStudio({ initialSlug }: Props) {
       ) : null}
 
       {step === 2 && slug && !course ? (
-        <div className="flex min-h-[240px] items-center justify-center border border-brand-ink/10 bg-brand-surface">
+        <div className="flex min-h-[240px] items-center justify-center rounded-[5px] border border-brand-ink/10 bg-white">
           <p className="text-sm text-brand-ink/50">Loading curriculum…</p>
         </div>
       ) : null}

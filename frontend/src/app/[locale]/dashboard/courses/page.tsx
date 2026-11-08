@@ -1,10 +1,12 @@
 "use client";
 
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
-import { Link } from "@/i18n/navigation";
-import { useEffect, useState } from "react";
-import { formInputClass, formLabelClass, formTextareaClass } from "@/lib/form-styles";
 import { DashboardSavedCart } from "@/components/dashboard/DashboardSavedCart";
+import { LearningToolsPanel } from "@/components/dashboard/LearningToolsPanel";
+import { MyListsPanel, WishlistPanel } from "@/components/dashboard/MyLearningLibrary";
+import { Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 type MyCourseItem = {
   slug: string;
@@ -17,25 +19,29 @@ type MyCourseItem = {
   progress_pct: number;
   status: string;
   instructor_name?: string | null;
-  instructor_email?: string | null;
-  duration_minutes?: number;
-  current_week_title?: string;
 };
 
-function statusBadgeClass(status: string) {
-  if (status === "Completed") return "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-200/90";
-  if (status === "In Progress") return "bg-amber-100 text-amber-950 ring-1 ring-amber-200/90";
-  return "bg-neutral-100 text-zinc-700 ring-1 ring-neutral-200/90";
-}
+type Tab = "courses" | "lists" | "wishlist" | "saved" | "tools";
 
 export default function DashboardCoursesPage() {
+  return (
+    <Suspense fallback={<p className="px-6 py-10 text-sm text-[#6a6f73]">Loading your courses…</p>}>
+      <DashboardCoursesInner />
+    </Suspense>
+  );
+}
+
+function DashboardCoursesInner() {
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>("courses");
   const [items, setItems] = useState<MyCourseItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [revSlug, setRevSlug] = useState("");
-  const [revRating, setRevRating] = useState(5);
-  const [revComment, setRevComment] = useState("");
-  const [revBusy, setRevBusy] = useState(false);
-  const [revMsg, setRevMsg] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const next = searchParams.get("tab");
+    if (next === "saved" || next === "lists" || next === "wishlist" || next === "tools" || next === "courses") setTab(next);
+  }, [searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,18 +56,12 @@ export default function DashboardCoursesPage() {
           return;
         }
         if (!res.ok) {
-          const detail = data && typeof data === "object" && "detail" in data ? String((data as { detail: unknown }).detail) : "We couldn't load your courses.";
-          setError(detail);
-          setItems([]);
-          return;
-        }
-        if (!Array.isArray(data)) {
-          setError("Unexpected response from server.");
+          setError(typeof data?.detail === "string" ? data.detail : "We couldn't load your courses.");
           setItems([]);
           return;
         }
         setError(null);
-        setItems(data as MyCourseItem[]);
+        setItems(Array.isArray(data) ? (data as MyCourseItem[]) : []);
       } catch {
         if (!cancelled) {
           setError("We could not reach the server. Check your connection and try again.");
@@ -74,182 +74,119 @@ export default function DashboardCoursesPage() {
     };
   }, []);
 
-  if (items === null) {
-    return (
-      <div className="mx-auto max-w-3xl rounded-md border border-neutral-200/90 bg-brand-surface p-10 text-center shadow-none dark:border-zinc-800/90 dark:bg-zinc-900">
-        <p className="text-sm font-medium text-neutral-500">Loading your courses…</p>
-      </div>
-    );
-  }
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!items) return [];
+    if (!needle) return items;
+    return items.filter((row) => row.title.toLowerCase().includes(needle) || (row.instructor_name ?? "").toLowerCase().includes(needle));
+  }, [items, query]);
 
-  if (error) {
-    return (
-      <div className="mx-auto max-w-3xl space-y-6">
-        <DashboardSavedCart />
-        <div className="rounded-md border border-red-200/90 bg-red-50/80 p-8 text-center shadow-none sm:p-10">
-          <h1 className="text-lg font-semibold text-brand-ink">We could not load your courses</h1>
-          <p className="mt-2 text-sm text-red-900/90">{error}</p>
-          <Link href="/login" className="mt-4 inline-block text-sm font-semibold text-brand-primary hover:underline">
-            Go to sign in
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const hasEnrollments = items.length > 0;
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "courses", label: "All courses" },
+    { id: "lists", label: "My lists" },
+    { id: "wishlist", label: "Wishlist" },
+    { id: "saved", label: "Saved" },
+    { id: "tools", label: "Learning tools" },
+  ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-10">
-      <DashboardSavedCart />
-
-      {!hasEnrollments ? (
-        <div className="rounded-md border border-neutral-200/90 bg-brand-surface p-8 text-center shadow-none dark:border-zinc-800/90 dark:bg-zinc-900 sm:p-10">
-          <h1 className="text-lg font-semibold text-brand-ink sm:text-xl">My courses</h1>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-            You have not enrolled in any courses yet. Saved courses from your cart appear above; browse the catalog to
-            add more, then enroll when you are ready.
-          </p>
-          <Link href="/courses" className="btn-primary-brand mt-6 inline-flex">
-            Browse courses
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">My courses</h1>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Enrollments and progress stay up to date on your dashboard.
-                </p>
-              </div>
-              <Link href="/courses" className="text-sm font-semibold text-brand-primary hover:underline">
-                Browse more
-              </Link>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {items.map((row) => (
-                <Link
-                  key={row.slug}
-                  href={`/learn/${row.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-md border border-neutral-200/90 bg-brand-surface shadow-none transition hover:border-neutral-300 hover:shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900"
-                >
-                  <div className="relative aspect-[16/10] w-full bg-neutral-100">
-                    <CourseThumbnail
-                      src={row.image_url}
-                      alt={row.image_alt}
-                      sizes="(min-width: 1280px) 30vw, (min-width: 640px) 45vw, 100vw"
-                      className="object-cover transition duration-300 group-hover:scale-[1.02]"
-                    />
-                    <span
-                      className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${statusBadgeClass(row.status)}`}
-                    >
-                      {row.status}
-                    </span>
-                  </div>
-                  <div className="flex flex-1 flex-col p-4">
-                    <h2 className="font-bold leading-snug text-brand-ink group-hover:text-brand-primary">{row.title}</h2>
-                    <p className="mt-2 line-clamp-2 text-sm text-neutral-500">{row.description}</p>
-                    <p className="mt-3 text-sm text-neutral-500">
-                      {row.current_week_title ? `${row.current_week_title}. ` : ""}
-                      Lesson {row.lesson_done} of {row.lessons}
-                      {row.duration_minutes ? ` · ${row.duration_minutes} min` : ""}
-                    </p>
-                    <div className="mt-3 flex items-center gap-3">
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100">
-                        <div
-                          className="h-full rounded-full bg-brand-accent"
-                          style={{ width: `${Math.min(100, Math.max(0, row.progress_pct))}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold tabular-nums text-zinc-700">{row.progress_pct}%</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+    <div className="bg-white">
+      <div className="border-b-4 border-brand-accent bg-[#10244F] text-white">
+        <div className="mx-auto max-w-[84rem] px-4 py-10 sm:px-6">
+          <h1 className="text-[2rem] font-extrabold tracking-tight sm:text-[2.5rem]">My learning</h1>
+          <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="My learning">
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === item.id}
+                onClick={() => setTab(item.id)}
+                className={`rounded-[5px] px-3.5 py-2 text-sm font-semibold transition duration-200 ${
+                  tab === item.id ? "bg-white text-[#10244F]" : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
+        </div>
+      </div>
 
-          <section className="rounded-md border border-neutral-200/90 bg-brand-surface p-6 shadow-none dark:border-zinc-800/90 dark:bg-zinc-900 sm:p-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Rate a course</h2>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-              Share feedback on courses you are enrolled in. You can update your review anytime. Only enrolled
-              learners can submit ratings.
-            </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className={`${formLabelClass} sm:col-span-2`}>
-                Course
-                <select
-                  value={revSlug || items[0]?.slug || ""}
-                  onChange={(e) => setRevSlug(e.target.value)}
-                  className={`${formInputClass} max-w-md`}
-                >
-                  {items.map((row) => (
-                    <option key={row.slug} value={row.slug}>
-                      {row.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={formLabelClass}>
-                Rating (1-5)
+      <div className="mx-auto max-w-[84rem] px-4 py-8 sm:px-6">
+        {error ? (
+          <div>
+            <p className="text-sm text-red-700">{error}</p>
+            <Link href="/login" className="mt-3 inline-block text-sm font-bold text-[#1457D0]">
+              Go to sign in
+            </Link>
+          </div>
+        ) : null}
+
+        {tab === "saved" ? <DashboardSavedCart /> : null}
+        {tab === "wishlist" ? <WishlistPanel /> : null}
+        {tab === "lists" ? <MyListsPanel /> : null}
+        {tab === "tools" ? <LearningToolsPanel /> : null}
+
+        {tab === "courses" ? (
+          items === null ? (
+            <p className="text-sm text-[#6a6f73]">Loading your courses…</p>
+          ) : (
+            <div className="space-y-6">
+              {items.length > 0 ? (
                 <input
-                  type="number"
-                  min={1}
-                  max={5}
-                  value={revRating}
-                  onChange={(e) => setRevRating(Number(e.target.value) || 1)}
-                  className={`${formInputClass} max-w-xs`}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search my courses"
+                  className="h-11 w-full max-w-sm rounded-[5px] border border-brand-ink/15 px-4 text-sm outline-none focus:border-brand-accent"
                 />
-              </label>
-              <label className={`${formLabelClass} sm:col-span-2`}>
-                Comment (optional)
-                <textarea
-                  value={revComment}
-                  onChange={(e) => setRevComment(e.target.value)}
-                  rows={3}
-                  className={formTextareaClass}
-                />
-              </label>
+              ) : null}
+              {items.length === 0 ? (
+                <EmptyLearning />
+              ) : filtered.length === 0 ? (
+                <p className="text-sm text-[#6a6f73]">No courses match that search.</p>
+              ) : (
+                <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filtered.map((row) => {
+                    const started = row.progress_pct > 0 || row.lesson_done > 0;
+                    return (
+                      <Link key={row.slug} href={`/learn/${row.slug}`} className="group flex flex-col">
+                        <div className="relative aspect-video w-full overflow-hidden rounded-[5px] bg-[#f7f9fa]">
+                          <CourseThumbnail src={row.image_url} alt={row.image_alt} sizes="260px" className="object-cover" />
+                        </div>
+                        <h2 className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-[#011B33] group-hover:text-brand-accent">
+                          {row.title}
+                        </h2>
+                        {row.instructor_name ? <p className="mt-1 truncate text-xs text-[#011B33]/55">{row.instructor_name}</p> : null}
+                        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-brand-ink/10">
+                          <div className="h-full bg-brand-accent" style={{ width: `${Math.min(100, Math.max(0, row.progress_pct))}%` }} />
+                        </div>
+                        <p className="mt-2 text-xs font-semibold text-brand-accent">
+                          {started ? `${row.progress_pct}% complete` : "Start course"}
+                        </p>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            {revMsg ? <p className="mt-4 text-sm font-medium text-zinc-800">{revMsg}</p> : null}
-            <button
-              type="button"
-              disabled={revBusy}
-              onClick={async () => {
-                setRevMsg(null);
-                setRevBusy(true);
-                try {
-                  const res = await fetch("/api/reviews", {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      course_slug: revSlug || items[0]?.slug,
-                      rating: revRating,
-                      comment: revComment.trim() || null,
-                    }),
-                  });
-                  const data = await res.json().catch(() => null);
-                  if (!res.ok) {
-                    setRevMsg(typeof data?.detail === "string" ? data.detail : "We couldn't save your review.");
-                    return;
-                  }
-                  setRevMsg("Thanks. Your review was saved.");
-                } catch {
-                  setRevMsg("Connection problem. Please try again.");
-                } finally {
-                  setRevBusy(false);
-                }
-              }}
-              className="btn-primary-brand mt-6 !px-6 !py-2.5 text-sm disabled:opacity-60"
-            >
-              {revBusy ? "Saving…" : "Submit review"}
-            </button>
-          </section>
-        </>
-      )}
+          )
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function EmptyLearning() {
+  return (
+    <div className="py-16 text-center">
+      <p className="text-lg font-bold text-[#1c1d1f]">Start learning today.</p>
+      <p className="mt-2 text-sm text-[#6a6f73]">
+        When you enroll in a course, it will appear here.{" "}
+        <Link href="/courses" className="font-bold text-[#1457D0] underline-offset-2 hover:underline">
+          Browse now.
+        </Link>
+      </p>
     </div>
   );
 }

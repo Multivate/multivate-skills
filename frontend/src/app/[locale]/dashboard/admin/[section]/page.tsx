@@ -15,6 +15,7 @@ const SECTIONS = new Set([
   "certificates",
   "analytics",
   "reviews",
+  "security",
   "system-logs",
 ]);
 
@@ -31,6 +32,7 @@ const TITLES: Record<string, string> = {
   mentors: "Mentor approvals",
   certificates: "Certificates",
   analytics: "Analytics",
+  security: "Security",
   reviews: "Reviews",
   "system-logs": "System logs",
 };
@@ -49,7 +51,7 @@ export default async function AdminSectionPage({ params }: Props) {
   return (
     <div className={isAnalytics ? "space-y-6" : "mx-auto max-w-6xl space-y-6"}>
       {isAnalytics ? null : (
-        <h1 className="text-xl font-semibold tracking-tighter text-brand-ink sm:text-2xl">{title}</h1>
+        <h1 className="admin-ink text-2xl font-semibold">{title}</h1>
       )}
       <AdminSectionContent section={section} />
     </div>

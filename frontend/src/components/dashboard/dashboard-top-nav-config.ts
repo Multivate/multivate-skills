@@ -11,7 +11,9 @@ export type DashboardNavGroup = {
 export type DashboardWorkspace = "admin" | "instructor" | "mentor" | "student";
 
 export function navHrefActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard") return pathname === "/dashboard";
+  if (href === "/dashboard" || href === "/admin" || href === "/instructor") {
+    return pathname === href;
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -25,15 +27,15 @@ export const instructorNavGroups: DashboardNavGroup[] = [
     labelKey: "teach",
     items: [
       { href: "/dashboard/courses", id: "myCourses" },
-      { href: "/dashboard/instructor/studio", id: "courseStudio" },
+      { href: "/instructor/studio", id: "courseStudio" },
     ],
   },
   {
     id: "audience",
     labelKey: "audience",
     items: [
-      { href: "/dashboard/instructor/students", id: "students" },
-      { href: "/dashboard/instructor/reviews", id: "reviews" },
+      { href: "/instructor/students", id: "students" },
+      { href: "/instructor/reviews", id: "reviews" },
       { href: "/dashboard/messages", id: "messages" },
     ],
   },
@@ -41,8 +43,8 @@ export const instructorNavGroups: DashboardNavGroup[] = [
     id: "insights",
     labelKey: "insights",
     items: [
-      { href: "/dashboard/instructor/analytics", id: "analytics" },
-      { href: "/dashboard/instructor/earnings", id: "earnings" },
+      { href: "/instructor/analytics", id: "analytics" },
+      { href: "/instructor/earnings", id: "earnings" },
       { href: "/dashboard/payments", id: "billing" },
     ],
   },
@@ -74,6 +76,9 @@ export const studentNavGroups: DashboardNavGroup[] = [
     id: "account",
     labelKey: "account",
     items: [
+      { href: "/dashboard/purchase-history", id: "purchaseHistory" },
+      { href: "/dashboard/profile", id: "publicProfile" },
+      { href: "/dashboard/support", id: "helpSupport" },
       { href: "/dashboard/payments", id: "payments" },
       { href: "/dashboard/messages", id: "messages" },
     ],
@@ -103,30 +108,26 @@ export const dashboardNavGroupsNs: Record<DashboardWorkspace, string> = {
 
 export const dashboardAccent: Record<
   DashboardWorkspace,
-  { active: string; focus: string; avatar: string; itemActive: string }
+  { active: string; focus: string; itemActive: string }
 > = {
   admin: {
     active: "bg-brand-ink text-white",
     itemActive: "bg-brand-muted text-brand-ink",
     focus: "focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/30",
-    avatar: "bg-brand-ink text-white",
   },
   instructor: {
     active: "bg-brand-ink text-white",
     itemActive: "bg-brand-muted text-brand-ink",
     focus: "focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/30",
-    avatar: "bg-brand-ink text-white",
   },
   mentor: {
     active: "bg-brand-ink text-white",
     itemActive: "bg-brand-muted text-brand-ink",
     focus: "focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/30",
-    avatar: "bg-brand-ink text-white",
   },
   student: {
     active: "bg-brand-ink text-white",
     itemActive: "bg-brand-muted text-brand-ink",
     focus: "focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/30",
-    avatar: "bg-brand-ink text-white",
   },
 };

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import date
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -640,13 +641,19 @@ def save_progress(db: Session, user: User, payload: PlayerProgressIn) -> PlayerP
             VideoWatchHistory.user_id == user.id, VideoWatchHistory.lesson_id == lesson.id
         )
     )
+    prev_watch = int(row.watch_time_seconds or 0) if row else 0
     if not row:
         row = VideoWatchHistory(user_id=user.id, lesson_id=lesson.id)
     row.position_seconds = max(0, payload.position_seconds)
-    row.watch_time_seconds = max(row.watch_time_seconds, payload.watch_time_seconds)
+    row.watch_time_seconds = max(prev_watch, payload.watch_time_seconds)
     row.completed = payload.completed or row.completed
     db.add(row)
     db.flush()
+    delta = max(0, int(row.watch_time_seconds or 0) - prev_watch)
+    if delta:
+        from app.services.learning_habit_service import add_watch_seconds
+
+        add_watch_seconds(db, user.id, date.today(), delta)
 
     progress_pct = _recalc_enrollment_progress(db, user.id, course)
 

@@ -621,7 +621,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
       <div className="mx-auto max-w-lg border border-brand-ink/10 bg-brand-surface px-6 py-10 text-center">
         <p className="text-sm text-brand-ink/70">{error}</p>
         <Link
-          href={preview ? `/dashboard/instructor/studio/${slug}` : "/dashboard/courses"}
+          href={preview ? `/instructor/studio/${slug}` : "/dashboard/courses"}
           className="mt-6 inline-block text-sm font-semibold text-brand-accent"
         >
           Go back
@@ -760,7 +760,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
               onClick={() => stopPlayback()}
               className="cr-border cr-text flex w-full items-center justify-center rounded-sm border px-3 py-2 text-xs font-semibold"
             >
-              Book 1:1 mentor
+              Book a mentor
             </Link>
           ) : null}
         </div>
@@ -778,7 +778,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
           </button>
           <div className="min-w-0 flex-1">
             <Link
-              href={preview ? `/dashboard/instructor/studio/${slug}` : "/dashboard/courses"}
+              href={preview ? `/instructor/studio/${slug}` : "/dashboard/courses"}
               onClick={() => stopPlayback()}
               className="cr-accent inline-flex items-center gap-1 text-xs font-semibold hover:underline"
             >
@@ -796,7 +796,7 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
               onClick={() => stopPlayback()}
               className="cr-border cr-text hidden items-center rounded-sm border px-3 py-2 text-xs font-semibold sm:inline-flex"
             >
-              Book 1:1
+              Book a mentor
             </Link>
           ) : null}
 

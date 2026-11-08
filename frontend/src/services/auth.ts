@@ -117,6 +117,15 @@ export async function registerStart(payload: RegisterPayload): Promise<RegisterS
   return { signup_token, email_masked, ...(devOtp ? { dev_otp: devOtp } : {}) };
 }
 
+export async function saveLearningChoice(topic: string, learnWith: string): Promise<void> {
+  await fetch("/api/auth/learning-choice", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ topic, learn_with: learnWith }),
+  });
+}
+
 export async function registerVerify(
   role: "student" | "instructor" | "mentor",
   signupToken: string,
