@@ -16,7 +16,7 @@ export function MapMissionPin() {
       >
         <Image src={whiteLogo} alt="" width={52} height={52} className="h-11 w-11 object-cover object-top" />
       </button>
-      <div className="pointer-events-none absolute left-1/2 top-full z-20 w-[min(15.5rem,calc(100vw-2.5rem))] -translate-x-1/2 pt-3 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 sm:pt-[18px]">
+      <div className="pointer-events-none absolute left-1/2 top-full z-20 hidden w-[min(15.5rem,calc(100vw-2.5rem))] -translate-x-1/2 pt-3 opacity-0 transition duration-200 lg:block lg:group-hover:pointer-events-auto lg:group-hover:opacity-100 lg:group-focus-within:pointer-events-auto lg:group-focus-within:opacity-100 sm:pt-[18px]">
         <div role="tooltip" className="rounded-[5px] bg-white px-3.5 py-3 text-left shadow-[0_10px_28px_rgba(12,27,74,0.16)]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-accent">{t("coMission")}</p>
           <p className="mt-1 text-[15px] font-extrabold leading-5 text-[#011B33]">{t("missionLine")}</p>

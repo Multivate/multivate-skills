@@ -87,10 +87,14 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
       className="relative"
       ref={panelRef}
       onMouseEnter={() => {
-        setOpen(true);
-        if (Date.now() - lastLoadedAt.current > 15000) void load();
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          setOpen(true);
+          if (Date.now() - lastLoadedAt.current > 15000) void load();
+        }
       }}
-      onMouseLeave={() => setOpen(false)}
+      onMouseLeave={() => {
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) setOpen(false);
+      }}
     >
       <button
         type="button"
@@ -114,20 +118,27 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff]">
-          <div className="flex items-center justify-between border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[70] bg-[#011B33]/25 sm:hidden"
+            aria-label="Close notifications"
+            onClick={() => setOpen(false)}
+          />
+          <div className="fixed inset-x-3 top-[4.6rem] z-[80] max-h-[min(28rem,calc(100dvh-5.5rem))] overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[min(22rem,calc(100vw-2rem))] sm:max-h-80">
+          <div className="flex items-center justify-between gap-3 border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
             <p className="text-sm font-semibold">Notifications</p>
             {unread > 0 ? (
               <button
                 type="button"
                 onClick={() => void markAllRead()}
-                className="text-xs font-semibold text-brand-accent hover:underline"
+                className="shrink-0 text-xs font-semibold text-brand-accent hover:underline"
               >
                 Mark all read
               </button>
             ) : null}
           </div>
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-[min(24rem,calc(100dvh-8rem))] overflow-y-auto sm:max-h-80">
             {loading && items.length === 0 ? (
               <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">Loading…</p>
             ) : items.length === 0 ? (
@@ -140,8 +151,8 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
                       n.read_at ? "opacity-75" : "bg-brand-accent/5"
                     }`}
                   >
-                    <p className="text-sm font-bold">{n.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-[#011B33]/60 dark:text-[#eef4ff]/60">{n.body}</p>
+                    <p className="break-words text-sm font-bold">{n.title}</p>
+                    <p className="mt-1 break-words text-xs leading-relaxed text-[#011B33]/60 dark:text-[#eef4ff]/60">{n.body}</p>
                     <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#011B33]/40 dark:text-[#eef4ff]/40">
                       {new Date(n.created_at).toLocaleString()}
                     </p>
@@ -177,6 +188,7 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
             )}
           </div>
         </div>
+        </>
       ) : null}
     </div>
   );

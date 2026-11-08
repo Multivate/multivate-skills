@@ -77,7 +77,7 @@ export function InstructorShell({ children }: { children: ReactNode }) {
   return (
     <div className="desk-root flex min-h-screen flex-col bg-white text-[#011B33] dark:bg-[#070e22] dark:text-[#eef4ff]">
       <header className="sticky top-0 z-50 border-b border-brand-ink/10 bg-brand-sky dark:border-white/10 dark:bg-[#0c1833]">
-        <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-3 px-4 sm:gap-5 sm:px-6">
+        <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-2 overflow-visible px-3 sm:gap-5 sm:px-6">
           <Link href="/instructor" className="shrink-0" aria-label="Multivate home">
             <LogoMark className="max-w-[8.5rem] sm:max-w-[10rem]" />
           </Link>
@@ -143,14 +143,16 @@ export function InstructorShell({ children }: { children: ReactNode }) {
               </Link>
             </HoverMenu>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
             <Link
               href="/instructor/studio/new"
               className="hidden h-10 items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white hover:bg-[#0f4bb8] lg:inline-flex"
             >
               New course
             </Link>
-            <AppearanceMenu />
+            <div className="hidden sm:block">
+              <AppearanceMenu />
+            </div>
             <NotificationBell
               label={tDash("shell.notifications")}
               buttonClassName="relative flex h-10 w-10 items-center justify-center rounded-[5px] text-[#011B33] transition duration-200 hover:bg-white/70 hover:text-brand-accent dark:text-[#eef4ff] dark:hover:bg-white/10"
@@ -284,6 +286,10 @@ export function InstructorShell({ children }: { children: ReactNode }) {
               <Link href="/dashboard/settings" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>
                 {ti("settings")}
               </Link>
+              <div className="flex items-center justify-between py-2 sm:hidden">
+                <span className="text-sm font-semibold">Appearance</span>
+                <AppearanceMenu />
+              </div>
             </DeskMobileSection>
           </div>
         ) : null}
