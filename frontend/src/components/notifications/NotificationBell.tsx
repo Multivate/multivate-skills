@@ -3,6 +3,7 @@
 import { Bell } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type NotificationRow = {
   id: string;
@@ -16,9 +17,11 @@ type NotificationRow = {
 
 export function NotificationBell({ label, buttonClassName }: { label: string; buttonClassName?: string }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
+  const buttonRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const lastLoadedAt = useRef(0);
 
@@ -49,6 +52,8 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
     }
   }, []);
 
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     void load();
     const timer = window.setInterval(() => {
@@ -60,11 +65,23 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
 
   useEffect(() => {
     if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (!panelRef.current?.contains(e.target as Node)) setOpen(false);
+    function onDoc(event: MouseEvent) {
+      const target = event.target as Node;
+      if (buttonRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
     }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
   }, [open]);
 
   async function markRead(id: string) {
@@ -82,24 +99,89 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
     setUnread(0);
   }
 
+  const panel = open ? (
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-[70] bg-[#011B33]/30"
+        aria-label="Close notifications"
+        onClick={() => setOpen(false)}
+      />
+      <div
+        ref={panelRef}
+        className="fixed inset-x-3 bottom-3 top-[4.5rem] z-[80] flex flex-col overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:inset-x-auto sm:bottom-auto sm:right-3 sm:top-[4.5rem] sm:h-auto sm:max-h-[min(32rem,calc(100dvh-5.5rem))] sm:w-[min(22rem,calc(100vw-1.5rem))]"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
+          <p className="text-sm font-semibold">Notifications</p>
+          {unread > 0 ? (
+            <button
+              type="button"
+              onClick={() => void markAllRead()}
+              className="shrink-0 text-xs font-semibold text-brand-accent hover:underline"
+            >
+              Mark all read
+            </button>
+          ) : null}
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+          {loading && items.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">Loading…</p>
+          ) : items.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">You are all caught up.</p>
+          ) : (
+            items.map((n) => {
+              const inner = (
+                <div
+                  className={`border-b border-brand-ink/10 px-4 py-3 transition hover:bg-[#f6f8fb] dark:border-white/10 dark:hover:bg-white/5 ${
+                    n.read_at ? "opacity-75" : "bg-brand-accent/5"
+                  }`}
+                >
+                  <p className="break-words text-sm font-bold">{n.title}</p>
+                  <p className="mt-1 break-words text-xs leading-relaxed text-[#011B33]/60 dark:text-[#eef4ff]/60">{n.body}</p>
+                  <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#011B33]/40 dark:text-[#eef4ff]/40">
+                    {new Date(n.created_at).toLocaleString()}
+                  </p>
+                </div>
+              );
+              if (n.link_href) {
+                return (
+                  <Link
+                    key={n.id}
+                    href={n.link_href}
+                    onClick={() => {
+                      if (!n.read_at) void markRead(n.id);
+                      setOpen(false);
+                    }}
+                  >
+                    {inner}
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  className="block w-full text-left"
+                  onClick={() => {
+                    if (!n.read_at) void markRead(n.id);
+                  }}
+                >
+                  {inner}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </>
+  ) : null;
+
   return (
-    <div
-      className="relative"
-      ref={panelRef}
-      onMouseEnter={() => {
-        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-          setOpen(true);
-          if (Date.now() - lastLoadedAt.current > 15000) void load();
-        }
-      }}
-      onMouseLeave={() => {
-        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) setOpen(false);
-      }}
-    >
+    <div className="relative" ref={buttonRef}>
       <button
         type="button"
         onClick={() => {
-          setOpen((v) => !v);
+          setOpen((value) => !value);
           if (!open && Date.now() - lastLoadedAt.current > 15000) void load();
         }}
         className={
@@ -116,80 +198,7 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
           </span>
         ) : null}
       </button>
-
-      {open ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[70] bg-[#011B33]/25 sm:hidden"
-            aria-label="Close notifications"
-            onClick={() => setOpen(false)}
-          />
-          <div className="fixed inset-x-3 top-[4.6rem] z-[80] max-h-[min(28rem,calc(100dvh-5.5rem))] overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[min(22rem,calc(100vw-2rem))] sm:max-h-80">
-          <div className="flex items-center justify-between gap-3 border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
-            <p className="text-sm font-semibold">Notifications</p>
-            {unread > 0 ? (
-              <button
-                type="button"
-                onClick={() => void markAllRead()}
-                className="shrink-0 text-xs font-semibold text-brand-accent hover:underline"
-              >
-                Mark all read
-              </button>
-            ) : null}
-          </div>
-          <div className="max-h-[min(24rem,calc(100dvh-8rem))] overflow-y-auto sm:max-h-80">
-            {loading && items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">Loading…</p>
-            ) : items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">You are all caught up.</p>
-            ) : (
-              items.map((n) => {
-                const inner = (
-                  <div
-                    className={`border-b border-brand-ink/10 px-4 py-3 transition hover:bg-[#f6f8fb] dark:border-white/10 dark:hover:bg-white/5 ${
-                      n.read_at ? "opacity-75" : "bg-brand-accent/5"
-                    }`}
-                  >
-                    <p className="break-words text-sm font-bold">{n.title}</p>
-                    <p className="mt-1 break-words text-xs leading-relaxed text-[#011B33]/60 dark:text-[#eef4ff]/60">{n.body}</p>
-                    <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#011B33]/40 dark:text-[#eef4ff]/40">
-                      {new Date(n.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                );
-                if (n.link_href) {
-                  return (
-                    <Link
-                      key={n.id}
-                      href={n.link_href}
-                      onClick={() => {
-                        if (!n.read_at) void markRead(n.id);
-                        setOpen(false);
-                      }}
-                    >
-                      {inner}
-                    </Link>
-                  );
-                }
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    className="block w-full text-left"
-                    onClick={() => {
-                      if (!n.read_at) void markRead(n.id);
-                    }}
-                  >
-                    {inner}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-        </>
-      ) : null}
+      {mounted && panel ? createPortal(panel, document.body) : null}
     </div>
   );
 }

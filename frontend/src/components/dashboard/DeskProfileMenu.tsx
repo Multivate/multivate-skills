@@ -1,7 +1,18 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useLocale } from "next-intl";
-import { type ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { persistPreferredLocale } from "@/lib/preferred-locale";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
@@ -9,21 +20,81 @@ import { routing, type AppLocale } from "@/i18n/routing";
 export const deskFlyoutLink =
   "block px-4 py-2 text-sm font-medium text-[#011B33] transition duration-200 hover:bg-brand-sky hover:text-brand-accent dark:text-[#eef4ff] dark:hover:bg-white/10";
 
-const flyout =
-  "pointer-events-none absolute right-0 top-full z-50 min-w-[16.5rem] pt-2 opacity-0 translate-y-1.5 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100";
-
 export function DeskProfileMenu({ trigger, children }: { trigger: ReactNode; children: ReactNode }) {
-  return (
-    <div className="group relative">
-      {trigger}
-      <div className={flyout}>
-        <div
-          className="max-h-[calc(100vh-5.5rem)] overflow-y-auto overscroll-contain rounded-[5px] border border-brand-ink/10 bg-white py-1 shadow-[0_12px_28px_rgba(16,36,79,0.14)] [scrollbar-gutter:stable] dark:border-white/10 dark:bg-[#10192f]"
-          onWheel={(event) => event.stopPropagation()}
-        >
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(event: MouseEvent | globalThis.MouseEvent) {
+      const target = event.target as Node;
+      if (buttonRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  const triggerNode = isValidElement(trigger)
+    ? cloneElement(trigger as ReactElement<{ onClick?: (event: MouseEvent<HTMLElement>) => void }>, {
+        onClick: (event: MouseEvent<HTMLElement>) => {
+          (trigger as ReactElement<{ onClick?: (event: MouseEvent<HTMLElement>) => void }>).props.onClick?.(event);
+          setOpen((value) => !value);
+        },
+      })
+    : trigger;
+
+  const panel = open ? (
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-[70] bg-[#011B33]/30"
+        aria-label="Close menu"
+        onClick={() => setOpen(false)}
+      />
+      <div
+        ref={panelRef}
+        role="menu"
+        className="fixed inset-x-3 bottom-3 top-[4.5rem] z-[80] flex flex-col overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:inset-x-auto sm:bottom-auto sm:right-3 sm:top-[4.5rem] sm:h-auto sm:max-h-[min(36rem,calc(100dvh-5.5rem))] sm:w-[20rem]"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
+          <p className="text-sm font-semibold">Account</p>
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[5px] text-[#011B33] hover:bg-brand-sky dark:text-[#eef4ff] dark:hover:bg-white/10"
+            aria-label="Close menu"
+            onClick={() => setOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [-webkit-overflow-scrolling:touch]">
           {children}
         </div>
       </div>
+    </>
+  ) : null;
+
+  return (
+    <div className="relative" ref={buttonRef}>
+      {triggerNode}
+      {mounted && panel ? createPortal(panel, document.body) : null}
     </div>
   );
 }

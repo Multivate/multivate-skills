@@ -79,7 +79,7 @@ export function StudentShell({ children }: { children: ReactNode }) {
   return (
     <div className="desk-root flex min-h-screen flex-col bg-white text-[#011B33] dark:bg-[#070e22] dark:text-[#eef4ff]">
       <header className="sticky top-0 z-50 bg-brand-sky dark:border-b dark:border-white/10 dark:bg-[#0c1833]">
-        <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-3 px-4 sm:gap-5 sm:px-6">
+        <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-2 overflow-visible px-3 sm:gap-5 sm:px-6">
           <Link href="/dashboard" className="shrink-0" aria-label="Multivate home">
             <LogoMark className="max-w-[8.5rem] sm:max-w-[10rem]" />
           </Link>
@@ -161,7 +161,8 @@ export function StudentShell({ children }: { children: ReactNode }) {
               </Link>
             </HoverMenu>
           </nav>
-          <div className="flex items-center gap-1 sm:gap-2 lg:ml-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-2">
+            <div className="hidden sm:block">
             <HoverMenu
               trigger={
                 <Link
@@ -191,8 +192,13 @@ export function StudentShell({ children }: { children: ReactNode }) {
                 Open wishlist
               </Link>
             </HoverMenu>
-            <SiteHeaderCart />
-            <AppearanceMenu />
+            </div>
+            <div className="hidden sm:block">
+              <SiteHeaderCart />
+            </div>
+            <div className="hidden sm:block">
+              <AppearanceMenu />
+            </div>
             <NotificationBell
               label={tDash("shell.notifications")}
               buttonClassName="relative flex h-10 w-10 items-center justify-center rounded-[5px] text-[#011B33] transition duration-200 hover:bg-white/70 hover:text-brand-accent dark:text-[#eef4ff] dark:hover:bg-white/10"
@@ -329,6 +335,10 @@ export function StudentShell({ children }: { children: ReactNode }) {
               <Link href="/dashboard/settings" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>
                 {tDash("nav.student.settings")}
               </Link>
+              <div className="flex items-center justify-between py-2 sm:hidden">
+                <span className="text-sm font-semibold">Appearance</span>
+                <AppearanceMenu />
+              </div>
             </DeskMobileSection>
             <DeskMobileSection title="Support">
               <Link href="/dashboard/support" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>
