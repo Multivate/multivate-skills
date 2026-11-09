@@ -114,3 +114,25 @@ class RecommendedCourseOut(BaseModel):
     promo_video_url: str | None = None
     match_score: float = 0
     match_reasons: list[str] = Field(default_factory=list)
+
+
+class LearningPathStepOut(BaseModel):
+    order: int
+    track: str
+    role: str
+    reason: str
+    course: RecommendedCourseOut
+
+
+class LearningPathOut(BaseModel):
+    goal_code: str
+    topic: str
+    german_level: str
+    instruction_locale: str
+    weekly_hours: str
+    session_minutes: int
+    week_minutes: int
+    week_days: int
+    summary: str
+    has_catalog: bool = False
+    steps: list[LearningPathStepOut] = Field(default_factory=list)

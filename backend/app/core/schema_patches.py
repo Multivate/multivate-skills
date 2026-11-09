@@ -771,6 +771,38 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         )
         _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS career_direction TEXT")
         _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS extra_notes TEXT")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS goal_code VARCHAR(32)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS german_level VARCHAR(16)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS instruction_locale VARCHAR(8)")
+        _run(
+            conn,
+            """
+            UPDATE student_learning_profiles
+            SET goal_code = career_direction
+            WHERE (goal_code IS NULL OR goal_code = '')
+              AND career_direction IN ('work', 'study', 'train', 'live', 'explore')
+            """,
+        )
+        _run(
+            conn,
+            """
+            UPDATE student_learning_profiles
+            SET german_level = lower(current_skills)
+            WHERE (german_level IS NULL OR german_level = '')
+              AND lower(current_skills) IN ('none', 'a1', 'a2', 'b1', 'b2', 'c1', 'c2')
+            """,
+        )
+        _run(
+            conn,
+            """
+            UPDATE student_learning_profiles AS p
+            SET instruction_locale = u.learn_with
+            FROM users AS u
+            WHERE p.user_id = u.id
+              AND (p.instruction_locale IS NULL OR p.instruction_locale = '')
+              AND u.learn_with IN ('en', 'fr', 'de', 'es')
+            """,
+        )
         _run(
             conn,
             "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",

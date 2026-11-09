@@ -9,6 +9,9 @@ export type StudentLearningProfileRegistrationPayload = {
   weekly_hours: string;
   career_direction: string | null;
   extra_notes: string | null;
+  goal_code: string | null;
+  german_level: string | null;
+  instruction_locale: string | null;
 };
 
 export type InstructorTeachingProfileRegistrationPayload = {

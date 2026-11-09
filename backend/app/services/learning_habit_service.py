@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.models.learning_visit import LearningVisit
 from app.models.student_learning_profile import StudentLearningProfile
 from app.schemas.learning import LearningHabitsOut, LearningHabitsPatch
+from app.services.learning_intent import intent_from_profile
 from app.services.learning_service import get_student_profile
 
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -103,10 +104,10 @@ def get_habits(db: Session, user_id: UUID, local_date: str) -> LearningHabitsOut
     visit_days = {row.visited_on for row in rows}
     week_rows = [row for row in rows if week_start <= row.visited_on <= week_end]
     profile = get_student_profile(db, user_id)
+    intent = intent_from_profile(profile)
     days = _parse_days(getattr(profile, "reminder_days", None) if profile else None)
     time_value = getattr(profile, "reminder_time", None) if profile else None
-    minutes_goal = int(getattr(profile, "reminder_minutes", 30) or 30) if profile else 30
-    minutes_goal = max(15, min(180, minutes_goal))
+    minutes_goal = intent.week_minutes
     dismissed = bool(getattr(profile, "reminder_dismissed", False)) if profile else False
     minutes_this_week = sum(int(row.watch_seconds or 0) for row in week_rows) // 60
     return LearningHabitsOut(
@@ -115,7 +116,7 @@ def get_habits(db: Session, user_id: UUID, local_date: str) -> LearningHabitsOut
         week_end=week_end.isoformat(),
         streak_weeks=_streak_weeks(visit_days, day),
         visits_this_week=len({row.visited_on for row in week_rows}),
-        visit_goal=1,
+        visit_goal=intent.week_days,
         visited_today=day in visit_days,
         minutes_this_week=minutes_this_week,
         minutes_goal=minutes_goal,

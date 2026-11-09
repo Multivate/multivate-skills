@@ -17,6 +17,9 @@ class StudentLearningProfileOut(BaseModel):
     weekly_course_target: int = 1
     career_direction: str | None
     extra_notes: str | None
+    goal_code: str | None = None
+    german_level: str | None = None
+    instruction_locale: str | None = None
     updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
@@ -37,6 +40,9 @@ class StudentLearningProfileAdminRow(BaseModel):
     weekly_course_target: int = 1
     career_direction: str | None
     extra_notes: str | None
+    goal_code: str | None = None
+    german_level: str | None = None
+    instruction_locale: str | None = None
     updated_at: datetime
 
 
@@ -51,6 +57,9 @@ class StudentLearningProfileRegistration(BaseModel):
     weekly_hours: str = Field(..., min_length=1, max_length=32)
     career_direction: str | None = Field(None, max_length=12000)
     extra_notes: str | None = Field(None, max_length=12000)
+    goal_code: str | None = Field(None, max_length=32)
+    german_level: str | None = Field(None, max_length=16)
+    instruction_locale: str | None = Field(None, max_length=8)
 
 
 class StudentLearningProfileUpsert(BaseModel):
@@ -62,3 +71,6 @@ class StudentLearningProfileUpsert(BaseModel):
     weekly_hours: str | None = Field(None, max_length=32)
     career_direction: str | None = Field(None, max_length=12000)
     extra_notes: str | None = Field(None, max_length=12000)
+    goal_code: str | None = Field(None, max_length=32)
+    german_level: str | None = Field(None, max_length=16)
+    instruction_locale: str | None = Field(None, max_length=8)

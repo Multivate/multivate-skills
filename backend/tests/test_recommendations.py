@@ -78,6 +78,48 @@ def test_recommendations_prioritize_profile_match(client) -> None:
     assert "Data Science" in body[0]["match_reasons"]
 
 
+PROFILE_PATH = {
+    "education_level": "other",
+    "current_skills": "a1",
+    "skills_to_learn": "German, Technology",
+    "learning_goals": "skilled work in Germany",
+    "preferred_formats": "Online (self-paced)",
+    "weekly_hours": "5to10",
+    "career_direction": "work",
+    "extra_notes": "learn_with:en;level:a1;goal:work",
+    "goal_code": "work",
+    "german_level": "a1",
+    "instruction_locale": "en",
+}
+
+
+def test_learning_path_sequences_german_before_tech(client) -> None:
+    _seed_published_courses()
+    email = f"path-{uuid.uuid4().hex[:8]}@example.com"
+    auth = register_student_complete(
+        client,
+        {
+            "name": "Path Learner",
+            "email": email,
+            "password": "password123",
+            "learning_profile": PROFILE_PATH,
+        },
+    )
+    tok = auth["access_token"]
+    r = client.get("/api/v1/learning/path", headers={"Authorization": f"Bearer {tok}"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["goal_code"] == "work"
+    assert body["german_level"] == "a1"
+    assert body["topic"] == "German, Technology"
+    assert body["session_minutes"] == 30
+    assert body["has_catalog"] is True
+    slugs = [step["course"]["slug"] for step in body["steps"]]
+    assert slugs[0] == "rec-german-a1"
+    assert body["steps"][0]["track"] == "german"
+    assert body["steps"][0]["role"] == "now"
+
+
 def test_recommendations_forbidden_for_instructor(client) -> None:
     from tests.test_payment_checkout import _instructor
 

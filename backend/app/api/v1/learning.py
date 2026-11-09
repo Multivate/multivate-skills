@@ -18,6 +18,7 @@ from app.schemas.learning import (
     LibraryCourseIn,
     LibraryCourseOut,
     MyCourseItem,
+    LearningPathOut,
     ProgressUpdate,
     RecommendedCourseOut,
     WeeklyCourseTargetIn,
@@ -98,6 +99,18 @@ def read_recommendations(
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students only")
     return recommendation_service.list_recommendations(db, user.id, limit=limit)
+
+
+@router.get("/path", response_model=LearningPathOut)
+def read_learning_path(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    limit: Annotated[int, Query(ge=1, le=24)] = 8,
+) -> LearningPathOut:
+    """Structured sequence: what to learn next, from onboarding answers."""
+    if user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students only")
+    return recommendation_service.build_learning_path(db, user.id, limit=limit)
 
 
 @router.patch("/progress/{course_slug}", response_model=MyCourseItem)

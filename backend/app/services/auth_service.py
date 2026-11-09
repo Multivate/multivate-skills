@@ -182,23 +182,29 @@ def record_learning_choice(db: Session, user: User, topic: str, learn_with: str)
         row = db.execute(
             select(StudentLearningProfile).where(StudentLearningProfile.user_id == user.id)
         ).scalar_one_or_none()
+        from app.services.learning_intent import profile_write_fields
+
+        fields = profile_write_fields(
+            {
+                "education_level": getattr(row, "education_level", None) if row else "other",
+                "current_skills": getattr(row, "current_skills", None) if row else None,
+                "skills_to_learn": topic,
+                "learning_goals": getattr(row, "learning_goals", None) if row else None,
+                "preferred_formats": getattr(row, "preferred_formats", None) if row else "Online (self-paced)",
+                "weekly_hours": getattr(row, "weekly_hours", None) if row else "5to10",
+                "career_direction": getattr(row, "career_direction", None) if row else None,
+                "goal_code": getattr(row, "goal_code", None) if row else None,
+                "german_level": getattr(row, "german_level", None) if row else None,
+                "instruction_locale": learn_with,
+                "extra_notes": getattr(row, "extra_notes", None) if row else None,
+            }
+        )
         if row is None:
-            row = StudentLearningProfile(
-                user_id=user.id,
-                education_level="other",
-                skills_to_learn=topic,
-                learning_goals=f"Learn with {learn_with}",
-                preferred_formats="Online (self-paced)",
-                weekly_hours="5to10",
-                extra_notes=f"learn_with:{learn_with}",
-            )
+            row = StudentLearningProfile(user_id=user.id, **fields)
             db.add(row)
         else:
-            row.skills_to_learn = topic
-            row.learning_goals = f"Learn with {learn_with}"
-            notes = (row.extra_notes or "").strip()
-            if not notes or notes.startswith("learn_with:"):
-                row.extra_notes = f"learn_with:{learn_with}"
+            for key, val in fields.items():
+                setattr(row, key, val)
     elif user.role == UserRole.INSTRUCTOR:
         row = db.execute(
             select(InstructorTeachingProfile).where(InstructorTeachingProfile.user_id == user.id)

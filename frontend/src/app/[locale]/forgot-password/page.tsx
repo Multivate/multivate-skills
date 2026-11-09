@@ -137,9 +137,7 @@ export default function ForgotPasswordPage() {
                 <p className="rounded-md border border-brand-accent/30 bg-brand-accent/10 px-3 py-2 text-sm text-brand-ink" role="status">
                   {notice}
                 </p>
-              ) : (
-                <p className="text-sm text-brand-ink/65">{t("spamHint")}</p>
-              )}
+              ) : null}
               {error ? (
                 <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
                   {error}

@@ -10,7 +10,25 @@ import { useAuth } from "@/contexts/auth-context";
 import { Link } from "@/i18n/navigation";
 import type { BackendCourse } from "@/lib/backend-courses";
 
-type RecommendedCourse = { slug: string };
+type PathStep = {
+  order: number;
+  track: string;
+  role: "now" | "next" | "later" | string;
+  reason: string;
+  course: BackendCourse;
+};
+
+type LearningPath = {
+  goal_code: string;
+  topic: string;
+  german_level: string;
+  session_minutes: number;
+  week_days: number;
+  week_minutes: number;
+  summary: string;
+  has_catalog: boolean;
+  steps: PathStep[];
+};
 
 type Habits = {
   streak_weeks: number;
@@ -55,7 +73,7 @@ export function StudentDashboardHome() {
   const tNav = useTranslations("dashboard.nav.student");
   const [items, setItems] = useState<EnrolledCourse[] | null>(null);
   const [catalog, setCatalog] = useState<BackendCourse[]>([]);
-  const [recSlugs, setRecSlugs] = useState<string[]>([]);
+  const [path, setPath] = useState<LearningPath | null>(null);
   const [habits, setHabits] = useState<Habits | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,9 +82,9 @@ export function StudentDashboardHome() {
     const today = localDate();
     (async () => {
       try {
-        const [coursesRes, recRes, catalogRes, visitRes] = await Promise.all([
+        const [coursesRes, pathRes, catalogRes, visitRes] = await Promise.all([
           fetch("/api/learning/my-courses", { credentials: "include", cache: "no-store" }),
-          fetch("/api/learning/recommendations", { credentials: "include", cache: "no-store" }),
+          fetch("/api/learning/path", { credentials: "include", cache: "no-store" }),
           fetch("/api/courses", { cache: "no-store" }),
           fetch("/api/learning/visit", {
             method: "POST",
@@ -76,7 +94,7 @@ export function StudentDashboardHome() {
           }),
         ]);
         const coursesData = await coursesRes.json().catch(() => null);
-        const recData = await recRes.json().catch(() => null);
+        const pathData = await pathRes.json().catch(() => null);
         const catalogData = await catalogRes.json().catch(() => null);
         const visitData = await visitRes.json().catch(() => null);
         if (cancelled) return;
@@ -92,7 +110,7 @@ export function StudentDashboardHome() {
         }
         setError(null);
         setItems(Array.isArray(coursesData) ? (coursesData as EnrolledCourse[]) : []);
-        setRecSlugs(recRes.ok && Array.isArray(recData) ? (recData as RecommendedCourse[]).map((row) => row.slug) : []);
+        setPath(pathRes.ok && pathData && Array.isArray(pathData.steps) ? (pathData as LearningPath) : null);
         setCatalog(catalogRes.ok && Array.isArray(catalogData) ? (catalogData as BackendCourse[]) : []);
         if (visitRes.ok && visitData && typeof visitData.visits_this_week === "number") {
           setHabits(visitData as Habits);
@@ -111,13 +129,25 @@ export function StudentDashboardHome() {
 
   const nextForYou = useMemo(() => {
     const enrolled = new Set((items ?? []).map((row) => row.slug));
-    const bySlug = new Map(catalog.map((course) => [course.slug, course]));
-    const fromRecs = recSlugs
-      .map((slug) => bySlug.get(slug))
-      .filter((course): course is BackendCourse => course != null && !enrolled.has(course.slug));
-    if (fromRecs.length > 0) return fromRecs.slice(0, 4);
+    const fromPath = (path?.steps ?? [])
+      .map((step) => step.course)
+      .filter((course) => course?.slug && !enrolled.has(course.slug));
+    if (fromPath.length > 0) return fromPath.slice(0, 4);
     return catalog.filter((course) => !enrolled.has(course.slug)).slice(0, 4);
-  }, [catalog, items, recSlugs]);
+  }, [catalog, items, path]);
+
+  const pathSteps = useMemo(() => {
+    const enrolled = new Set((items ?? []).map((row) => row.slug));
+    const fromPath = (path?.steps ?? []).filter((step) => step.course?.slug && !enrolled.has(step.course.slug));
+    if (fromPath.length > 0) return fromPath.slice(0, 4);
+    return nextForYou.map((course, index) => ({
+      order: index + 1,
+      track: "",
+      role: index === 0 ? "now" : "later",
+      reason: "",
+      course,
+    }));
+  }, [items, path, nextForYou]);
 
   const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
   const continueCourse =
@@ -227,12 +257,24 @@ export function StudentDashboardHome() {
               </ul>
             </aside>
           </section>
+        ) : pathSteps[0] ? (
+          <section className="rounded-[5px] border border-brand-ink/10 bg-white p-5 sm:p-6">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">{tRec("now")}</p>
+            <h2 className="mt-1 text-lg font-extrabold sm:text-xl">{pathSteps[0].course.title}</h2>
+            <p className="mt-2 text-sm text-[#011B33]/60">{path?.summary ?? tRec("subtitle")}</p>
+            <Link
+              href={`/courses/${pathSteps[0].course.slug}`}
+              className="mt-5 inline-flex h-10 w-fit items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white"
+            >
+              {tRec("openFirst")}
+            </Link>
+          </section>
         ) : (
           <section className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-12 text-center">
-            <p className="font-semibold">You have not enrolled yet.</p>
-            <p className="mt-2 text-sm text-[#011B33]/60">Browse the catalog. Paid courses show up here after checkout.</p>
+            <p className="font-semibold">{tRec("emptyEnrollTitle")}</p>
+            <p className="mt-2 text-sm text-[#011B33]/60">{path?.summary || tRec("emptyEnrollBody")}</p>
             <Link href="/courses" className="mt-5 inline-flex h-11 items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white">
-              Explore courses
+              {tRec("browse")}
             </Link>
           </section>
         )}
@@ -257,18 +299,29 @@ export function StudentDashboardHome() {
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-extrabold">{tRec("title")}</h2>
-              <p className="mt-1 text-sm text-[#011B33]/60">{tRec("subtitle")}</p>
+              <p className="mt-1 text-sm text-[#011B33]/60">{path?.summary || tRec("subtitle")}</p>
+              {path ? (
+                <p className="mt-1 text-xs text-[#011B33]/45">
+                  {tRec("weekly", { minutes: path.week_minutes, days: path.week_days })}
+                </p>
+              ) : null}
             </div>
             <Link href="/courses" className="text-sm font-semibold text-brand-accent hover:underline">
               {tRec("browse")}
             </Link>
           </div>
-          {nextForYou.length === 0 ? (
+          {pathSteps.length === 0 ? (
             <p className="text-sm text-[#011B33]/60">{tRec("empty")}</p>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {nextForYou.map((course) => (
-                <CatalogCourseCard key={course.slug} course={course} />
+              {pathSteps.map((step) => (
+                <div key={step.course.slug}>
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-brand-accent">
+                    {step.role === "now" ? tRec("now") : step.role === "next" ? tRec("next") : tRec("later")}
+                    {step.reason ? ` · ${step.reason}` : ""}
+                  </p>
+                  <CatalogCourseCard course={step.course} />
+                </div>
               ))}
             </div>
           )}

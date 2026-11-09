@@ -14,20 +14,23 @@ from app.schemas.mentor import GuidanceChatIn, GuidanceChatOut
 logger = logging.getLogger(__name__)
 _settings = get_settings()
 
-_SYSTEM_PROMPT = """You are Lena, the career and relocation guide on the Multivate learning platform. Speak as a knowledgeable human guide, not as a generic chatbot or "AI assistant."
+_SYSTEM_PROMPT = """You are Lena, a real person who guides learners on Multivate. You help people plan German, study, and work in Germany, especially from Nigeria and other African countries.
 
-Your role:
-- Help users understand realistic paths to study, work, or train in Germany, with practical focus on learners from Nigeria and other African countries.
-- Recommend German language levels (A1-C2) based on goals: university, Ausbildung, skilled employment, healthcare, IT, and similar fields.
-- Suggest tech and career skills that align with Germany's job market and courses available on Multivate.
-- When relevant, reference only courses from the catalog provided below.
-- Be clear, factual, and structured. Note when visa or legal details may change and official sources should be checked.
+Talk like a helpful colleague on WhatsApp, not like a support bot or an AI.
+- Use contractions (I'm, you'll, that's).
+- Answer the question first, in plain sentences.
+- Keep it to 2-4 short paragraphs. Add a simple list only if the steps would be messy in prose.
+- Do not use labels like "What this means", "Next steps", "Start here", or "As an AI".
+- Do not use emojis, tables, or # headings.
+- Do not stack greetings. After the first message, skip "Hi, I'm Lena".
+- If a Multivate course fits, name it in **bold** and say why in one line.
+- Be honest when visa or legal rules can change. Suggest they confirm with the official German mission.
 - Never ask for passwords, payments, or personal documents.
-- Do not use em dashes in replies. Use commas, periods, or short sentences instead.
-- Never repeat a previous answer word for word. Build on what the user already asked and add new detail each turn.
-- Keep follow-up replies shorter and more specific than your first reply.
+- Do not use em dashes. Use commas or full stops.
+- Never copy a previous reply. Add something new each turn.
+- End with one natural question, the way a person would, not a form.
 
-Tone: warm, professional, and direct. Introduce yourself as Lena when greeting someone new. You represent Multivate."""
+You represent Multivate. Sound warm, calm, and specific."""
 
 
 def _catalog_context(db: Session) -> str:
@@ -57,49 +60,54 @@ def _fallback_reply(message: str, catalog: str, history: list) -> str:
         if any(w in lower for w in ("german", "language", "a1", "a2", "b1", "b2", "c1")):
             if "b1" in prior or "b2" in prior:
                 return (
-                    "To go deeper on German: tell me your current level and your goal in Germany "
-                    "(university, Ausbildung, nursing, IT, or skilled work). I can suggest a realistic timeline "
-                    "and which Multivate German courses fit your next step."
+                    "Okay, let's make this specific. If you tell me whether you're around A1, A2, or B1, "
+                    "and whether this is for university, Ausbildung, or a job, I can map a realistic timeline "
+                    "and point you to the right Multivate German course.\n\n"
+                    "Where are you with German right now?"
                 )
             return (
-                "For your next step, pick one goal: study, Ausbildung, or skilled work. "
-                "That decides whether you should aim for B1, B2, or higher before you apply."
+                "It depends what you're aiming for. Study or Ausbildung usually needs B1 or B2 before you apply. "
+                "For skilled work, B1 is a solid floor and B2 opens more doors. We should pick the path first, "
+                "then set the level.\n\n"
+                "Are you trying to study, train, or work?"
             )
         if any(w in lower for w in ("nigeria", "africa", "visa", "relocate", "move", "germany")):
             return (
-                "Share three details and I will narrow this down: your education, work experience, "
-                "and target timeline. I can then suggest whether study, Ausbildung, or skilled employment "
-                "is the most realistic route for you."
+                "I can get more useful if I know a bit about you. What's your highest education, "
+                "what work have you done, and when do you want to move? With that I can say whether "
+                "study, Ausbildung, or skilled work is the more realistic route."
             )
         return (
-            "Tell me one thing you want to figure out next: German level, visa route, or which skills to build. "
-            "I will focus on that instead of repeating the overview."
+            "Let's pick one thing and go deep on it instead of covering everything again. "
+            "German, the visa route, or the skills you should build first.\n\n"
+            "Which of those is on your mind today?"
         )
 
     if any(w in lower for w in ("german", "language", "a1", "a2", "b1", "b2")):
         return (
-            "For most paths to Germany, German matters, even for many English-taught roles.\n\n"
-            "• University / Ausbildung: often B1-B2 before applying; C1 for some regulated fields.\n"
-            "• Skilled work (IT, engineering): B1 is a strong minimum; B2 opens more doors.\n"
-            "• Starting from zero: plan 6-12 months for A1→B1 with consistent study.\n\n"
-            "On Multivate, look for German courses matching your current level. "
-            "Tell me your goal (study, work, or family reunion) and I'll narrow this down."
+            "You'll need German for almost every path, even when the job is advertised in English.\n\n"
+            "If you want university or Ausbildung, think B1 to B2 before you apply. Some regulated fields go to C1. "
+            "For IT or engineering work, B1 is a strong minimum. From zero, most people need about 6 to 12 months "
+            "of steady study to reach B1.\n\n"
+            "What's the goal, study, work, or joining family?"
         )
     if any(w in lower for w in ("nigeria", "africa", "visa", "relocate", "move")):
         return (
-            "Many learners from Nigeria and across Africa succeed in Germany through study, "
-            "Ausbildung (vocational training), or skilled employment.\n\n"
-            "Typical steps: clarify your goal → check qualification recognition → build German (and relevant tech skills) → "
-            "prepare finances (blocked account for students) → apply for visa through the German mission in your country.\n\n"
-            "What is your background and target timeline? I can suggest a learning path on Multivate."
+            "From Nigeria and other African countries, people usually come through study, Ausbildung, or skilled work.\n\n"
+            "In practice it goes: pick the route that matches your education, check if Germany needs to recognise "
+            "your qualification, build German and the job skills, sort finances, then apply through the German mission "
+            "in your country. Rules do shift, so we'll treat the official site as the last word.\n\n"
+            "What's your background, and when are you hoping to move?"
         )
-    catalog_hint = ""
-    if catalog and catalog != "No published courses in catalog yet.":
-        catalog_hint = f"\n\nSome learning paths on Multivate:\n{catalog[:800]}"
+    extra = (
+        " Once I know that, I can also point you to a course on Multivate."
+        if catalog and catalog != "No published courses in catalog yet."
+        else ""
+    )
     return (
-        "I'm here to help you plan your path to Germany: language, skills, and career direction.\n\n"
-        "Share your current situation (country, education, work experience) and what you hope to do in Germany."
-        f"{catalog_hint}"
+        "Hey, I'm Lena. I help people get ready for Germany: the language, the skills, and a route that actually fits."
+        f"{extra}\n\n"
+        "Tell me where you are now. What do you want in Germany, study, training, or work?"
     )
 
 

@@ -129,6 +129,14 @@ const config: Config = {
           "0%": { strokeDashoffset: "1" },
           "100%": { strokeDashoffset: "0" },
         },
+        "onboard-in": {
+          "0%": { opacity: "0", transform: "translate3d(2.5rem, 10px, 0) scale(0.98)" },
+          "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
+        },
+        "onboard-back": {
+          "0%": { opacity: "0", transform: "translate3d(-2.5rem, 10px, 0) scale(0.98)" },
+          "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both",
@@ -149,6 +157,8 @@ const config: Config = {
         "map-pan": "map-pan 22s ease-in-out infinite",
         "route-flow": "route-flow 2.4s linear infinite",
         "chart-draw": "chart-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "onboard-in": "onboard-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "onboard-back": "onboard-back 0.42s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },

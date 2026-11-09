@@ -55,6 +55,9 @@ type StudentProfileRow = {
   weekly_hours: string | null;
   career_direction: string | null;
   extra_notes: string | null;
+  goal_code?: string | null;
+  german_level?: string | null;
+  instruction_locale?: string | null;
   updated_at: string;
 };
 
@@ -287,13 +290,13 @@ export function AdminSectionContent({ section }: { section: string }) {
           user_email: row.user_email,
           updated_at: row.updated_at,
           answers: [
-            { label: "Education", value: profileLabel("education", row.education_level) },
+            { label: "Goal", value: row.goal_code || row.career_direction },
+            { label: "German level", value: row.german_level || row.current_skills },
+            { label: "Teaches in", value: row.instruction_locale },
             { label: "Weekly hours", value: profileLabel("weekly", row.weekly_hours) },
             { label: "Preferred formats", value: row.preferred_formats },
-            { label: "Current skills", value: row.current_skills, wide: true },
             { label: "Wants to learn", value: row.skills_to_learn, wide: true },
             { label: "Learning goals", value: profileLabel("language", row.learning_goals), wide: true },
-            { label: "Career direction", value: row.career_direction, wide: true },
             {
               label: "Extra notes",
               value: /^learn_with:[a-z]{2}$/i.test(row.extra_notes ?? "") ? null : row.extra_notes,

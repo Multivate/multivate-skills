@@ -19,6 +19,7 @@ from app.models.role import UserRole
 from app.models.student_learning_profile import StudentLearningProfile
 from app.models.user import User
 from app.services import mentor_service
+from app.services.learning_intent import locale_from_notes, profile_write_fields
 from app.schemas.auth import (
     AuthResponse,
     InstructorRegisterRequest,
@@ -40,10 +41,18 @@ _LOCALES = {"en", "fr", "de", "es"}
 
 
 def _locale_tag(note: str | None, prefix: str) -> str | None:
-    if not note or not note.startswith(prefix):
+    key = prefix.rstrip(":")
+    found = locale_from_notes(note, key)
+    if found:
+        return found
+    if not note:
         return None
-    locale = note[len(prefix) :].strip()
-    return locale if locale in _LOCALES else None
+    for part in note.replace(",", ";").split(";"):
+        part = part.strip()
+        if part.startswith(prefix):
+            locale = part[len(prefix) :].strip()
+            return locale if locale in _LOCALES else None
+    return None
 
 
 def _mask_email(email: str) -> str:
@@ -263,6 +272,7 @@ def _tokens_for_user(user: User) -> TokenPair:
 
 def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthResponse:
     lp = payload["learning_profile"]
+    fields = profile_write_fields(lp)
     user = User(
         name=payload["name"],
         email=str(payload["email"]).lower(),
@@ -270,25 +280,16 @@ def _create_student_from_payload(db: Session, payload: dict[str, Any]) -> AuthRe
         role=UserRole.STUDENT,
         is_active=True,
         two_factor_enabled=False,
-        learn_topic=lp.get("skills_to_learn"),
-        learn_with=_locale_tag(lp.get("extra_notes"), "learn_with:"),
+        learn_topic=fields["skills_to_learn"],
+        learn_with=fields["instruction_locale"],
+        preferred_locale=fields["instruction_locale"],
     )
     db.add(user)
     db.flush()
     from app.services.bank_transfer_service import ensure_student_code
 
     ensure_student_code(db, user)
-    profile = StudentLearningProfile(
-        user_id=user.id,
-        education_level=lp["education_level"],
-        current_skills=lp.get("current_skills"),
-        skills_to_learn=lp["skills_to_learn"],
-        learning_goals=lp.get("learning_goals"),
-        preferred_formats=lp["preferred_formats"],
-        weekly_hours=lp["weekly_hours"],
-        career_direction=lp.get("career_direction"),
-        extra_notes=lp.get("extra_notes"),
-    )
+    profile = StudentLearningProfile(user_id=user.id, **fields)
     db.add(profile)
     db.commit()
     db.refresh(user)

@@ -167,6 +167,9 @@ def serialize_student_profile(user_id: UUID, row: StudentLearningProfile | None)
             weekly_course_target=1,
             career_direction=None,
             extra_notes=None,
+            goal_code=None,
+            german_level=None,
+            instruction_locale=None,
             updated_at=None,
         )
     return StudentLearningProfileOut.model_validate(row)
@@ -194,6 +197,9 @@ def list_student_profiles_for_admin(db: Session, limit: int = 200) -> list[Stude
             weekly_course_target=getattr(profile, "weekly_course_target", 1) or 1,
             career_direction=profile.career_direction,
             extra_notes=profile.extra_notes,
+            goal_code=getattr(profile, "goal_code", None),
+            german_level=getattr(profile, "german_level", None),
+            instruction_locale=getattr(profile, "instruction_locale", None),
             updated_at=profile.updated_at,
         )
         for profile, name, email in rows

@@ -166,9 +166,7 @@ export function LoginForm() {
             <p className="rounded-[5px] border border-brand-accent/30 bg-brand-sky px-3 py-2 text-sm text-[#011B33]" role="status">
               {mfaNotice}
             </p>
-          ) : (
-            <p className="text-sm text-[#011B33]/65">{t("mfaSpamHint")}</p>
-          )}
+          ) : null}
           {error ? (
             <p className="rounded-[5px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
               {error}

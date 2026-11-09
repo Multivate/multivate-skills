@@ -36,6 +36,9 @@ class StudentLearningProfile(Base):
     reminder_dismissed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     career_direction: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     extra_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    goal_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    german_level: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    instruction_locale: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

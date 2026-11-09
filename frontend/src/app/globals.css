@@ -276,7 +276,9 @@ input[type="number"] {
   .animate-twinkle,
   .animate-map-pan,
   .animate-route-flow,
-  .animate-chart-draw {
+  .animate-chart-draw,
+  .animate-onboard-in,
+  .animate-onboard-back {
     animation: none !important;
   }
 }

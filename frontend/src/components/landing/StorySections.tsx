@@ -17,7 +17,7 @@ const learnLeft = [
 
 const learnRight = [
   { title: "learn2Title", body: "learn2Body", image: "/marketing/study.jpg", tall: false },
-  { title: "learn4Title", body: "learn4Body", image: "/marketing/learners.jpg", tall: true },
+  { title: "learn4Title", body: "learn4Body", image: "/marketing/ask-lena.jpg", tall: true },
 ] as const;
 
 const steps = ["1", "2", "3"] as const;
