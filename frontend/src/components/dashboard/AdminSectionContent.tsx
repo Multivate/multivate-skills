@@ -290,9 +290,9 @@ export function AdminSectionContent({ section }: { section: string }) {
           user_email: row.user_email,
           updated_at: row.updated_at,
           answers: [
-            { label: "Goal", value: row.goal_code || row.career_direction },
-            { label: "German level", value: row.german_level || row.current_skills },
-            { label: "Teaches in", value: row.instruction_locale },
+            { label: "Goal", value: row.goal_code || row.career_direction || null },
+            { label: "German level", value: row.german_level || row.current_skills || null },
+            { label: "Teaches in", value: row.instruction_locale ?? null },
             { label: "Weekly hours", value: profileLabel("weekly", row.weekly_hours) },
             { label: "Preferred formats", value: row.preferred_formats },
             { label: "Wants to learn", value: row.skills_to_learn, wide: true },
