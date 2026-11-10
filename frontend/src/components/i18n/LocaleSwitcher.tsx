@@ -3,6 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
 
@@ -63,6 +64,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, undefined, "events");
   const current = localeOptions.find((option) => option.value === locale) ?? localeOptions[0];
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -23,6 +24,9 @@ class CourseOut(BaseModel):
     price_cents: int = 0
     currency: str = "NGN"
     is_free: bool = False
+    discount_percent: int = 0
+    discount_expires_at: datetime | None = None
+    sale_price_cents: int | None = None
     status: str = "draft"
     promo_video_url: str | None = None
     instructor_name: str | None = None

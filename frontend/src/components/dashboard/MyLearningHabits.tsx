@@ -135,7 +135,7 @@ export function MyLearningHabits() {
           setHabits(getData as LearningHabits);
         }
       } catch {
-        /* leave empty — progress cards still work */
+        /* leave empty; progress cards still work */
       }
     })();
     return () => {

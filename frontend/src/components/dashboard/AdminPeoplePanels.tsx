@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { PersonMark } from "@/components/dashboard/PersonMark";
 
 type PersonRow = {
@@ -161,6 +162,7 @@ type ProfileCard = {
   user_email: string;
   updated_at: string;
   answers: { label: string; value: string | null; wide?: boolean }[];
+  footer?: ReactNode;
 };
 
 export function AdminProfileCards({ rows, empty }: { rows: ProfileCard[]; empty: string }) {
@@ -189,6 +191,7 @@ export function AdminProfileCards({ rows, empty }: { rows: ProfileCard[]; empty:
               <Answer key={answer.label} label={answer.label} value={answer.value} wide={answer.wide} />
             ))}
           </dl>
+          {row.footer}
         </article>
       ))}
     </div>

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { ChevronDown, LogOut, Menu, Search, Settings, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -45,6 +46,7 @@ function NavDropdown({
   const tDash = useTranslations("dashboard");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, undefined, "events");
   const active = navGroupActive(pathname, group);
 
   useEffect(() => {
@@ -106,6 +108,8 @@ export function DashboardTopNav({
   const navItemsNs = dashboardNavItemsNs[workspace] ?? "nav.student";
   const navGroupsNs = dashboardNavGroupsNs[workspace] ?? "navGroups.student";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileScrollRef = useRef<HTMLElement>(null);
+  useBodyScrollLock(mobileOpen, mobileScrollRef);
   const groups = dashboardNavGroupsByWorkspace[workspace] ?? dashboardNavGroupsByWorkspace.student;
   const accent = dashboardAccent[workspace] ?? dashboardAccent.student;
   const homeHref = workspace === "admin" ? "/admin" : workspace === "instructor" ? "/instructor" : "/dashboard";
@@ -121,7 +125,7 @@ export function DashboardTopNav({
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-brand-ink/10 bg-brand-paper/95 backdrop-blur-md">
+      <header className="desk-topbar sticky top-0 z-40 isolate border-b border-brand-ink/10 dark:border-white/10">
         <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-4 px-4 sm:px-6 lg:px-8 xl:px-10">
           <button
             type="button"
@@ -229,7 +233,7 @@ export function DashboardTopNav({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="min-h-0 flex-1 overflow-y-auto p-4">
+            <nav ref={mobileScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
               <Link
                 href={homeHref}
                 onClick={() => setMobileOpen(false)}

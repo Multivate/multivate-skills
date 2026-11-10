@@ -130,7 +130,7 @@ class Settings(BaseSettings):
         description="Maximum allowed upload size in bytes.",
     )
     allowed_image_types: str = Field(
-        default="image/jpeg,image/png,image/webp,image/gif,image/svg+xml",
+        default="image/jpeg,image/png,image/webp,image/gif",
         description="Comma-separated allowed image MIME types.",
     )
     allowed_document_types: str = Field(

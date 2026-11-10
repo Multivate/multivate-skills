@@ -4,7 +4,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { readApiError } from "@/lib/api-error";
-import { AudioPhrasebookPlayer } from "@/components/player/AudioPhrasebookPlayer";
+import { SkillClassroom } from "@/components/player/SkillClassroom";
 
 export default function LearnCourseRedirect({ slug }: { slug: string }) {
   const router = useRouter();
@@ -37,11 +37,7 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
         setAudioMode(true);
         setChecking(false);
         return;
-      }
-
-      if (phraseRes.status === 404) {
-        // Not an audio course - open video curriculum.
-      } else {
+      } else if (phraseRes.status !== 404) {
         const data = await phraseRes.json().catch(() => null);
         setError(readApiError(data, "We couldn't open this course right now."));
         setChecking(false);
@@ -86,7 +82,7 @@ export default function LearnCourseRedirect({ slug }: { slug: string }) {
   }, [slug, previewQs, preview, router]);
 
   if (audioMode) {
-    return <AudioPhrasebookPlayer slug={slug} preview={preview} />;
+    return <SkillClassroom slug={slug} preview={preview} />;
   }
 
   if (error) {

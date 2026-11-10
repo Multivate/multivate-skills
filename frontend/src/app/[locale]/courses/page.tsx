@@ -12,13 +12,30 @@ type PageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-function matchesSearch(query: string, title: string, description: string, slug: string): boolean {
+function searchNeedles(query: string): string[] {
   const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  const t = title.toLowerCase();
-  const d = description.toLowerCase();
-  const s = slug.toLowerCase();
-  return t.includes(needle) || d.includes(needle) || s.includes(needle);
+  if (!needle) return [];
+  const extras: Record<string, string[]> = {
+    tech: ["technology", "cloud", "artificial", "data"],
+    web: ["technology", "web"],
+    data: ["data", "analytics"],
+    career: ["career", "interview", "work"],
+    german: ["german", "deutsch", "language"],
+  };
+  return [needle, ...(extras[needle] ?? [])];
+}
+
+function matchesSearch(
+  query: string,
+  title: string,
+  description: string,
+  slug: string,
+  category?: string,
+): boolean {
+  const needles = searchNeedles(query);
+  if (needles.length === 0) return true;
+  const hay = `${title} ${description} ${slug} ${category ?? ""}`.toLowerCase();
+  return needles.some((item) => hay.includes(item));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -43,13 +60,13 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
 
   const courses = await fetchBackendCatalog({ revalidate: 60 });
   const filtered = searchQ
-    ? courses.filter((c) => matchesSearch(searchQ, c.title, c.description, c.slug))
+    ? courses.filter((c) => matchesSearch(searchQ, c.title, c.description, c.slug, c.category))
     : courses;
 
   return (
     <>
       <SiteHeader />
-      <main className="bg-white py-12 sm:py-16">
+      <main id="main-content" className="bg-white py-12 sm:py-16">
         <div className="container-page">
           <nav className="text-sm text-neutral-500" aria-label="Breadcrumb">
             <Link

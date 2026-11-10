@@ -2,9 +2,10 @@
 
 import { BookOpen, ChevronDown, GraduationCap, Info, Menu, Users, X, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher";
 import { Link } from "@/i18n/navigation";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { LogoMark } from "./LogoMark";
 import { SiteHeaderCart } from "./SiteHeaderCart";
 import { SiteHeaderSearch } from "./SiteHeaderSearch";
@@ -23,8 +24,18 @@ function NavMenu({
   icon: LucideIcon;
   items: { href: string; label: string }[];
 }) {
+  const [hover, setHover] = useState(false);
+  useBodyScrollLock(hover, undefined, "events");
   return (
-    <div className="group relative">
+    <div
+      className="group relative"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHover(false);
+      }}
+    >
       <Link
         href={href}
         className="inline-flex items-center gap-1.5 py-2 text-[15px] font-medium text-[#011B33] transition duration-200 hover:text-brand-accent"
@@ -60,6 +71,8 @@ export function SiteHeader() {
   const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const menuScrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, menuScrollRef);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -91,7 +104,7 @@ export function SiteHeader() {
       icon: Users,
       items: [
         { href: "/mentors", label: t("mentors") },
-        { href: "/dashboard/book-1on1", label: t("bookMentor") },
+        { href: "/mentors", label: t("bookMentor") },
       ],
     },
     {
@@ -104,11 +117,13 @@ export function SiteHeader() {
       ],
     },
     {
-      href: "/#about",
+      href: "/about",
       label: t("about"),
       icon: Info,
       items: [
-        { href: "/#about", label: t("about") },
+        { href: "/about", label: t("about") },
+        { href: "/about#mission", label: tFooter("coMission") },
+        { href: "/contact", label: t("contact") },
         { href: "/privacy", label: tFooter("suPrivacy") },
         { href: "/terms", label: tFooter("suTerms") },
       ],
@@ -117,10 +132,16 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-brand-sky transition-shadow duration-300 ${
+      className={`desk-topbar sticky top-0 z-50 isolate transition-shadow duration-300 ${
         scrolled ? "shadow-[0_8px_24px_rgba(12,27,74,0.06)]" : ""
       }`}
     >
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[80] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-brand-ink focus:shadow"
+      >
+        {tCommon("skipToContent")}
+      </a>
       <div className="container-page flex h-16 items-center gap-4 lg:h-[4.25rem]">
         <Link href="/" className="flex shrink-0 items-center" aria-label={t("homeAria")}>
           <LogoMark className="max-w-[9.5rem] sm:max-w-[11rem]" priority />
@@ -133,7 +154,9 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-          <SiteHeaderSearch className="hidden w-36 shrink-0 lg:block xl:w-44" />
+          <Suspense fallback={<div className="hidden h-9 w-36 lg:block xl:w-44" />}>
+            <SiteHeaderSearch className="hidden w-36 shrink-0 lg:block xl:w-44" />
+          </Suspense>
           <SiteHeaderCart />
           <LocaleSwitcher className="hidden sm:inline-flex" />
           <Link
@@ -158,12 +181,19 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-brand-ink/10 bg-brand-sky px-4 py-4 lg:hidden">
-          <SiteHeaderSearch className="mb-4" inputId="site-header-search-menu" />
+        <>
+          <div className="fixed inset-0 top-16 z-40 bg-[#10244F]/20 lg:hidden" onClick={() => setOpen(false)} />
+          <div
+            ref={menuScrollRef}
+            className="desk-sheet fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto overscroll-contain border-t border-brand-ink/10 px-4 py-4 [-webkit-overflow-scrolling:touch] lg:hidden"
+          >
+          <Suspense fallback={<div className="mb-4 h-9" />}>
+            <SiteHeaderSearch className="mb-4" inputId="site-header-search-menu" />
+          </Suspense>
           <div className="mb-3 px-1">
             <LocaleSwitcher />
           </div>
-          <nav className="flex flex-col">
+          <nav className="flex flex-col pb-[env(safe-area-inset-bottom)]">
             {menus.map((menu) => (
               <div key={menu.label} className="border-b border-brand-ink/10 py-1 last:border-0">
                 <Link
@@ -197,7 +227,8 @@ export function SiteHeader() {
               {tCommon("getStarted")}
             </Link>
           </nav>
-        </div>
+          </div>
+        </>
       ) : null}
     </header>
   );

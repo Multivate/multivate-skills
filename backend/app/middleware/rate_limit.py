@@ -16,6 +16,10 @@ _ROUTE_LIMITS: tuple[tuple[str, int, int], ...] = (
     ("/api/v1/auth/login/mfa", 25, 60),
     ("/api/v1/auth/register/", 12, 60),
     ("/api/v1/auth/forgot-password/", 10, 60),
+    ("/api/v1/auth/refresh", 40, 60),
+    ("/api/v1/payments/", 30, 60),
+    ("/api/v1/enrollments/start", 20, 60),
+    ("/api/v1/media/upload", 20, 60),
     ("/api/v1/discount-codes/validate", 40, 60),
     ("/api/v1/guidance/chat", 30, 60),
     ("/api/v1/mentors/", 40, 60),
@@ -25,7 +29,9 @@ _ROUTE_LIMITS: tuple[tuple[str, int, int], ...] = (
 def _client_ip(request: Request) -> str:
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        hops = [part.strip() for part in forwarded.split(",") if part.strip()]
+        if hops:
+            return hops[-1]
     if request.client and request.client.host:
         return request.client.host
     return "unknown"

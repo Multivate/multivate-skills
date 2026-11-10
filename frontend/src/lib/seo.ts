@@ -5,7 +5,15 @@ import { absoluteUrl, getSiteUrl, hreflangLanguages } from "@/lib/site-url";
 export const SITE_NAME = "Multivate";
 export const SITE_LEGAL_NAME = "Multivate Technological Services & Consultancy Limited";
 export const SITE_EMAIL = "info@multivate.com.ng";
-export const DEFAULT_OG_IMAGE = "/MULTIVATE MAIN LOGO.png";
+
+export function encodedAssetPath(path: string): string {
+  return path
+    .split("/")
+    .map((segment, index) => (index === 0 ? "" : encodeURIComponent(segment)))
+    .join("/");
+}
+
+export const DEFAULT_OG_IMAGE = encodedAssetPath("/MULTIVATE MAIN LOGO.png");
 
 export function truncateMeta(text: string, max = 158): string {
   const cleaned = text.replace(/\s+/g, " ").trim();
@@ -52,7 +60,7 @@ export function publicPageMetadata({
   index?: boolean;
 }): Metadata {
   const canonical = absoluteUrl(locale, path);
-  const ogImage = image || `${getSiteUrl()}${DEFAULT_OG_IMAGE}`;
+  const ogImage = image || `${getSiteUrl()}${encodedAssetPath(DEFAULT_OG_IMAGE)}`;
   const desc = truncateMeta(description);
   const fullTitle = brandedTitle(title);
   return {

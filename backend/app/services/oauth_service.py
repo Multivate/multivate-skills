@@ -183,6 +183,7 @@ def _ensure_student_profile(db: Session, user_id: Any) -> None:
             skills_to_learn="General",
             preferred_formats="Online (self-paced)",
             weekly_hours="5to10",
+            study_mode="online",
         )
     )
     _logger.info("Created default student learning profile user_id=%s", user_id)

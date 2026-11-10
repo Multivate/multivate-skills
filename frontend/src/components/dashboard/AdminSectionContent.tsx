@@ -58,6 +58,9 @@ type StudentProfileRow = {
   goal_code?: string | null;
   german_level?: string | null;
   instruction_locale?: string | null;
+  study_mode?: string | null;
+  campus_location?: string | null;
+  cohort_name?: string | null;
   updated_at: string;
 };
 
@@ -85,6 +88,98 @@ type ReviewRow = {
   comment: string | null;
   created_at: string;
 };
+
+function AdminStudentPlacement({
+  row,
+  onSaved,
+}: {
+  row: StudentProfileRow;
+  onSaved: (next: StudentProfileRow) => void;
+}) {
+  const [studyMode, setStudyMode] = useState(row.study_mode || "online");
+  const [campus, setCampus] = useState(row.campus_location ?? "");
+  const [cohort, setCohort] = useState(row.cohort_name ?? "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/student-learning-profiles/${row.user_id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          study_mode: studyMode,
+          campus_location: studyMode === "online" ? "" : campus,
+          cohort_name: studyMode === "online" ? "" : cohort,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setMsg(typeof data?.detail === "string" ? data.detail : "Could not save placement.");
+        return;
+      }
+      onSaved(data as StudentProfileRow);
+      setMsg("Saved.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form
+      className="mt-4 grid gap-3 border-t border-[var(--admin-line)] pt-4 sm:grid-cols-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void save();
+      }}
+    >
+      <label className="block text-xs font-semibold">
+        Enrolment
+        <select
+          value={studyMode}
+          onChange={(event) => setStudyMode(event.target.value)}
+          className="mt-1 w-full rounded-lg border border-[var(--admin-line)] bg-white px-2 py-2 text-sm"
+        >
+          <option value="online">Online</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="physical">Physical</option>
+        </select>
+      </label>
+      <label className="block text-xs font-semibold">
+        Campus
+        <input
+          value={campus}
+          onChange={(event) => setCampus(event.target.value)}
+          disabled={studyMode === "online"}
+          placeholder="Ibadan, Oyo state"
+          className="mt-1 w-full rounded-lg border border-[var(--admin-line)] px-2 py-2 text-sm disabled:opacity-50"
+        />
+      </label>
+      <label className="block text-xs font-semibold">
+        Cohort
+        <input
+          value={cohort}
+          onChange={(event) => setCohort(event.target.value)}
+          disabled={studyMode === "online"}
+          className="mt-1 w-full rounded-lg border border-[var(--admin-line)] px-2 py-2 text-sm disabled:opacity-50"
+        />
+      </label>
+      <div className="flex items-end gap-3">
+        <button
+          type="submit"
+          disabled={busy}
+          className="h-9 rounded-lg bg-brand-ink px-3 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          Save placement
+        </button>
+        {msg ? <p className="text-xs text-[#011B33]/60">{msg}</p> : null}
+      </div>
+    </form>
+  );
+}
 
 export function AdminSectionContent({ section }: { section: string }) {
   const [users, setUsers] = useState<UserRow[] | null>(null);
@@ -294,6 +389,9 @@ export function AdminSectionContent({ section }: { section: string }) {
             { label: "German level", value: row.german_level || row.current_skills || null },
             { label: "Teaches in", value: row.instruction_locale ?? null },
             { label: "Weekly hours", value: profileLabel("weekly", row.weekly_hours) },
+            { label: "Study mode", value: row.study_mode },
+            { label: "Campus", value: row.campus_location },
+            { label: "Cohort", value: row.cohort_name },
             { label: "Preferred formats", value: row.preferred_formats },
             { label: "Wants to learn", value: row.skills_to_learn, wide: true },
             { label: "Learning goals", value: profileLabel("language", row.learning_goals), wide: true },
@@ -303,6 +401,16 @@ export function AdminSectionContent({ section }: { section: string }) {
               wide: true,
             },
           ],
+          footer: (
+            <AdminStudentPlacement
+              row={row}
+              onSaved={(next) => {
+                setStudentProfiles((current) =>
+                  (current ?? []).map((item) => (item.user_id === next.user_id ? { ...item, ...next } : item)),
+                );
+              }}
+            />
+          ),
         }))}
       />
     );

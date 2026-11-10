@@ -25,7 +25,7 @@ export function LegalDocumentLayout({
     <div className="min-h-screen bg-white text-[#011B33]">
       <SiteHeader />
 
-      <main className="container-page py-10 sm:py-14">
+      <main id="main-content" className="container-page py-10 sm:py-14">
         <div className="max-w-3xl">
           <p className="tag-overline">Legal</p>
           <div className="marketing-rule mt-4" aria-hidden />

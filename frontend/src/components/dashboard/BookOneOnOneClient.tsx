@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
@@ -74,8 +75,12 @@ function parseMentors(raw: unknown): Mentor[] {
 
 export function BookOneOnOneClient() {
   const searchParams = useSearchParams();
+  const tClass = useTranslations("classroom");
   const courseSlug = (searchParams.get("course") ?? "").trim();
   const mentorPref = (searchParams.get("mentor") ?? "").trim();
+  const lessonId = (searchParams.get("lesson") ?? "").trim();
+  const goalCode = (searchParams.get("goal") ?? "").trim();
+  const fromClassroom = searchParams.get("stuck") === "1";
   const { user, loading: authLoading } = useAuth();
 
   const [tiers, setTiers] = useState<Tier[]>([]);
@@ -93,6 +98,7 @@ export function BookOneOnOneClient() {
   const [copied, setCopied] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const remitaFormRef = useRef<HTMLFormElement>(null);
+  const seededNote = useRef(false);
 
   useEffect(() => {
     void (async () => {
@@ -110,6 +116,19 @@ export function BookOneOnOneClient() {
   useEffect(() => {
     if (mentorPref) setMentorSlug(mentorPref);
   }, [mentorPref]);
+
+  useEffect(() => {
+    if (seededNote.current || !fromClassroom) return;
+    const bits = [
+      goalCode ? `Goal: ${goalCode}` : null,
+      courseSlug ? `Course: ${courseSlug}` : null,
+      lessonId ? `Lesson: ${lessonId}` : null,
+    ].filter(Boolean);
+    if (bits.length) {
+      seededNote.current = true;
+      setNote(`Stuck in the classroom. ${bits.join(". ")}.`);
+    }
+  }, [fromClassroom, goalCode, courseSlug, lessonId]);
 
   const selectedTier = tiers.find((row) => row.tier === tier);
   const selectedMentor = mentors.find((row) => row.slug === mentorSlug) ?? null;
@@ -230,6 +249,11 @@ export function BookOneOnOneClient() {
         <p className="mt-2 text-sm leading-relaxed text-[#011B33]/60">
           Talk with someone already living in Germany. Each billed hour is 45 minutes live. You only pay after you start a booking.
         </p>
+        {fromClassroom ? (
+          <p className="mt-4 rounded-[5px] border border-brand-accent/20 bg-[#f4f7fd] px-3 py-2 text-sm text-[#011B33]/75">
+            {tClass("stuckBanner")}
+          </p>
+        ) : null}
       </header>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(17rem,0.7fr)]">
@@ -355,7 +379,7 @@ export function BookOneOnOneClient() {
             </div>
             <div className="flex items-start justify-between gap-3">
               <span className="text-[#011B33]/55">Type</span>
-              <span className="text-right font-semibold">{selectedTier?.label ?? "—"}</span>
+              <span className="text-right font-semibold">{selectedTier?.label ?? "-"}</span>
             </div>
             <div className="flex items-start justify-between gap-3">
               <span className="text-[#011B33]/55">Time</span>

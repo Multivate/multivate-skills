@@ -47,6 +47,8 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS price_cents INTEGER NOT NULL DEFAULT 990000")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS currency VARCHAR(3) NOT NULL DEFAULT 'NGN'")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS is_free BOOLEAN NOT NULL DEFAULT FALSE")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS discount_percent INTEGER NOT NULL DEFAULT 0")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS discount_expires_at TIMESTAMPTZ")
 
         _run(
             conn,
@@ -90,6 +92,7 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS format VARCHAR(16) NOT NULL DEFAULT 'video'")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS source_language VARCHAR(8) NOT NULL DEFAULT 'en'")
         _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS target_language VARCHAR(8) NOT NULL DEFAULT 'de'")
+        _run(conn, "ALTER TABLE courses ADD COLUMN IF NOT EXISTS cefr_level VARCHAR(8) NOT NULL DEFAULT 'A1'")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_courses_format ON courses (format)")
 
         _run(conn, "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS lesson_done INTEGER NOT NULL DEFAULT 0")
@@ -192,6 +195,7 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             """,
         )
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_course_sections_course_id ON course_sections (course_id)")
+        _run(conn, "ALTER TABLE course_sections ADD COLUMN IF NOT EXISTS scene_key VARCHAR(32)")
 
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS section_id UUID")
         _run(conn, "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS lesson_type VARCHAR(32) NOT NULL DEFAULT 'video'")
@@ -242,6 +246,8 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         )
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_audio_phrases_course_id ON audio_phrases (course_id)")
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_audio_phrases_section_id ON audio_phrases (section_id)")
+        _run(conn, "ALTER TABLE audio_phrases ADD COLUMN IF NOT EXISTS usage_note VARCHAR(512)")
+        _run(conn, "ALTER TABLE audio_phrases ADD COLUMN IF NOT EXISTS ipa VARCHAR(128)")
 
         _run(
             conn,
@@ -774,6 +780,31 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS goal_code VARCHAR(32)")
         _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS german_level VARCHAR(16)")
         _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS instruction_locale VARCHAR(8)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS study_mode VARCHAR(16)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS campus_location VARCHAR(255)")
+        _run(conn, "ALTER TABLE student_learning_profiles ADD COLUMN IF NOT EXISTS cohort_name VARCHAR(128)")
+        _run(
+            conn,
+            """
+            UPDATE student_learning_profiles
+            SET study_mode = 'online'
+            WHERE study_mode IS NULL OR study_mode = ''
+            """,
+        )
+        _run(
+            conn,
+            """
+            UPDATE student_learning_profiles
+            SET campus_location = 'Ibadan, Oyo state'
+            WHERE study_mode IN ('hybrid', 'physical')
+              AND (
+                campus_location IS NULL
+                OR campus_location = ''
+                OR campus_location ILIKE '%lagos%'
+                OR campus_location ILIKE '%ikeja%'
+              )
+            """,
+        )
         _run(
             conn,
             """
@@ -961,6 +992,55 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
             """,
         )
         _run(conn, "CREATE INDEX IF NOT EXISTS ix_support_tickets_user_id ON support_tickets (user_id)")
+
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS classroom_posts (
+                id UUID PRIMARY KEY,
+                author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                space VARCHAR(16) NOT NULL,
+                channel VARCHAR(32) NOT NULL DEFAULT 'general',
+                title VARCHAR(180),
+                body TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_classroom_posts_author_id ON classroom_posts (author_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_classroom_posts_space ON classroom_posts (space)")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS classroom_comments (
+                id UUID PRIMARY KEY,
+                post_id UUID NOT NULL REFERENCES classroom_posts(id) ON DELETE CASCADE,
+                author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                body TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_classroom_comments_post_id ON classroom_comments (post_id)")
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_classroom_comments_author_id ON classroom_comments (author_id)")
+        _run(conn, "ALTER TABLE classroom_posts ADD COLUMN IF NOT EXISTS image_url VARCHAR(512)")
+        _run(conn, "ALTER TABLE classroom_posts ADD COLUMN IF NOT EXISTS kind VARCHAR(16) NOT NULL DEFAULT 'student'")
+        _run(conn, "ALTER TABLE classroom_posts ADD COLUMN IF NOT EXISTS link_url VARCHAR(512)")
+        _run(conn, "ALTER TABLE classroom_posts ADD COLUMN IF NOT EXISTS link_label VARCHAR(180)")
+        _run(conn, "ALTER TABLE classroom_posts ADD COLUMN IF NOT EXISTS detail TEXT")
+        _run(
+            conn,
+            """
+            CREATE TABLE IF NOT EXISTS classroom_voice_presence (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                room VARCHAR(32) NOT NULL,
+                joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                heartbeat_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        )
+        _run(conn, "CREATE INDEX IF NOT EXISTS ix_classroom_voice_presence_room ON classroom_voice_presence (room)")
 
         _run(conn, "UPDATE courses SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")
         _run(conn, "UPDATE payments SET currency = 'NGN' WHERE currency IS NULL OR currency = '' OR currency = 'USD'")

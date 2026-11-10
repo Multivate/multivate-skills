@@ -31,6 +31,8 @@ type Step =
   | "why"
   | "level"
   | "time"
+  | "mode"
+  | "campus"
   | "plan"
   | "teach"
   | "years"
@@ -47,12 +49,14 @@ const WHY_LABEL: Record<string, string> = {
   explore: "exploring a path to Germany",
 };
 
-function stepsFor(role: Role, learn: string): Step[] {
+function stepsFor(role: Role, learn: string, studyMode: "online" | "hybrid" | "physical" = "online"): Step[] {
   if (role === "instructor") return ["welcome", "role", "teach", "speak", "years", "account", "otp"];
   if (role === "mentor") return ["welcome", "role", "account", "otp"];
   const student: Step[] = ["welcome", "role", "speak", "learn", "why"];
   if (learn !== "technology") student.push("level");
-  student.push("time", "plan", "account", "otp");
+  student.push("time", "mode");
+  if (studyMode !== "online") student.push("campus");
+  student.push("plan", "account", "otp");
   return student;
 }
 
@@ -115,6 +119,9 @@ export function RegisterForm() {
   const [why, setWhy] = useState("");
   const [level, setLevel] = useState("");
   const [hours, setHours] = useState("5to10");
+  const [studyMode, setStudyMode] = useState<"online" | "hybrid" | "physical">("online");
+  const [campusLocation, setCampusLocation] = useState("Ibadan, Oyo state");
+  const [cohortName, setCohortName] = useState("");
   const [yearsExperience, setYearsExperience] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +130,7 @@ export function RegisterForm() {
   const [otpCode, setOtpCode] = useState("");
   const advanceTimer = useRef<number | null>(null);
 
-  const steps = useMemo(() => stepsFor(role, learn), [role, learn]);
+  const steps = useMemo(() => stepsFor(role, learn, studyMode), [role, learn, studyMode]);
   const index = Math.max(0, steps.indexOf(step));
   const progress = Math.round(((index + 1) / steps.length) * 100);
 
@@ -169,11 +176,16 @@ export function RegisterForm() {
     goTo(steps[nextIndex], delta < 0 ? "back" : "fwd");
   }
 
-  function pickThenNext(apply: () => void, nextRole = role, nextLearn = learn) {
+  function pickThenNext(
+    apply: () => void,
+    nextRole = role,
+    nextLearn = learn,
+    nextMode: "online" | "hybrid" | "physical" = studyMode,
+  ) {
     apply();
     if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
     advanceTimer.current = window.setTimeout(() => {
-      const list = stepsFor(nextRole, nextLearn);
+      const list = stepsFor(nextRole, nextLearn, nextMode);
       const here = list.indexOf(step);
       const following = list[here + 1];
       if (following) goTo(following, "fwd");
@@ -232,13 +244,21 @@ export function RegisterForm() {
                 current_skills: germanLevel,
                 skills_to_learn: topic,
                 learning_goals: goal,
-                preferred_formats: "Online (self-paced)",
+                preferred_formats:
+                  studyMode === "physical"
+                    ? "Physical (on campus)"
+                    : studyMode === "hybrid"
+                      ? "Hybrid (campus + online)"
+                      : "Online (self-paced)",
                 weekly_hours: hours,
                 career_direction: goalCode,
                 extra_notes: `learn_with:${learnWith};level:${germanLevel};goal:${goalCode}`,
                 goal_code: goalCode,
                 german_level: germanLevel,
                 instruction_locale: learnWith,
+                study_mode: studyMode,
+                campus_location: studyMode === "online" ? null : campusLocation.trim() || "Ibadan, Oyo state",
+                cohort_name: studyMode === "online" ? null : cohortName.trim() || null,
               },
             }
           : role === "instructor"
@@ -478,6 +498,73 @@ export function RegisterForm() {
                 <ChoiceCard title={t("onboard.timeSteady")} hint="About 30 minutes a day" selected={hours === "5to10"} onClick={() => pickThenNext(() => setHours("5to10"))} />
                 <ChoiceCard title={t("onboard.timeSerious")} hint="An hour or more most days" selected={hours === "10to15"} onClick={() => pickThenNext(() => setHours("10to15"))} />
               </div>
+            </section>
+          ) : null}
+
+          {step === "mode" ? (
+            <section>
+              <h1 className="text-[1.45rem] font-extrabold leading-tight text-[#10244F] sm:text-[1.7rem]">{t("onboard.modeTitle")}</h1>
+              <p className="mt-2 text-[15px] text-[#10244F]/65">{t("onboard.modeBody")}</p>
+              <div className="mt-4 grid gap-2.5 sm:mt-6 sm:gap-3">
+                <ChoiceCard
+                  title={t("onboard.modeOnline")}
+                  hint={t("onboard.modeOnlineHint")}
+                  selected={studyMode === "online"}
+                  onClick={() => pickThenNext(() => setStudyMode("online"), role, learn, "online")}
+                />
+                <ChoiceCard
+                  title={t("onboard.modeHybrid")}
+                  hint={t("onboard.modeHybridHint")}
+                  selected={studyMode === "hybrid"}
+                  onClick={() => pickThenNext(() => setStudyMode("hybrid"), role, learn, "hybrid")}
+                />
+                <ChoiceCard
+                  title={t("onboard.modePhysical")}
+                  hint={t("onboard.modePhysicalHint")}
+                  selected={studyMode === "physical"}
+                  onClick={() => pickThenNext(() => setStudyMode("physical"), role, learn, "physical")}
+                />
+              </div>
+            </section>
+          ) : null}
+
+          {step === "campus" ? (
+            <section>
+              <h1 className="text-[1.45rem] font-extrabold leading-tight text-[#10244F] sm:text-[1.7rem]">{t("onboard.campusTitle")}</h1>
+              <p className="mt-2 text-[15px] text-[#10244F]/65">{t("onboard.campusBody")}</p>
+              <p className="mt-5 rounded-[14px] bg-white px-4 py-3 text-[15px] font-semibold text-[#10244F]">{t("onboard.campusPlace")}</p>
+              <form
+                className="mt-6 space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setCampusLocation("Ibadan, Oyo state");
+                  go(1);
+                }}
+              >
+                <label className="block">
+                  <span className="text-sm font-semibold text-[#10244F]">{t("onboard.cohortLabel")}</span>
+                  <input
+                    value={cohortName}
+                    onChange={(event) => setCohortName(event.target.value)}
+                    className="mt-1.5 w-full rounded-[14px] border border-brand-ink/10 bg-white px-4 py-3 text-[15px] outline-none focus:border-brand-accent"
+                    placeholder={t("onboard.cohortPh")}
+                  />
+                </label>
+                <button type="submit" className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand-accent text-[16px] font-semibold text-white">
+                  {t("onboard.campusContinue")}
+                </button>
+                <button
+                  type="button"
+                  className="w-full text-sm font-medium text-[#011B33]"
+                  onClick={() => {
+                    setCampusLocation("Ibadan, Oyo state");
+                    setCohortName("");
+                    go(1);
+                  }}
+                >
+                  {t("onboard.campusSkip")}
+                </button>
+              </form>
             </section>
           ) : null}
 

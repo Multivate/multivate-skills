@@ -197,6 +197,9 @@ def record_learning_choice(db: Session, user: User, topic: str, learn_with: str)
                 "german_level": getattr(row, "german_level", None) if row else None,
                 "instruction_locale": learn_with,
                 "extra_notes": getattr(row, "extra_notes", None) if row else None,
+                "study_mode": getattr(row, "study_mode", None) if row else None,
+                "campus_location": getattr(row, "campus_location", None) if row else None,
+                "cohort_name": getattr(row, "cohort_name", None) if row else None,
             }
         )
         if row is None:

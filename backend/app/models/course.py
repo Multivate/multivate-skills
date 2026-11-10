@@ -28,6 +28,8 @@ class Course(Base):
     price_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=990000)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="NGN")
     is_free: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    discount_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    discount_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     category: Mapped[str] = mapped_column(String(64), nullable=False, default="general")
     format: Mapped[CourseFormat] = mapped_column(
         value_string_enum(CourseFormat),
@@ -37,6 +39,7 @@ class Course(Base):
     )
     source_language: Mapped[str] = mapped_column(String(8), nullable=False, default="en")
     target_language: Mapped[str] = mapped_column(String(8), nullable=False, default="de")
+    cefr_level: Mapped[str] = mapped_column(String(8), nullable=False, default="A1")
     level: Mapped[CourseLevel] = mapped_column(
         value_string_enum(CourseLevel),
         nullable=False,

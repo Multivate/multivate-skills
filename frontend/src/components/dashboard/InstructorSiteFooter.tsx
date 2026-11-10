@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { FooterSocialMarks } from "@/components/layout/FooterSocialMarks";
 import { LogoMark } from "@/components/layout/LogoMark";
 
 const CONTACT_EMAIL = "info@multivate.com.ng";
@@ -44,7 +45,7 @@ export function InstructorSiteFooter() {
       title: t("company"),
       links: [
         { href: "/courses", label: tNav("courses") },
-        { href: "/#about", label: t("coAbout") },
+        { href: "/about", label: t("coAbout") },
         { href: "/privacy", label: t("suPrivacy") },
         { href: "/terms", label: t("suTerms") },
         { href: `mailto:${CONTACT_EMAIL}`, label: t("suSupport"), external: true },
@@ -65,6 +66,7 @@ export function InstructorSiteFooter() {
             <a href={`mailto:${CONTACT_EMAIL}`} className="mt-4 inline-block text-sm font-medium text-[#b7dcff] hover:text-white">
               {CONTACT_EMAIL}
             </a>
+            <FooterSocialMarks heading={t("follow")} />
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4">
             {columns.map((column) => (

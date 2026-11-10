@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 export function SiteHeaderSearch({
@@ -16,7 +17,8 @@ export function SiteHeaderSearch({
 }) {
   const t = useTranslations("nav");
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const searchParams = useSearchParams();
+  const [q, setQ] = useState(() => searchParams.get("search") ?? "");
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();

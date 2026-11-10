@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import mimetypes
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,6 +97,21 @@ def _resolve_content_type(file: UploadFile) -> str:
     return ct
 
 
+_SAFE_PATH_PART = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
+
+
+def _safe_subfolder(value: str | None) -> str | None:
+    if not value:
+        return None
+    cleaned = value.replace("\\", "/").strip("/")
+    parts = [p for p in cleaned.split("/") if p not in ("", ".", "..")]
+    if not parts:
+        return None
+    if any(not _SAFE_PATH_PART.match(p) for p in parts):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid upload path.")
+    return "/".join(parts[:4])
+
+
 def _check_exec_signature(data: bytes) -> None:
     for sig in _EXEC_MAGIC:
         if data[:len(sig)] == sig:
@@ -111,7 +127,6 @@ def _extension_for(mime: str, filename: str | None) -> str:
         "image/png": "png",
         "image/webp": "webp",
         "image/gif": "gif",
-        "image/svg+xml": "svg",
         "video/mp4": "mp4",
         "video/webm": "webm",
         "video/quicktime": "mov",
@@ -197,12 +212,16 @@ async def upload_file(
 
     # Build relative path:  <folder>[/<subfolder>]/<uuid>.<ext>
     parts = [folder]
-    if subfolder:
-        parts.append(subfolder)
+    safe_sub = _safe_subfolder(subfolder)
+    if safe_sub:
+        parts.append(safe_sub)
     parts.append(stored_filename)
     relative_path = "/".join(parts)
 
-    dest = _upload_root() / Path(relative_path)
+    dest = (_upload_root() / Path(relative_path)).resolve()
+    root = _upload_root().resolve()
+    if not str(dest).startswith(str(root)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid upload path.")
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(data)
 

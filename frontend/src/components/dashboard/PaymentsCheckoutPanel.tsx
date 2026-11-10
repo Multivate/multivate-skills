@@ -6,10 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
-import {
-  checkoutAmountCentsForSlug,
-  checkoutDisplayPriceForSlug,
-} from "@/lib/checkout-pricing";
+import { checkoutDisplayPriceForSlug } from "@/lib/checkout-pricing";
 
 type CoursePreview = { slug: string; title: string; description: string };
 
@@ -84,8 +81,6 @@ export function PaymentsCheckoutPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           course_slug: slug,
-          amount_cents: checkoutAmountCentsForSlug(slug),
-          currency: "USD",
         }),
       });
       const data = await res.json().catch(() => null);

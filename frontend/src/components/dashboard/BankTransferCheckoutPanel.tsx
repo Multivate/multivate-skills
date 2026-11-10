@@ -69,6 +69,7 @@ export function BankTransferCheckoutPanel() {
   const [submitted, setSubmitted] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [couponBusy, setCouponBusy] = useState(false);
+  const startOnce = useRef(false);
 
   const paymentStatus = data?.payment?.status ?? "";
   const awaitingReview = paymentStatus === "awaiting_review" || submitted;
@@ -91,7 +92,13 @@ export function BankTransferCheckoutPanel() {
         });
         const body = (await res.json().catch(() => null)) as StartResponse & { detail?: string };
         if (!res.ok) {
-          setErr(typeof body?.detail === "string" ? body.detail : t("startError"));
+          const detail = typeof body?.detail === "string" ? body.detail : t("startError");
+          if (res.status === 409 && /already enrolled/i.test(detail)) {
+            removeItem(slug);
+            router.push(`/learn/${slug}`);
+            return;
+          }
+          setErr(detail);
           return;
         }
         setData(body);
@@ -128,7 +135,9 @@ export function BankTransferCheckoutPanel() {
   }
 
   useEffect(() => {
-    if (slug && user?.role === "student") void startEnrollment();
+    if (!slug || user?.role !== "student" || startOnce.current) return;
+    startOnce.current = true;
+    void startEnrollment();
   }, [slug, user?.role, startEnrollment]);
 
   async function copyReference(ref: string) {

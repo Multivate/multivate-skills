@@ -27,6 +27,7 @@ from app.models.course import Course  # noqa: F401
 from app.models.audio_phrase import AudioPhrase  # noqa: F401
 from app.models.audio_phrase_progress import AudioPhraseProgress  # noqa: F401
 from app.models.audio_module_assessment import AudioModuleAssessment  # noqa: F401
+from app.models.classroom_feed import ClassroomComment, ClassroomPost, ClassroomVoicePresence  # noqa: F401
 from app.models.course_audit_log import CourseAuditLog  # noqa: F401
 from app.models.course_section import CourseSection  # noqa: F401
 from app.models.lesson_resource import LessonResource  # noqa: F401
@@ -129,16 +130,17 @@ app.include_router(api_router)
 # ---------------------------------------------------------------------------
 # Static file serving for uploads (development only; Nginx serves in production)
 # ---------------------------------------------------------------------------
-_upload_root = (Path(__file__).resolve().parents[1] / _settings.upload_root)
-_upload_root.mkdir(parents=True, exist_ok=True)
-try:
-    app.mount(
-        _settings.public_upload_url,
-        StaticFiles(directory=str(_upload_root)),
-        name="uploads",
-    )
-except Exception as _mount_err:  # noqa: BLE001
-    logger.warning("Could not mount static upload directory: %s", _mount_err)
+if not _is_locked_down:
+    _upload_root = Path(__file__).resolve().parents[1] / _settings.upload_root
+    _upload_root.mkdir(parents=True, exist_ok=True)
+    try:
+        app.mount(
+            _settings.public_upload_url,
+            StaticFiles(directory=str(_upload_root)),
+            name="uploads",
+        )
+    except Exception as _mount_err:  # noqa: BLE001
+        logger.warning("Could not mount static upload directory: %s", _mount_err)
 
 
 @app.exception_handler(RequestValidationError)

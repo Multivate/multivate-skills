@@ -43,7 +43,7 @@ export async function HeroSection() {
                 </Link>
               </div>
             </div>
-            <div className="mt-0 lg:mt-auto lg:mb-[5.5rem]">
+            <div className="mt-8 sm:mt-9 lg:mt-auto lg:mb-[5.5rem]">
               <p className="max-w-[12rem] text-[15px] leading-snug text-[#011B33]">{t("trustLine")}</p>
               <ul className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <li>
@@ -74,7 +74,7 @@ export async function HeroSection() {
             <div className="pointer-events-none absolute inset-0 z-20">
               <div className="absolute left-1/2 top-1/2 h-full -translate-x-1/2 -translate-y-1/2 lg:left-0 lg:h-[92%] lg:translate-x-0">
                 <div className="relative h-full w-max lg:animate-map-pan">
-                  <img src="/marketing/germany-outline.svg?v=2" alt="" className="h-full w-auto max-w-none" />
+                  <img src="/marketing/germany-outline.svg?v=2" alt="Outline map of Germany" className="h-full w-auto max-w-none" />
                   <MapMissionPin />
                 </div>
               </div>

@@ -9,6 +9,7 @@ import { StudentSurface } from "@/components/dashboard/StudentPageHero";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "@/i18n/navigation";
 import type { BackendCourse } from "@/lib/backend-courses";
+import { asStudyMode, formatMoney, type StudentPortalRecord, type StudyMode } from "@/lib/student-portal";
 
 type PathStep = {
   order: number;
@@ -67,14 +68,132 @@ function Meter({ label, value, goal, unit }: { label: string; value: number; goa
   );
 }
 
+function ModeAside({
+  mode,
+  portal,
+  habits,
+}: {
+  mode: StudyMode;
+  portal: StudentPortalRecord | null;
+  habits: Habits | null;
+}) {
+  const t = useTranslations("dashboard.studentHome");
+  const tPortal = useTranslations("dashboard.studentPortal");
+  const tNav = useTranslations("dashboard.nav.student");
+
+  if (mode === "physical") {
+    return (
+      <aside className="flex flex-col justify-between rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">{t("campusDesk")}</p>
+          <p className="mt-3 font-semibold">{portal?.campus_location || t("placementPending")}</p>
+          <p className="mt-1 text-sm text-[#011B33]/60">{portal?.cohort_name || t("cohortPending")}</p>
+          <p className="mt-4 font-mono text-sm font-bold">{portal?.student_code}</p>
+          <p className="mt-4 text-sm text-[#011B33]/60">{t("timetableBody")}</p>
+          {habits ? (
+            <div className="mt-4">
+              <Meter label={t("campusDays")} value={habits.visits_this_week} goal={habits.visit_goal} unit={t("visitsUnit")} />
+            </div>
+          ) : null}
+        </div>
+        <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+          <li>
+            <Link href="/dashboard/portal" className="text-brand-accent hover:underline">
+              {tNav("portal")}
+            </Link>
+          </li>
+          <li>
+            <Link href="/dashboard/payments" className="text-[#011B33]/70 hover:text-brand-accent">
+              {tPortal("fees")}
+            </Link>
+          </li>
+        </ul>
+      </aside>
+    );
+  }
+
+  if (mode === "hybrid") {
+    return (
+      <aside className="flex flex-col justify-between rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">{t("hybridDesk")}</p>
+          <p className="mt-3 text-sm font-semibold">{portal?.campus_location || t("placementPending")}</p>
+          <p className="mt-1 text-sm text-[#011B33]/60">{portal?.cohort_name || t("cohortPending")}</p>
+          {habits ? (
+            <div className="mt-4 space-y-4">
+              <Meter label={t("campusDays")} value={habits.visits_this_week} goal={habits.visit_goal} unit={t("visitsUnit")} />
+              <Meter label={t("practiceMinutes")} value={habits.minutes_this_week} goal={habits.minutes_goal} unit={t("minutesUnit")} />
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-[#011B33]/55">{t("weekPending")}</p>
+          )}
+        </div>
+        <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+          <li>
+            <Link href="/dashboard/portal" className="text-brand-accent hover:underline">
+              {tNav("portal")}
+            </Link>
+          </li>
+          <li>
+            <Link href="/dashboard/payments" className="text-[#011B33]/70 hover:text-brand-accent">
+              {tPortal("fees")}
+            </Link>
+          </li>
+          <li>
+            <Link href="/dashboard/book-1on1" className="text-[#011B33]/70 hover:text-brand-accent">
+              {tNav("bookOneOnOne")}
+            </Link>
+          </li>
+        </ul>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="flex flex-col justify-between rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-5">
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">{t("thisWeek")}</p>
+        {habits ? (
+          <div className="mt-4 space-y-4">
+            <Meter label={t("visitsLabel")} value={habits.visits_this_week} goal={habits.visit_goal} unit={t("visitsUnit")} />
+            <Meter label={t("minutesLabel")} value={habits.minutes_this_week} goal={habits.minutes_goal} unit={t("minutesUnit")} />
+            {habits.streak_weeks > 0 ? <p className="text-sm font-semibold">{t("streak", { count: habits.streak_weeks })}</p> : null}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-[#011B33]/55">{t("weekPending")}</p>
+        )}
+      </div>
+      <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+        <li>
+          <Link href="/dashboard/portal" className="text-brand-accent hover:underline">
+            {tNav("portal")}
+          </Link>
+        </li>
+        <li>
+          <Link href="/dashboard/courses" className="text-[#011B33]/70 hover:text-brand-accent">
+            {tNav("myCourses")}
+          </Link>
+        </li>
+        <li>
+          <Link href="/dashboard/book-1on1" className="text-[#011B33]/70 hover:text-brand-accent">
+            {tNav("bookOneOnOne")}
+          </Link>
+        </li>
+      </ul>
+    </aside>
+  );
+}
+
 export function StudentDashboardHome() {
   const { user } = useAuth();
+  const t = useTranslations("dashboard.studentHome");
   const tRec = useTranslations("dashboard.recommendations");
-  const tNav = useTranslations("dashboard.nav.student");
+  const tPortal = useTranslations("dashboard.studentPortal");
   const [items, setItems] = useState<EnrolledCourse[] | null>(null);
   const [catalog, setCatalog] = useState<BackendCourse[]>([]);
   const [path, setPath] = useState<LearningPath | null>(null);
   const [habits, setHabits] = useState<Habits | null>(null);
+  const [portal, setPortal] = useState<StudentPortalRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +201,7 @@ export function StudentDashboardHome() {
     const today = localDate();
     (async () => {
       try {
-        const [coursesRes, pathRes, catalogRes, visitRes] = await Promise.all([
+        const [coursesRes, pathRes, catalogRes, visitRes, portalRes] = await Promise.all([
           fetch("/api/learning/my-courses", { credentials: "include", cache: "no-store" }),
           fetch("/api/learning/path", { credentials: "include", cache: "no-store" }),
           fetch("/api/courses", { cache: "no-store" }),
@@ -92,11 +211,13 @@ export function StudentDashboardHome() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ local_date: today }),
           }),
+          fetch("/api/learning/portal", { credentials: "include", cache: "no-store" }),
         ]);
         const coursesData = await coursesRes.json().catch(() => null);
         const pathData = await pathRes.json().catch(() => null);
         const catalogData = await catalogRes.json().catch(() => null);
         const visitData = await visitRes.json().catch(() => null);
+        const portalData = await portalRes.json().catch(() => null);
         if (cancelled) return;
         if (coursesRes.status === 401) {
           setError("Your session expired. Please sign in again.");
@@ -114,6 +235,9 @@ export function StudentDashboardHome() {
         setCatalog(catalogRes.ok && Array.isArray(catalogData) ? (catalogData as BackendCourse[]) : []);
         if (visitRes.ok && visitData && typeof visitData.visits_this_week === "number") {
           setHabits(visitData as Habits);
+        }
+        if (portalRes.ok && portalData?.student_code) {
+          setPortal(portalData as StudentPortalRecord);
         }
       } catch {
         if (!cancelled) {
@@ -133,7 +257,7 @@ export function StudentDashboardHome() {
       .map((step) => step.course)
       .filter((course) => course?.slug && !enrolled.has(course.slug));
     if (fromPath.length > 0) return fromPath.slice(0, 4);
-    return catalog.filter((course) => !enrolled.has(course.slug)).slice(0, 4);
+    return catalog.filter((course) => course?.slug && !enrolled.has(course.slug)).slice(0, 4);
   }, [catalog, items, path]);
 
   const pathSteps = useMemo(() => {
@@ -153,6 +277,7 @@ export function StudentDashboardHome() {
   const continueCourse =
     (items ?? []).find((row) => row.progress_pct > 0 && row.progress_pct < 100) ?? (items ?? [])[0] ?? null;
   const weekday = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const mode = asStudyMode(portal?.study_mode);
 
   if (items === null) {
     return (
@@ -187,15 +312,39 @@ export function StudentDashboardHome() {
         ? `${continueCourse.lesson_done} of ${continueCourse.lessons} items · ${continueCourse.progress_pct}%`
         : "";
 
+  const continueLabel =
+    mode === "physical" ? t("practice") : continueCourse && continueCourse.progress_pct > 0 ? t("continue") : t("start");
+  const continueKicker =
+    mode === "physical" ? t("practiceKicker") : continueCourse && continueCourse.progress_pct > 0 ? t("pickUp") : t("startHere");
+
+  const feeLine =
+    portal && portal.outstanding_payments > 0
+      ? tPortal("feesDue", { count: portal.outstanding_payments })
+      : portal?.payments[0]
+        ? `${formatMoney(portal.payments[0].amount_cents, portal.payments[0].currency)} · ${portal.payments[0].status}`
+        : tPortal("feesClear");
+
   return (
     <StudentSurface>
       <div className="space-y-12">
         <header>
-          <p className="text-sm text-[#011B33]/50">{weekday}</p>
+          <p className="text-sm text-[#011B33]/50">
+            {weekday} · {t(`modeBadge.${mode}`)}
+            {portal?.student_code ? ` · ${portal.student_code}` : ""}
+          </p>
           <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight text-[#011B33] sm:text-[2rem]">
             {greetingFor(firstName)}
           </h1>
         </header>
+
+        {mode !== "online" && portal?.outstanding_payments ? (
+          <p className="rounded-[5px] border border-brand-ink/10 bg-white px-4 py-3 text-sm">
+            {feeLine}{" "}
+            <Link href="/dashboard/payments" className="font-semibold text-brand-accent">
+              {tPortal("seePayments")}
+            </Link>
+          </p>
+        ) : null}
 
         {continueCourse ? (
           <section className="grid gap-6 md:grid-cols-[minmax(0,1.55fr)_minmax(15rem,0.72fr)] md:items-stretch">
@@ -205,9 +354,7 @@ export function StudentDashboardHome() {
                   <CourseThumbnail src={continueCourse.image_url} alt={continueCourse.title} sizes="280px" className="object-cover" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center p-5 sm:p-6">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">
-                    {continueCourse.progress_pct > 0 ? "Pick up where you left off" : "Start here"}
-                  </p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">{continueKicker}</p>
                   <h2 className="mt-1 text-lg font-extrabold leading-snug sm:text-xl">{continueCourse.title}</h2>
                   <p className="mt-2 text-sm text-[#011B33]/60">{weekLine}</p>
                   <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-brand-ink/10">
@@ -217,74 +364,46 @@ export function StudentDashboardHome() {
                     href={`/learn/${continueCourse.slug}`}
                     className="mt-5 inline-flex h-10 w-fit items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white"
                   >
-                    {continueCourse.progress_pct > 0 ? "Continue" : "Start course"}
+                    {continueLabel}
                   </Link>
                 </div>
               </div>
             </div>
-
-            <aside className="flex flex-col justify-between rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-5">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">This week</p>
-                {habits ? (
-                  <div className="mt-4 space-y-4">
-                    <Meter label="Days on the platform" value={habits.visits_this_week} goal={habits.visit_goal} unit="days" />
-                    <Meter label="Lesson minutes" value={habits.minutes_this_week} goal={habits.minutes_goal} unit="min" />
-                    {habits.streak_weeks > 0 ? (
-                      <p className="text-sm font-semibold">{habits.streak_weeks} week streak</p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm text-[#011B33]/55">Week stats appear after your first recorded visit.</p>
-                )}
-              </div>
-              <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
-                <li>
-                  <Link href="/dashboard/courses" className="text-brand-accent hover:underline">
-                    {tNav("myCourses")}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/dashboard/book-1on1" className="text-[#011B33]/70 hover:text-brand-accent">
-                    {tNav("bookOneOnOne")}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/dashboard/courses?tab=wishlist" className="text-[#011B33]/70 hover:text-brand-accent">
-                    {tNav("wishlist")}
-                  </Link>
-                </li>
-              </ul>
-            </aside>
-          </section>
-        ) : pathSteps[0] ? (
-          <section className="rounded-[5px] border border-brand-ink/10 bg-white p-5 sm:p-6">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">{tRec("now")}</p>
-            <h2 className="mt-1 text-lg font-extrabold sm:text-xl">{pathSteps[0].course.title}</h2>
-            <p className="mt-2 text-sm text-[#011B33]/60">{path?.summary ?? tRec("subtitle")}</p>
-            <Link
-              href={`/courses/${pathSteps[0].course.slug}`}
-              className="mt-5 inline-flex h-10 w-fit items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white"
-            >
-              {tRec("openFirst")}
-            </Link>
+            <ModeAside mode={mode} portal={portal} habits={habits} />
           </section>
         ) : (
-          <section className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-12 text-center">
-            <p className="font-semibold">{tRec("emptyEnrollTitle")}</p>
-            <p className="mt-2 text-sm text-[#011B33]/60">{path?.summary || tRec("emptyEnrollBody")}</p>
-            <Link href="/courses" className="mt-5 inline-flex h-11 items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white">
-              {tRec("browse")}
-            </Link>
+          <section className="grid gap-6 md:grid-cols-[minmax(0,1.55fr)_minmax(15rem,0.72fr)] md:items-stretch">
+            {pathSteps[0] ? (
+              <div className="rounded-[5px] border border-brand-ink/10 bg-white p-5 sm:p-6">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand-accent">{tRec("now")}</p>
+                <h2 className="mt-1 text-lg font-extrabold sm:text-xl">{pathSteps[0].course.title}</h2>
+                <p className="mt-2 text-sm text-[#011B33]/60">{path?.summary ?? tRec("subtitle")}</p>
+                <Link
+                  href={`/courses/${pathSteps[0].course.slug}`}
+                  className="mt-5 inline-flex h-10 w-fit items-center rounded-[5px] bg-brand-accent px-4 text-sm font-semibold text-white"
+                >
+                  {tRec("openFirst")}
+                </Link>
+              </div>
+            ) : (
+              <div className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-12 text-center">
+                <p className="font-semibold">{tRec("emptyEnrollTitle")}</p>
+                <p className="mt-2 text-sm text-[#011B33]/60">{path?.summary || tRec("emptyEnrollBody")}</p>
+                <Link href="/courses" className="mt-5 inline-flex h-11 items-center rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white">
+                  {tRec("browse")}
+                </Link>
+              </div>
+            )}
+            <ModeAside mode={mode} portal={portal} habits={habits} />
           </section>
         )}
 
         {items.length > 0 ? (
           <section>
             <div className="mb-3 flex items-end justify-between">
-              <h2 className="text-lg font-extrabold">Your courses</h2>
+              <h2 className="text-lg font-extrabold">{t("library")}</h2>
               <Link href="/dashboard/courses" className="text-sm font-semibold text-brand-accent hover:underline">
-                See all
+                {t("seeAll")}
               </Link>
             </div>
             <div className="divide-y divide-brand-ink/10 rounded-[5px] border border-brand-ink/10 px-3 py-1">

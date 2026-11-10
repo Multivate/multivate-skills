@@ -44,7 +44,7 @@ export default function DashboardProgressPage() {
 
   return (
     <>
-      <StudentPageHero title="Progress" subtitle="Lesson counts update when you finish videos and quizzes — nothing is estimated." />
+      <StudentPageHero title="Progress" subtitle="Lesson counts update when you finish videos and quizzes. Nothing is estimated." />
       <StudentSurface>
         {items === null ? <p className="text-sm text-[#6a6f73]">Loading progress…</p> : null}
         {error ? <p className="text-sm font-medium text-red-700">{error}</p> : null}

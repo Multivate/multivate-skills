@@ -9,7 +9,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import type { BackendCourse } from "@/lib/backend-courses";
 import type { CartLine } from "@/lib/cart-types";
-import { formatCoursePrice } from "@/lib/course-price";
+import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
+import { formatCoursePrice, saleIsLive, salePriceCents } from "@/lib/course-price";
 
 type Props = {
   course: BackendCourse;
@@ -24,8 +25,13 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
   const { hasSlug, toggle } = useWishlist();
   const wished = hasSlug(course.slug);
 
+  const listCents = course.price_cents ?? 0;
+  const liveSale = saleIsLive(course.discount_percent, course.discount_expires_at);
+  const saleCents = liveSale
+    ? (course.sale_price_cents ?? salePriceCents(listCents, course.discount_percent, course.discount_expires_at))
+    : null;
   const priceLabel = formatCoursePrice(
-    course.price_cents ?? 0,
+    saleCents ?? listCents,
     course.currency ?? "NGN",
     course.is_free ?? false,
   );
@@ -41,7 +47,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
   const shell = layout === "scroll" ? "w-[18.5rem] shrink-0 snap-start" : "h-full w-full min-w-0";
 
   return (
-    <article className={`flex h-full flex-col rounded-2xl border border-[#e9eaf2] bg-white p-4 ${shell}`}>
+    <article className={`flex h-full flex-col rounded-2xl border border-[#e9eaf2] bg-white p-4 dark:border-white/10 dark:bg-[#10192f] ${shell}`}>
       <Link href={`/courses/${course.slug}`} className="flex flex-col gap-4">
         <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-neutral-100">
           <CourseThumbnail
@@ -52,7 +58,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <h3 className="line-clamp-2 min-h-[2.6rem] text-[17px] font-medium leading-[1.2] text-[#011B33]">
+          <h3 className="line-clamp-2 min-h-[2.6rem] text-[17px] font-medium leading-[1.2] text-[#011B33] dark:text-[#eef4ff]">
             {course.title}
           </h3>
           {course.instructor_name ? (
@@ -89,25 +95,36 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
           )}
         </ul>
       </Link>
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <p className="text-base font-medium leading-none text-[#011B33]">{priceLabel}</p>
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <CourseSalePrice
+          priceCents={listCents}
+          currency={course.currency ?? "NGN"}
+          isFree={course.is_free ?? false}
+          discountPercent={course.discount_percent}
+          discountExpiresAt={course.discount_expires_at}
+          salePriceCentsOverride={course.sale_price_cents}
+        />
         <div className="flex items-center gap-2">
           {user?.role === "student" ? (
             <button
               type="button"
               aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
               onClick={() => void toggle(course.slug)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d1d7dc] text-[#1c1d1f] hover:border-[#1457D0] hover:text-[#1457D0]"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                wished
+                  ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                  : "border-[#d1d7dc] text-[#1c1d1f] hover:border-[#1457D0] hover:text-[#1457D0] dark:border-white/20 dark:text-[#eef4ff] dark:hover:border-brand-accent dark:hover:text-brand-accent"
+              }`}
             >
-              <Heart className="h-4 w-4" fill={wished ? "currentColor" : "none"} />
+              <Heart className="h-4 w-4 stroke-current" fill={wished ? "currentColor" : "none"} />
             </button>
           ) : (
             <Link
               href={`/login?from=${encodeURIComponent(`/courses/${course.slug}`)}`}
               aria-label="Sign in to save this course"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d1d7dc] text-[#1c1d1f] hover:text-[#1457D0]"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d1d7dc] text-[#1c1d1f] hover:text-[#1457D0] dark:border-white/20 dark:text-[#eef4ff] dark:hover:text-brand-accent"
             >
-              <Heart className="h-4 w-4" />
+              <Heart className="h-4 w-4 stroke-current" />
             </Link>
           )}
           <AddToCartButton item={cartLine} variant="inline" addLabel={tCart("add")} removeLabel={tCart("remove")} />

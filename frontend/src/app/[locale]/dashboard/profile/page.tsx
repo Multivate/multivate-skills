@@ -61,7 +61,7 @@ export default function PublicProfileEditorPage() {
           <p className="text-sm text-[#011B33]/50">Account</p>
           <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight">Public profile</h1>
           <p className="mt-2 text-sm text-[#011B33]/60">
-            Optional. Off by default. When on, other people can see this page — not your email or payments.
+            Optional. Off by default. When on, other people can see this page, not your email or payments.
           </p>
         </header>
 

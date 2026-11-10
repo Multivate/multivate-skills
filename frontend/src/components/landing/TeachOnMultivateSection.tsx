@@ -29,7 +29,7 @@ export async function TeachOnMultivateSection() {
             {t("ctaInstructor")}
           </Link>
           <Link
-            href="/instructor"
+            href="/login?from=/instructor/studio"
             className="inline-flex h-[50px] items-center justify-center rounded-[5px] border border-[#011B33]/20 bg-white px-8 text-[16px] font-medium text-[#011B33] hover:border-brand-accent hover:text-brand-accent"
           >
             {t("ctaStudio")}

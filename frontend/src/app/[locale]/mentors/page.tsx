@@ -27,7 +27,7 @@ export default async function MentorsPage() {
   return (
     <>
       <SiteHeader />
-      <main className="bg-white">
+      <main id="main-content" className="bg-white">
         <section className="border-b border-brand-ink/10 bg-brand-muted py-12 sm:py-16">
           <div className="container-page max-w-3xl">
             <h1 className="text-3xl font-semibold tracking-[-0.02em] text-brand-ink sm:text-4xl">

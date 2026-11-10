@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, BookOpen, GraduationCap, UserRound } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 type NotificationRow = {
   id: string;
@@ -15,6 +16,31 @@ type NotificationRow = {
   created_at: string;
 };
 
+function timeAgo(iso: string) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms) || ms < 0) return "";
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "Now";
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function KindIcon({ kind }: { kind: string }) {
+  const Icon: ComponentType<{ className?: string; strokeWidth?: number }> =
+    kind.includes("enroll") || kind.includes("course")
+      ? BookOpen
+      : kind.includes("mentor") || kind.includes("signup")
+        ? UserRound
+        : kind.includes("welcome")
+          ? GraduationCap
+          : Bell;
+  return <Icon className="h-4 w-4" strokeWidth={2} />;
+}
+
 export function NotificationBell({ label, buttonClassName }: { label: string; buttonClassName?: string }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -23,7 +49,9 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
   const [loading, setLoading] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const lastLoadedAt = useRef(0);
+  useBodyScrollLock(open, scrollRef);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
@@ -75,12 +103,9 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
     }
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
     };
   }, [open]);
 
@@ -103,73 +128,100 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
     <>
       <button
         type="button"
-        className="fixed inset-0 z-[70] bg-[#011B33]/30"
-        aria-label="Close notifications"
+        className="fixed inset-0 z-[70] bg-[#10244F]/25"
+        aria-label="Close"
         onClick={() => setOpen(false)}
       />
       <div
         ref={panelRef}
-        className="fixed inset-x-3 bottom-3 top-[4.5rem] z-[80] flex flex-col overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:inset-x-auto sm:bottom-auto sm:right-3 sm:top-[4.5rem] sm:h-auto sm:max-h-[min(32rem,calc(100dvh-5.5rem))] sm:w-[min(22rem,calc(100vw-1.5rem))]"
+        className="desk-overlay fixed inset-x-3 top-[4.5rem] z-[80] flex max-h-[min(32rem,calc(100dvh-5.5rem))] flex-col overflow-hidden rounded-xl border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_16px_40px_rgba(16,36,79,0.18)] dark:border-white/10 dark:bg-[#0d1528] dark:text-[#eef4ff] sm:inset-x-auto sm:right-3 sm:w-[22.5rem]"
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
-          <p className="text-sm font-semibold">Notifications</p>
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-2 pt-3.5">
+          <div className="flex items-center gap-2">
+            <p className="text-[15px] font-semibold tracking-tight">Notifications</p>
+            {unread > 0 ? (
+              <span className="rounded-full bg-brand-accent px-1.5 py-0.5 text-[10px] font-bold text-white">{unread}</span>
+            ) : null}
+          </div>
           {unread > 0 ? (
-            <button
-              type="button"
-              onClick={() => void markAllRead()}
-              className="shrink-0 text-xs font-semibold text-brand-accent hover:underline"
-            >
-              Mark all read
+            <button type="button" onClick={() => void markAllRead()} className="text-xs font-semibold text-brand-accent">
+              Mark all
             </button>
           ) : null}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2 [-webkit-overflow-scrolling:touch]">
           {loading && items.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">Loading…</p>
+            <p className="px-3 py-8 text-center text-sm text-[#011B33]/45 dark:text-[#eef4ff]/45">Loading</p>
           ) : items.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-[#011B33]/55 dark:text-[#eef4ff]/55">You are all caught up.</p>
+            <p className="px-3 py-8 text-center text-sm text-[#011B33]/45 dark:text-[#eef4ff]/45">No notifications</p>
           ) : (
-            items.map((n) => {
-              const inner = (
-                <div
-                  className={`border-b border-brand-ink/10 px-4 py-3 transition hover:bg-[#f6f8fb] dark:border-white/10 dark:hover:bg-white/5 ${
-                    n.read_at ? "opacity-75" : "bg-brand-accent/5"
-                  }`}
-                >
-                  <p className="break-words text-sm font-bold">{n.title}</p>
-                  <p className="mt-1 break-words text-xs leading-relaxed text-[#011B33]/60 dark:text-[#eef4ff]/60">{n.body}</p>
-                  <p className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#011B33]/40 dark:text-[#eef4ff]/40">
-                    {new Date(n.created_at).toLocaleString()}
-                  </p>
-                </div>
-              );
-              if (n.link_href) {
-                return (
-                  <Link
-                    key={n.id}
-                    href={n.link_href}
-                    onClick={() => {
-                      if (!n.read_at) void markRead(n.id);
-                      setOpen(false);
-                    }}
+            <ul className="space-y-1">
+              {items.map((n) => {
+                const unreadItem = !n.read_at;
+                const body = n.body.trim() && n.body.trim() !== n.title.trim() ? n.body.trim() : "";
+                const inner = (
+                  <div
+                    className={`flex gap-3 rounded-lg px-3 py-2.5 text-left transition ${
+                      unreadItem
+                        ? "bg-[#f4f7fd] dark:bg-white/[0.08]"
+                        : "hover:bg-[#f6f8fb] dark:hover:bg-white/5"
+                    }`}
                   >
-                    {inner}
-                  </Link>
+                    <span
+                      className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                        unreadItem ? "bg-brand-accent text-white" : "bg-brand-ink/8 text-[#011B33]/55 dark:bg-white/10 dark:text-[#eef4ff]/60"
+                      }`}
+                    >
+                      <KindIcon kind={n.kind} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className={`text-sm leading-snug ${unreadItem ? "font-semibold" : "font-medium text-[#011B33]/80 dark:text-[#eef4ff]/80"}`}>
+                          {n.title}
+                        </span>
+                        <span className="shrink-0 pt-0.5 text-[11px] tabular-nums text-[#011B33]/40 dark:text-[#eef4ff]/40">
+                          {timeAgo(n.created_at)}
+                        </span>
+                      </span>
+                      {body ? (
+                        <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-[#011B33]/55 dark:text-[#eef4ff]/50">
+                          {body}
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
                 );
-              }
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  className="block w-full text-left"
-                  onClick={() => {
-                    if (!n.read_at) void markRead(n.id);
-                  }}
-                >
-                  {inner}
-                </button>
-              );
-            })
+                if (n.link_href) {
+                  return (
+                    <li key={n.id}>
+                      <Link
+                        href={n.link_href}
+                        className="block"
+                        onClick={() => {
+                          if (unreadItem) void markRead(n.id);
+                          setOpen(false);
+                        }}
+                      >
+                        {inner}
+                      </Link>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={n.id}>
+                    <button
+                      type="button"
+                      className="block w-full"
+                      onClick={() => {
+                        if (unreadItem) void markRead(n.id);
+                      }}
+                    >
+                      {inner}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </div>
       </div>
@@ -193,9 +245,7 @@ export function NotificationBell({ label, buttonClassName }: { label: string; bu
       >
         <Bell className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
         {unread > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-            {unread > 9 ? "9+" : unread}
-          </span>
+          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0d1528]" />
         ) : null}
       </button>
       {mounted && panel ? createPortal(panel, document.body) : null}

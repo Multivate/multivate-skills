@@ -17,6 +17,9 @@ export type BackendCourse = {
   price_cents?: number;
   currency?: string;
   is_free?: boolean;
+  discount_percent?: number;
+  discount_expires_at?: string | null;
+  sale_price_cents?: number | null;
   status?: string;
   instructor_name?: string | null;
   average_rating?: number | null;

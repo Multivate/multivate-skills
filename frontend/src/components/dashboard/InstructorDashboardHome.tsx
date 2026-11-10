@@ -103,7 +103,7 @@ export function InstructorDashboardHome() {
             <p className="mt-2 max-w-xl text-sm text-[#011B33]/60">
               {totals.total_courses === 0
                 ? "Create a course, then add lessons in Studio."
-                : "Studio, students, and completed payments — live from your account."}
+                : "Studio, students, and completed payments, live from your account."}
             </p>
           </div>
           <Link

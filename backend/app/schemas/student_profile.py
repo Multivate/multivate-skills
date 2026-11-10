@@ -20,6 +20,9 @@ class StudentLearningProfileOut(BaseModel):
     goal_code: str | None = None
     german_level: str | None = None
     instruction_locale: str | None = None
+    study_mode: str | None = None
+    campus_location: str | None = None
+    cohort_name: str | None = None
     updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
@@ -43,6 +46,9 @@ class StudentLearningProfileAdminRow(BaseModel):
     goal_code: str | None = None
     german_level: str | None = None
     instruction_locale: str | None = None
+    study_mode: str | None = None
+    campus_location: str | None = None
+    cohort_name: str | None = None
     updated_at: datetime
 
 
@@ -60,6 +66,17 @@ class StudentLearningProfileRegistration(BaseModel):
     goal_code: str | None = Field(None, max_length=32)
     german_level: str | None = Field(None, max_length=16)
     instruction_locale: str | None = Field(None, max_length=8)
+    study_mode: str | None = Field(None, max_length=16)
+    campus_location: str | None = Field(None, max_length=255)
+    cohort_name: str | None = Field(None, max_length=128)
+
+
+class AdminStudentPlacementIn(BaseModel):
+    """Admin-only: enrolment track, campus, and cohort."""
+
+    study_mode: str | None = Field(None, max_length=16)
+    campus_location: str | None = Field(None, max_length=255)
+    cohort_name: str | None = Field(None, max_length=128)
 
 
 class StudentLearningProfileUpsert(BaseModel):
@@ -74,3 +91,6 @@ class StudentLearningProfileUpsert(BaseModel):
     goal_code: str | None = Field(None, max_length=32)
     german_level: str | None = Field(None, max_length=16)
     instruction_locale: str | None = Field(None, max_length=8)
+    study_mode: str | None = Field(None, max_length=16)
+    campus_location: str | None = Field(None, max_length=255)
+    cohort_name: str | None = Field(None, max_length=128)

@@ -9,7 +9,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { fetchBackendCatalog } from "@/lib/backend-courses";
 import { fetchPublicMentors } from "@/lib/backend-mentors";
 import { fetchBackendPublicReviews } from "@/lib/backend-reviews";
-import { SITE_EMAIL, SITE_LEGAL_NAME, SITE_NAME } from "@/lib/seo";
+import { encodedAssetPath, SITE_EMAIL, SITE_LEGAL_NAME, SITE_NAME } from "@/lib/seo";
 import { absoluteUrl, getSiteUrl } from "@/lib/site-url";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -36,7 +36,7 @@ export default async function HomePage({ params }: Props) {
               legalName: SITE_LEGAL_NAME,
               url: site,
               email: SITE_EMAIL,
-              logo: `${site}/MULTIVATE MAIN LOGO.png`,
+              logo: `${site}${encodedAssetPath("/MULTIVATE MAIN LOGO.png")}`,
             },
             {
               "@type": "WebSite",
@@ -55,7 +55,7 @@ export default async function HomePage({ params }: Props) {
         }}
       />
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <HeroSection />
         <TopCoursesSection initialCourses={courses} />
         <StorySections reviews={reviews} />

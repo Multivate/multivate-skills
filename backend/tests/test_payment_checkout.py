@@ -1,7 +1,14 @@
-"""Checkout records payment and enrollment for students only."""
+"""Checkout never trusts a client-sent amount. Server prices the course."""
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from app.core.database import SessionLocal
+from app.models.course import Course
+from app.models.course_status import CourseStatus
 from tests.registration_utils import register_instructor_complete, register_student_complete
 
 PROFILE = {
@@ -41,37 +48,15 @@ def _instructor(client, email: str) -> dict:
     return register_instructor_complete(client, body)
 
 
-def test_checkout_forbidden_for_instructor(client) -> None:
-    ins = _instructor(client, "ins-pay-checkout@example.com")
-    tok = ins["access_token"]
-    slug = "pay-checkout-ins"
-    cr = client.post(
-        "/api/v1/courses",
-        json={
-            "slug": slug,
-            "title": "Ins course pay",
-            "description": "d" * 20,
-            "image_url": "https://example.com/x.png",
-            "lessons_count": 1,
-        },
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    assert cr.status_code == 201, cr.text
-
-    r = client.post(
-        "/api/v1/payments/checkout",
-        json={"course_slug": slug, "amount_cents": 100, "currency": "USD"},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    assert r.status_code == 403, r.text
-
-
-def test_checkout_enrolls_student(client) -> None:
-    ins = _instructor(client, "ins-pay-own@example.com")
-    st = _student(client, "stu-pay-checkout@example.com")
-    tok_ins = ins["access_token"]
-    tok_st = st["access_token"]
-    slug = "pay-checkout-stu"
+def _create_course(
+    client,
+    token: str,
+    slug: str,
+    *,
+    price_cents: int = 990000,
+    is_free: bool = False,
+    discount_percent: int = 0,
+) -> None:
     cr = client.post(
         "/api/v1/courses",
         json={
@@ -81,23 +66,79 @@ def test_checkout_enrolls_student(client) -> None:
             "image_url": "https://example.com/x.png",
             "lessons_count": 1,
         },
-        headers={"Authorization": f"Bearer {tok_ins}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert cr.status_code == 201, cr.text
+    db = SessionLocal()
+    try:
+        course = db.execute(select(Course).where(Course.slug == slug)).scalar_one()
+        course.status = CourseStatus.PUBLISHED
+        course.price_cents = price_cents
+        course.is_free = is_free
+        course.discount_percent = discount_percent
+        course.discount_expires_at = (
+            datetime.now(timezone.utc) + timedelta(days=2) if discount_percent > 0 else None
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_checkout_forbidden_for_instructor(client) -> None:
+    ins = _instructor(client, "ins-pay-checkout@example.com")
+    tok = ins["access_token"]
+    slug = "pay-checkout-ins"
+    _create_course(client, tok, slug)
 
     r = client.post(
         "/api/v1/payments/checkout",
-        json={"course_slug": slug, "amount_cents": 2500, "currency": "USD"},
-        headers={"Authorization": f"Bearer {tok_st}"},
+        json={"course_slug": slug, "amount_cents": 100, "currency": "USD"},
+        headers={"Authorization": f"Bearer {tok}"},
+    )
+    assert r.status_code == 403, r.text
+
+
+def test_checkout_ignores_client_amount(client) -> None:
+    ins = _instructor(client, "ins-pay-own@example.com")
+    st = _student(client, "stu-pay-checkout@example.com")
+    slug = "pay-checkout-stu"
+    _create_course(client, ins["access_token"], slug)
+
+    r = client.post(
+        "/api/v1/payments/checkout",
+        json={"course_slug": slug, "amount_cents": 1, "currency": "USD"},
+        headers={"Authorization": f"Bearer {st['access_token']}"},
     )
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["status"] == "completed"
-    assert body["amount_cents"] == 2500
+    assert body["enrollment_status"] == "pending_payment"
+    assert body["payment"]["amount_cents"] == 990000
+    assert body["payment"]["status"] in ("pending", "awaiting_review")
+    assert body["payment"]["amount_cents"] != 1
 
-    er = client.post(
-        "/api/v1/enrollments",
-        json={"course_slug": slug},
-        headers={"Authorization": f"Bearer {tok_st}"},
+
+def test_hundred_percent_discount_enrolls_without_paying(client) -> None:
+    ins = _instructor(client, "ins-pay-free@example.com")
+    st = _student(client, "stu-pay-free@example.com")
+    slug = "pay-checkout-100off"
+    _create_course(client, ins["access_token"], slug, discount_percent=100)
+
+    r = client.post(
+        "/api/v1/payments/checkout",
+        json={"course_slug": slug, "amount_cents": 990000, "currency": "NGN"},
+        headers={"Authorization": f"Bearer {st['access_token']}"},
     )
-    assert er.status_code == 409, er.text
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["enrollment_status"] == "enrolled"
+    assert body["payment"] is None or body["payment"]["amount_cents"] == 0
+
+
+def test_create_payment_rejects_client_priced_invoice(client) -> None:
+    st = _student(client, "stu-pay-mint@example.com")
+    r = client.post(
+        "/api/v1/payments",
+        json={"course_slug": "anything", "amount_cents": 1, "currency": "NGN"},
+        headers={"Authorization": f"Bearer {st['access_token']}"},
+    )
+    assert r.status_code == 410, r.text

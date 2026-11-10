@@ -17,8 +17,10 @@ def enroll_by_slug(db: Session, user: User, course_slug: str) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only student accounts can enroll in courses as learners.",
         )
+    from app.services.course_pricing import payable_cents
+
     course = course_service.get_course_or_404(db, course_slug)
-    if not course.is_free and course.price_cents > 0:
+    if payable_cents(course) > 0:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail="This course requires payment. Use enrollment start with bank transfer.",

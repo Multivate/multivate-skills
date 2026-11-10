@@ -70,6 +70,15 @@ def refresh_remita_payment(
     return bank_transfer_service.refresh_remita_payment(db, user, payment_reference)
 
 
+@router.post("/checkout", response_model=EnrollmentStartOut, status_code=status.HTTP_201_CREATED)
+def checkout(
+    payload: PaymentCreate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> EnrollmentStartOut:
+    return payment_service.checkout_and_enroll(db, user, payload)
+
+
 @router.post("", response_model=PaymentOut, status_code=status.HTTP_201_CREATED)
 def create_payment(
     payload: PaymentCreate,

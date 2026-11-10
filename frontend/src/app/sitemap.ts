@@ -4,7 +4,7 @@ import { fetchBackendCatalog } from "@/lib/backend-courses";
 import { fetchPublicMentors } from "@/lib/backend-mentors";
 import { absoluteUrl, getSiteUrl, localizedPath } from "@/lib/site-url";
 
-const STATIC_PATHS = ["/", "/courses", "/mentors", "/privacy", "/terms"] as const;
+const STATIC_PATHS = ["/", "/courses", "/mentors", "/about", "/contact", "/privacy", "/terms"] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [courses, mentors] = await Promise.all([fetchBackendCatalog({ revalidate: 3600 }), fetchPublicMentors()]);

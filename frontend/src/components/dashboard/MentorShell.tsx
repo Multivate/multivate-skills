@@ -2,7 +2,8 @@
 
 import { Menu, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import {
   DeskLocaleChips,
   DeskMobileSection,
@@ -28,6 +29,8 @@ export function MentorShell({ children }: { children: ReactNode }) {
   const tDash = useTranslations("dashboard");
   const tNav = useTranslations("nav");
   const [open, setOpen] = useState(false);
+  const menuScrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, menuScrollRef);
 
   useEffect(() => {
     setOpen(false);
@@ -42,7 +45,7 @@ export function MentorShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="desk-root flex min-h-screen flex-col bg-white text-[#011B33] dark:bg-[#070e22] dark:text-[#eef4ff]">
-      <header className="sticky top-0 z-50 border-b border-brand-ink/10 bg-brand-sky dark:border-white/10 dark:bg-[#0c1833]">
+      <header className="desk-topbar sticky top-0 z-50 isolate border-b border-brand-ink/10 dark:border-white/10">
         <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-4 px-4 sm:px-6">
           <Link href="/dashboard" className="shrink-0" aria-label="Multivate home">
             <LogoMark className="max-w-[8.5rem] sm:max-w-[10rem]" />
@@ -133,7 +136,12 @@ export function MentorShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         {open ? (
-          <div className="border-t border-brand-ink/10 px-4 py-3 lg:hidden">
+          <>
+          <div className="fixed inset-0 top-[4.25rem] z-40 bg-[#10244F]/20 lg:hidden" onClick={() => setOpen(false)} />
+          <div
+            ref={menuScrollRef}
+            className="desk-sheet fixed inset-x-0 bottom-0 top-[4.25rem] z-50 overflow-y-auto overscroll-contain border-t border-brand-ink/10 px-4 py-3 pb-[env(safe-area-inset-bottom)] dark:border-white/10 lg:hidden"
+          >
             <DeskMobileSection title="Workspace">
               <Link href="/dashboard" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>
                 {tDash("nav.mentor.home")}
@@ -164,6 +172,7 @@ export function MentorShell({ children }: { children: ReactNode }) {
               </Link>
             </DeskMobileSection>
           </div>
+          </>
         ) : null}
       </header>
       <main className="w-full flex-1">{children}</main>

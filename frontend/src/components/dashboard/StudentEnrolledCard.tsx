@@ -35,7 +35,7 @@ export function StudentEnrolledCard({
     return (
       <Link
         href={`/learn/${course.slug}`}
-        className="group grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-4 rounded-[5px] py-2 hover:bg-[#f6f8fb]"
+        className="group grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-4 rounded-[5px] py-2 hover:bg-[#f6f8fb] dark:hover:bg-white/5"
       >
         <div className="relative aspect-video overflow-hidden rounded-[4px] bg-[#f7f9fa]">
           <CourseThumbnail src={course.image_url} alt={course.image_alt || course.title} sizes="96px" className="object-cover" />

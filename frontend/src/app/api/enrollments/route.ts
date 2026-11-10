@@ -42,6 +42,13 @@ export async function POST(req: Request) {
       return true;
     };
 
+    const record = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const courseSlug = typeof record.course_slug === "string" ? record.course_slug.trim() : "";
+    if (!courseSlug) {
+      return NextResponse.json({ detail: "course_slug is required" }, { status: 400 });
+    }
+    const enrollPayload = JSON.stringify({ course_slug: courseSlug });
+
     const callEnroll = () =>
       fetch(`${base}/api/v1/enrollments`, {
         method: "POST",
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
           Authorization: `Bearer ${access!}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: enrollPayload,
       });
 
     if (!access) {

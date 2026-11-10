@@ -7,10 +7,11 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CourseEnrollCta } from "@/components/courses/CourseEnrollCta";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { fetchBackendCourse, fetchBackendLessons } from "@/lib/backend-courses";
-import { formatCourseDuration, formatCoursePrice } from "@/lib/course-price";
+import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
+import { formatCourseDuration, saleIsLive, salePriceCents } from "@/lib/course-price";
 import { resolveCourseImageUrl } from "@/lib/course-image";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { publicPageMetadata, SITE_NAME, truncateMeta } from "@/lib/seo";
+import { privateRobotsMetadata, publicPageMetadata, SITE_NAME, truncateMeta } from "@/lib/seo";
 import { absoluteAssetUrl, absoluteUrl, getSiteUrl } from "@/lib/site-url";
 import { Link } from "@/i18n/navigation";
 
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params;
   const course = await fetchBackendCourse(slug);
   if (!course) {
-    return { title: "Course" };
+    return privateRobotsMetadata("Course not found");
   }
   const image = absoluteAssetUrl(resolveCourseImageUrl(course.image_url));
   const description = truncateMeta(course.subtitle || course.description || course.title);
@@ -69,17 +70,17 @@ export default async function CourseDetailPage({ params }: Props) {
   const lessons = await fetchBackendLessons(slug);
   const sortedLessons = [...lessons].sort((a, b) => a.position - b.position);
   const bullets = learningBullets(course.learning_objectives, course.description);
-  const priceLabel = formatCoursePrice(
-    course.price_cents ?? 0,
-    course.currency ?? "NGN",
-    course.is_free ?? false,
-  );
+  const listCents = course.price_cents ?? 0;
+  const liveSale = saleIsLive(course.discount_percent, course.discount_expires_at);
+  const saleCents = liveSale
+    ? (course.sale_price_cents ?? salePriceCents(listCents, course.discount_percent, course.discount_expires_at))
+    : null;
   const durationLabel = formatCourseDuration(course.duration_minutes ?? 0);
   const levelLabel = course.level ? course.level.charAt(0).toUpperCase() + course.level.slice(1) : "All levels";
 
   const courseUrl = absoluteUrl(locale, `/courses/${course.slug}`);
   const image = absoluteAssetUrl(resolveCourseImageUrl(course.image_url));
-  const price = ((course.price_cents ?? 0) / 100).toFixed(2);
+  const price = ((saleCents ?? listCents) / 100).toFixed(2);
   const courseLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Course",
@@ -131,7 +132,7 @@ export default async function CourseDetailPage({ params }: Props) {
         ]}
       />
       <SiteHeader />
-      <main className="bg-white py-10 sm:py-14">
+      <main id="main-content" className="bg-white py-10 sm:py-14">
         <div className="container-page">
           <nav className="text-sm text-neutral-500" aria-label="Breadcrumb">
             <Link
@@ -221,7 +222,15 @@ export default async function CourseDetailPage({ params }: Props) {
                 />
               </div>
               <div className="space-y-4 p-6">
-                <p className="text-2xl font-semibold tracking-[-0.02em] text-brand-navy">{priceLabel}</p>
+                <CourseSalePrice
+                  priceCents={listCents}
+                  currency={course.currency ?? "NGN"}
+                  isFree={course.is_free ?? false}
+                  discountPercent={course.discount_percent}
+                  discountExpiresAt={course.discount_expires_at}
+                  salePriceCentsOverride={course.sale_price_cents}
+                  size="detail"
+                />
                 <CourseEnrollCta courseSlug={course.slug} />
                 <div className="space-y-2 border-t border-brand-ink/10 pt-4">
                   <Link

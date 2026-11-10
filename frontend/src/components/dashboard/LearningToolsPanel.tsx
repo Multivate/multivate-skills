@@ -41,7 +41,7 @@ export function LearningToolsPanel() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Link href="/dashboard/progress" className="rounded border border-[#d1d7dc] p-5 hover:border-[#1457D0]">
           <p className="text-xs font-bold uppercase tracking-wide text-[#6a6f73]">Progress</p>
-          <p className="mt-2 text-2xl font-bold">{items === null ? "—" : `${inProgress} in progress`}</p>
+          <p className="mt-2 text-2xl font-bold">{items === null ? "-" : `${inProgress} in progress`}</p>
           <p className="mt-1 text-sm text-[#6a6f73]">{done} completed</p>
         </Link>
         <Link href="/dashboard/certificates" className="rounded border border-[#d1d7dc] p-5 hover:border-[#1457D0]">

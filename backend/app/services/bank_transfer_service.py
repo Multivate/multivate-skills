@@ -123,9 +123,11 @@ def _new_payment_reference(db: Session) -> str:
 
 
 def _course_price(course: Course) -> tuple[int, str]:
-    if course.is_free or course.price_cents <= 0:
+    from app.services.course_pricing import list_price_cents, payable_cents
+
+    if course.is_free or list_price_cents(course) <= 0:
         return 0, get_settings().bank_transfer_currency.upper()
-    return course.price_cents, get_settings().bank_transfer_currency.upper()
+    return payable_cents(course), get_settings().bank_transfer_currency.upper()
 
 
 def _instructions_for(payment: Payment, course: Course, student_code: str) -> BankTransferInstructions:
@@ -283,14 +285,17 @@ def _apply_coupon_pricing(
     coupon_code: str | None,
 ) -> tuple[int, str, int, int, DiscountCode | None, str | None]:
     """Returns amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code."""
+    from app.services.course_pricing import list_price_cents
+
     amount_cents, currency = _course_price(course)
-    original_cents = amount_cents
-    discount_cents = 0
+    original_cents = list_price_cents(course)
+    discount_cents = max(0, original_cents - amount_cents)
     discount_row = None
     normalized_code: str | None = None
     if coupon_code and amount_cents > 0:
         discount_row = discount_service.get_discount_for_checkout(db, coupon_code, user, course)
-        amount_cents, discount_cents = discount_service.apply_discount_amount(discount_row, original_cents)
+        amount_cents, _coupon_off = discount_service.apply_discount_amount(discount_row, amount_cents)
+        discount_cents = max(0, original_cents - amount_cents)
         normalized_code = discount_row.code
         _logger.info(
             "Coupon applied code=%s course=%s original=%s discount=%s final=%s",
@@ -317,53 +322,76 @@ def _attach_discount_to_payment(
     payment.discount_code_id = discount_row.id if discount_row else None
 
 
-def _get_or_create_pending_enrollment(db: Session, user_id: UUID, course_id: UUID) -> Enrollment:
-    """Reuse the unique (user, course) enrollment row; safe under concurrent checkout starts."""
-    existing = db.execute(
+def _is_unique_violation(exc: BaseException) -> bool:
+    if isinstance(exc, IntegrityError):
+        return True
+    nested = getattr(exc, "exceptions", None)
+    if nested:
+        return any(_is_unique_violation(item) for item in nested)
+    orig = getattr(exc, "orig", None)
+    name = type(orig).__name__ if orig is not None else ""
+    return "UniqueViolation" in name or "IntegrityError" in type(exc).__name__
+
+
+def _load_enrollment(db: Session, user_id: UUID, course_id: UUID) -> Enrollment | None:
+    return db.execute(
         select(Enrollment).where(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
     ).scalar_one_or_none()
-    if existing:
-        if existing.status == EnrollmentStatus.ENROLLED:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled in this course")
-        existing.status = EnrollmentStatus.PENDING_PAYMENT
-        db.add(existing)
-        db.flush()
-        return existing
 
-    enrollment = Enrollment(
-        user_id=user_id,
-        course_id=course_id,
-        status=EnrollmentStatus.PENDING_PAYMENT,
-        lesson_done=0,
-        progress_pct=0,
-    )
-    db.add(enrollment)
+
+def _reuse_enrollment(existing: Enrollment) -> Enrollment:
+    if existing.status == EnrollmentStatus.ENROLLED:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled in this course")
+    existing.status = EnrollmentStatus.PENDING_PAYMENT
+    return existing
+
+
+def _get_or_create_pending_enrollment(db: Session, user_id: UUID, course_id: UUID) -> Enrollment:
+    """Reuse the unique (user, course) enrollment row; safe under concurrent checkout starts."""
+    existing = _load_enrollment(db, user_id, course_id)
+    if existing:
+        row = _reuse_enrollment(existing)
+        db.add(row)
+        db.flush()
+        return row
+
     try:
         with db.begin_nested():
+            enrollment = Enrollment(
+                user_id=user_id,
+                course_id=course_id,
+                status=EnrollmentStatus.PENDING_PAYMENT,
+                lesson_done=0,
+                progress_pct=0,
+            )
+            db.add(enrollment)
             db.flush()
-    except IntegrityError:
-        existing = db.execute(
-            select(Enrollment).where(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
-        ).scalar_one_or_none()
+            return enrollment
+    except Exception as exc:
+        if not _is_unique_violation(exc):
+            raise
+        _logger.info("Enrollment insert raced for user_id=%s course_id=%s", user_id, course_id)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        existing = _load_enrollment(db, user_id, course_id)
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Could not start enrollment. Please refresh and try again.",
             ) from None
-        if existing.status == EnrollmentStatus.ENROLLED:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already enrolled in this course")
-        existing.status = EnrollmentStatus.PENDING_PAYMENT
-        db.add(existing)
+        row = _reuse_enrollment(existing)
+        db.add(row)
         db.flush()
-        return existing
-    return enrollment
+        return row
 
 
 def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str | None = None) -> EnrollmentStartOut:
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only students can enroll in courses")
 
-    course = course_service.get_course_or_404(db, course_slug)
+    course = course_service.get_course_or_404(db, course_slug, user=user)
     amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code = _apply_coupon_pricing(
         db, user, course, coupon_code
     )
@@ -508,6 +536,7 @@ def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str
         )
 
     enrollment = _get_or_create_pending_enrollment(db, user.id, course.id)
+    student_code = ensure_student_code(db, user)
 
     payment_ref = _new_payment_reference(db)
     use_remita = remita_service.remita_configured()
@@ -1155,6 +1184,23 @@ def handle_remita_callback(db: Session, raw_body: str) -> str:
             )
             all_ok = False
             continue
+        remita_cents = remita_service.remita_paid_amount_cents(status_payload)
+        if remita_cents is None:
+            _logger.warning(
+                "Remita callback missing paid amount ref=%s; enrollment stays locked",
+                payment.payment_reference,
+            )
+            all_ok = False
+            continue
+        if remita_cents != payment.amount_cents:
+            _logger.warning(
+                "Remita amount mismatch ref=%s invoice=%s remita=%s",
+                payment.payment_reference,
+                payment.amount_cents,
+                remita_cents,
+            )
+            all_ok = False
+            continue
         try:
             _complete_payment(
                 db,
@@ -1162,6 +1208,8 @@ def handle_remita_callback(db: Session, raw_body: str) -> str:
                 None,
                 check_rrr,
                 {"remita_callback": item, "remita_status": status_payload},
+                amount_received_cents=remita_cents,
+                require_amount_match=True,
             )
             _logger.info("Remita callback completed payment ref=%s rrr=%s", payment.payment_reference, check_rrr)
         except HTTPException as exc:
@@ -1202,12 +1250,25 @@ def refresh_remita_payment(db: Session, user: User, payment_reference: str) -> P
             detail="We couldn't check payment status right now. Please try again shortly.",
         ) from exc
     if remita_service.remita_status_is_paid(status_payload):
+        remita_cents = remita_service.remita_paid_amount_cents(status_payload)
+        if remita_cents is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Remita did not confirm the paid amount. Enrollment stays locked. Try again shortly.",
+            )
+        if remita_cents != payment.amount_cents:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Paid amount does not match this invoice. Contact support.",
+            )
         return _complete_payment(
             db,
             payment,
             user,
             payment.transaction_reference,
             {"remita_refresh": status_payload},
+            amount_received_cents=remita_cents,
+            require_amount_match=True,
         )
     course = db.get(Course, payment.course_id) if payment.course_id else None
     student = db.get(User, payment.user_id)

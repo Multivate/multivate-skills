@@ -107,7 +107,7 @@ function StudioList() {
           <div>
             <p className="text-sm text-[#011B33]/50">Teach</p>
             <h1 className="mt-1 text-[1.75rem] font-extrabold tracking-tight">Course studio</h1>
-            <p className="mt-2 text-sm text-[#011B33]/60">Create, edit, and publish the courses you instruct.</p>
+            <p className="mt-2 text-sm text-[#011B33]/60">Create classroom modules or video courses, then publish.</p>
           </div>
           <Link
             href="/instructor/studio/new"
@@ -119,7 +119,7 @@ function StudioList() {
         </header>
 
         {err ? (
-          <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+          <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-500/15 dark:text-red-100" role="alert">
             {err}
           </div>
         ) : null}
@@ -140,8 +140,8 @@ function StudioList() {
 
         {rows && rows.length === 0 ? (
           <div className="rounded-[5px] border border-dashed border-brand-ink/20 px-6 py-16 text-center">
-            <p className="text-lg font-extrabold">Build your first course</p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-[#011B33]/60">Start a course, add a cover, then fill in the lessons.</p>
+            <p className="text-lg font-extrabold">Build your first classroom</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-[#011B33]/60">Start a course, add a cover, then add modules and lessons students hear, say, and spell.</p>
             <Link
               href="/instructor/studio/new"
               className="mt-6 inline-flex h-11 items-center gap-2 rounded-[5px] bg-brand-accent px-5 text-sm font-semibold text-white hover:bg-[#0f4bb8]"
@@ -182,7 +182,7 @@ function StudioList() {
                       <StudioStatusPill status={row.status} />
                     </div>
                     <p className="mt-2 text-xs text-[#011B33]/50">
-                      {isAudio ? "Audio" : "Video"} · {row.lessons_count} {isAudio ? "phrases" : "lessons"} · {formatUpdated(row.updated_at)}
+                      {isAudio ? "Classroom" : "Video"} · {row.lessons_count} lessons · {formatUpdated(row.updated_at)}
                     </p>
                     <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                       <StudioQuietLink href={`/instructor/studio/${row.slug}`}>Edit</StudioQuietLink>

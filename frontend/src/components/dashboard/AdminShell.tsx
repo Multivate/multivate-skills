@@ -23,7 +23,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { adminNavGroups } from "@/components/dashboard/admin-top-nav";
 import { PersonMark } from "@/components/dashboard/PersonMark";
 import { LogoMark } from "@/components/layout/LogoMark";
@@ -105,6 +106,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const tDash = useTranslations("dashboard");
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const menuScrollRef = useRef<HTMLElement>(null);
+  useBodyScrollLock(open, menuScrollRef);
+  useBodyScrollLock(accountOpen, undefined, "events");
   const [query, setQuery] = useState("");
   const { dark } = useAppearance();
   const [data, setData] = useState<AdminDash | null>(null);
@@ -263,11 +267,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
         {open ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button type="button" className="absolute inset-0 bg-[#070E22]/60" aria-label={tDash("shell.closeMenu")} onClick={() => setOpen(false)} />
-            <aside className={`relative z-10 h-full w-72 max-w-[85vw] ${dark ? "bg-[#070E22] text-white" : "bg-white text-[#10244F]"}`}>{sidebar}</aside>
+            <aside ref={menuScrollRef} className={`relative z-10 h-full w-72 max-w-[85vw] overflow-y-auto overscroll-contain ${dark ? "bg-[#070E22] text-white" : "bg-white text-[#10244F]"}`}>{sidebar}</aside>
           </div>
         ) : null}
         <div className="lg:pl-64">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 bg-[var(--admin-bg)] px-4 sm:px-6">
+          <header className="sticky top-0 z-30 isolate flex h-16 items-center gap-3 border-b border-[var(--admin-line)] bg-[var(--admin-bg)] px-4 sm:px-6">
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-lg lg:hidden"

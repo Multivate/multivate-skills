@@ -153,7 +153,7 @@ export default function TermsPage() {
           body: (
             <>
               <p>
-                Features such as Lena (our Multivate guide) and mentor messaging provide general educational and career
+                Features such as Kay (our Multivate guide) and mentor messaging provide general educational and career
                 information. They are not legal, immigration, visa, medical, or financial advice. Always verify official
                 requirements with the relevant authority before making decisions.
               </p>

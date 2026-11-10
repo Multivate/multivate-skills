@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { THEME_BOOT_SCRIPT } from "@/lib/appearance";
 import { routing } from "@/i18n/routing";
-import { DEFAULT_OG_IMAGE, SITE_NAME } from "@/lib/seo";
+import { DEFAULT_OG_IMAGE, SITE_NAME, encodedAssetPath } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   applicationName: SITE_NAME,
   icons: {
-    icon: "/MULTIVATE MAIN LOGO.png",
-    apple: "/MULTIVATE MAIN LOGO.png",
+    icon: encodedAssetPath("/MULTIVATE MAIN LOGO.png"),
+    apple: encodedAssetPath("/MULTIVATE MAIN LOGO.png"),
   },
   openGraph: {
     siteName: SITE_NAME,

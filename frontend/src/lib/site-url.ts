@@ -27,7 +27,13 @@ export function absoluteAssetUrl(pathOrUrl: string | null | undefined): string |
   const value = (pathOrUrl || "").trim();
   if (!value) return undefined;
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  if (value.startsWith("/")) return `${getSiteUrl()}${value}`;
+  if (value.startsWith("/")) {
+    const encoded = value
+      .split("/")
+      .map((segment, index) => (index === 0 ? "" : encodeURIComponent(segment)))
+      .join("/");
+    return `${getSiteUrl()}${encoded}`;
+  }
   return undefined;
 }
 

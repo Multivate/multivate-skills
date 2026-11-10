@@ -34,10 +34,10 @@ export function WishlistPanel() {
   if (items.length === 0) {
     return (
       <div className="py-16 text-center">
-        <Heart className="mx-auto h-8 w-8 text-[#d1d7dc]" />
+        <Heart className="mx-auto h-8 w-8 text-[#d1d7dc] dark:text-[#eef4ff]/35" />
         <p className="mt-4 text-lg font-bold">Your wishlist is empty.</p>
         <p className="mt-2 text-sm text-[#6a6f73]">
-          Save courses you want later — they stay on this account, not just this browser.{" "}
+          Save courses you want later. They stay on this account, not just this browser.{" "}
           <Link href="/courses" className="font-bold text-[#1457D0] hover:underline">
             Explore courses.
           </Link>
@@ -162,7 +162,7 @@ export function MyListsPanel() {
       {lists.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-lg font-bold">No lists yet.</p>
-          <p className="mt-2 text-sm text-[#6a6f73]">Group courses by goal — interviews, tech, or a 30-day sprint — instead of one mixed cart.</p>
+          <p className="mt-2 text-sm text-[#6a6f73]">Group courses by goal (interviews, tech, or a 30-day sprint) instead of one mixed cart.</p>
         </div>
       ) : (
         lists.map((list) => (

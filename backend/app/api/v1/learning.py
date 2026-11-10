@@ -19,6 +19,7 @@ from app.schemas.learning import (
     LibraryCourseOut,
     MyCourseItem,
     LearningPathOut,
+    StudentPortalOut,
     ProgressUpdate,
     RecommendedCourseOut,
     WeeklyCourseTargetIn,
@@ -111,6 +112,15 @@ def read_learning_path(
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students only")
     return recommendation_service.build_learning_path(db, user.id, limit=limit)
+
+
+@router.get("/portal", response_model=StudentPortalOut)
+def read_student_portal(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> StudentPortalOut:
+    """Student portal: identity, study mode, courses, fees, and week status."""
+    return learning_service.get_student_portal(db, user)
 
 
 @router.patch("/progress/{course_slug}", response_model=MyCourseItem)

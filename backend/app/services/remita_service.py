@@ -140,6 +140,19 @@ def remita_status_is_paid(payload: dict[str, Any]) -> bool:
     return code in REMITA_SUCCESS_STATUSES
 
 
+def remita_paid_amount_cents(payload: dict[str, Any]) -> int | None:
+    raw = payload.get("amount") or payload.get("Amount") or payload.get("amountPaid")
+    if raw is None or raw == "":
+        return None
+    try:
+        naira = float(str(raw).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+    if naira < 0:
+        return None
+    return int(round(naira * 100))
+
+
 def build_checkout(*, rrr: str, payment_reference: str) -> dict[str, str]:
     s = get_settings()
     merchant_id = s.remita_merchant_id.strip()

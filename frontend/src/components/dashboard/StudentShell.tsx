@@ -2,7 +2,8 @@
 
 import { Heart, Menu, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import {
   DeskLocaleChips,
   DeskMobileSection,
@@ -38,11 +39,24 @@ function HoverMenu({
   children: ReactNode;
   align?: "left" | "right";
 }) {
+  const [hover, setHover] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(hover, scrollRef, "events");
   return (
-    <div className="group relative">
+    <div
+      className="group relative"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHover(false);
+      }}
+    >
       {trigger}
       <div className={`${flyout} ${align === "left" ? "left-0 right-auto" : ""}`}>
-        <div className={flyoutCard}>{children}</div>
+        <div ref={scrollRef} className={flyoutCard}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -58,6 +72,8 @@ export function StudentShell({ children }: { children: ReactNode }) {
   const tNav = useTranslations("nav");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const menuScrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, menuScrollRef);
 
   useEffect(() => {
     setOpen(false);
@@ -78,7 +94,7 @@ export function StudentShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="desk-root flex min-h-screen flex-col bg-white text-[#011B33] dark:bg-[#070e22] dark:text-[#eef4ff]">
-      <header className="sticky top-0 z-50 bg-brand-sky dark:border-b dark:border-white/10 dark:bg-[#0c1833]">
+      <header className="desk-topbar sticky top-0 z-50 isolate border-b border-brand-ink/10 dark:border-white/10">
         <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-2 overflow-visible px-3 sm:gap-5 sm:px-6">
           <Link href="/dashboard" className="shrink-0" aria-label="Multivate home">
             <LogoMark className="max-w-[8.5rem] sm:max-w-[10rem]" />
@@ -90,7 +106,7 @@ export function StudentShell({ children }: { children: ReactNode }) {
               placeholder={tNav("searchLabel")}
               className="h-11 w-full rounded-[5px] border border-brand-ink/15 bg-white pl-11 pr-4 text-sm outline-none transition duration-200 focus:border-brand-accent"
             />
-            <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#011B33]" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#011B33] dark:text-[#eef4ff]" viewBox="0 0 24 24" fill="none" aria-hidden>
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
               <path d="M20 20L16.5 16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -137,6 +153,9 @@ export function StudentShell({ children }: { children: ReactNode }) {
                 For organizations
               </a>
             </HoverMenu>
+            <Link href="/dashboard/portal" className={navLink(pathname.startsWith("/dashboard/portal"))}>
+              {tDash("nav.student.portal")}
+            </Link>
             <HoverMenu
               trigger={
                 <Link href="/dashboard/courses" className={navLink(pathname.startsWith("/dashboard/courses"))}>
@@ -162,7 +181,6 @@ export function StudentShell({ children }: { children: ReactNode }) {
             </HoverMenu>
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-2">
-            <div className="hidden sm:block">
             <HoverMenu
               trigger={
                 <Link
@@ -170,7 +188,7 @@ export function StudentShell({ children }: { children: ReactNode }) {
                   className="relative inline-flex h-10 w-10 items-center justify-center rounded-[5px] text-[#011B33] transition duration-200 hover:bg-white/70 hover:text-brand-accent dark:text-[#eef4ff] dark:hover:bg-white/10"
                   aria-label={tDash("nav.student.wishlist")}
                 >
-                  <Heart className="h-[18px] w-[18px]" strokeWidth={2} />
+                  <Heart className="h-[18px] w-[18px] stroke-current" strokeWidth={2} fill={wishCount > 0 ? "currentColor" : "none"} />
                   {wishCount > 0 ? (
                     <span className="absolute right-1 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] font-semibold text-white">
                       {wishCount}
@@ -180,7 +198,7 @@ export function StudentShell({ children }: { children: ReactNode }) {
               }
             >
               {wishItems.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-[#011B33]/70">Nothing saved yet. Heart a course to keep it here.</p>
+                <p className="px-4 py-3 text-sm text-[#011B33]/70 dark:text-[#eef4ff]/70">Nothing saved yet. Heart a course to keep it here.</p>
               ) : (
                 wishItems.slice(0, 5).map((item) => (
                   <Link key={item.slug} href={`/courses/${item.slug}`} className={flyoutLink}>
@@ -192,7 +210,6 @@ export function StudentShell({ children }: { children: ReactNode }) {
                 Open wishlist
               </Link>
             </HoverMenu>
-            </div>
             <div className="hidden sm:block">
               <SiteHeaderCart />
             </div>
@@ -218,6 +235,9 @@ export function StudentShell({ children }: { children: ReactNode }) {
                 </div>
               </div>
               <DeskProfileSection title="Learning">
+                <Link href="/dashboard/portal" className={flyoutLink}>
+                  {tDash("nav.student.portal")}
+                </Link>
                 <Link href="/dashboard/courses" className={flyoutLink}>
                   {tDash("nav.student.myCourses")}
                 </Link>
@@ -299,8 +319,16 @@ export function StudentShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         {open ? (
-          <div className="border-t border-brand-ink/10 px-4 py-3 lg:hidden">
+          <>
+          <div className="fixed inset-0 top-[4.25rem] z-40 bg-[#10244F]/20 lg:hidden" onClick={() => setOpen(false)} />
+          <div
+            ref={menuScrollRef}
+            className="desk-sheet fixed inset-x-0 bottom-0 top-[4.25rem] z-50 overflow-y-auto overscroll-contain border-t border-brand-ink/10 px-4 py-3 pb-[env(safe-area-inset-bottom)] [-webkit-overflow-scrolling:touch] dark:border-white/10 lg:hidden"
+          >
             <DeskMobileSection title="Learning">
+              <Link href="/dashboard/portal" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>
+                {tDash("nav.student.portal")}
+              </Link>
               <Link href="/dashboard/courses" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>
                 {tDash("nav.student.myCourses")}
               </Link>
@@ -346,6 +374,7 @@ export function StudentShell({ children }: { children: ReactNode }) {
               </Link>
             </DeskMobileSection>
           </div>
+          </>
         ) : null}
       </header>
       <main className="w-full flex-1">{children}</main>

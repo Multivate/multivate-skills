@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from typing import Any
 
 GOAL_CODES = ("work", "study", "train", "live", "explore")
+STUDY_MODES = ("online", "hybrid", "physical")
+STUDY_MODE_FORMATS = {
+    "online": "Online (self-paced)",
+    "hybrid": "Hybrid (campus + online)",
+    "physical": "Physical (on campus)",
+}
+DEFAULT_CAMPUS = "Ibadan, Oyo state"
 GERMAN_LEVELS = ("none", "a1", "a2", "b1", "b2", "c1", "c2")
 LOCALES = ("en", "fr", "de", "es")
 
@@ -61,6 +68,13 @@ def normalize_weekly_hours(raw: str | None) -> str:
 
 def weekly_plan(raw: str | None) -> dict[str, int | str]:
     return _WEEKLY[normalize_weekly_hours(raw)]
+
+
+def normalize_study_mode(raw: str | None) -> str:
+    value = (raw or "online").strip().lower()
+    aliases = {"in-person": "physical", "in person": "physical", "campus": "physical", "blended": "hybrid"}
+    value = aliases.get(value, value)
+    return value if value in STUDY_MODES else "online"
 
 
 def normalize_goal(raw: str | None) -> str:
@@ -185,12 +199,13 @@ def profile_write_fields(payload: dict[str, Any]) -> dict[str, Any]:
         extra_notes=payload.get("extra_notes"),
         weekly_hours=payload.get("weekly_hours"),
     )
+    mode = normalize_study_mode(payload.get("study_mode"))
     return {
         "education_level": payload.get("education_level") or "other",
         "current_skills": intent.german_level if intent.wants_german else payload.get("current_skills"),
         "skills_to_learn": intent.topic,
         "learning_goals": payload.get("learning_goals") or f"Prepare for {intent.goal_label}",
-        "preferred_formats": payload.get("preferred_formats") or "Online (self-paced)",
+        "preferred_formats": payload.get("preferred_formats") or STUDY_MODE_FORMATS[mode],
         "weekly_hours": intent.weekly_hours,
         "weekly_course_target": intent.weekly_course_target,
         "reminder_minutes": intent.session_minutes,
@@ -199,6 +214,9 @@ def profile_write_fields(payload: dict[str, Any]) -> dict[str, Any]:
         "goal_code": intent.goal,
         "german_level": intent.german_level,
         "instruction_locale": intent.locale,
+        "study_mode": mode,
+        "campus_location": None if mode == "online" else ((payload.get("campus_location") or "").strip() or DEFAULT_CAMPUS),
+        "cohort_name": (payload.get("cohort_name") or None),
     }
 
 

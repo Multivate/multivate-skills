@@ -146,7 +146,7 @@ def _require_audio_course_access(db: Session, slug: str, user: User) -> Course:
     fmt = getattr(course, "format", None)
     is_audio = fmt == CourseFormat.AUDIO or fmt == "audio"
     if not is_audio:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This is not an audio course")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This is not a classroom course")
     if not can_access_course_content(db, user, course) and not (
         user.role == UserRole.ADMIN
         or (user.role == UserRole.INSTRUCTOR and course.instructor_id == user.id)
@@ -304,7 +304,10 @@ def get_player_curriculum(
         course_title=course.title,
         image_url=course.image_url,
         progress_pct=enrollment.progress_pct if enrollment else 0,
-        sections=[PlayerSectionOut(id=s.id, title=s.title, position=s.position) for s in sections],
+        sections=[
+            PlayerSectionOut(id=s.id, title=s.title, position=s.position, scene_key=getattr(s, "scene_key", None))
+            for s in sections
+        ],
         lessons=lesson_rows,
     )
 
@@ -316,7 +319,7 @@ def get_player_phrasebook(
     fmt = getattr(course, "format", None)
     is_audio = fmt == CourseFormat.AUDIO or fmt == "audio"
     if not is_audio:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This is not an audio course")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This is not a classroom course")
 
     if preview:
         if not user or (user.role != UserRole.ADMIN and course.instructor_id != user.id):
@@ -391,6 +394,8 @@ def get_player_phrasebook(
                 position=p.position,
                 source_text=p.source_text,
                 target_text=p.target_text,
+                usage_note=getattr(p, "usage_note", None),
+                ipa=getattr(p, "ipa", None),
                 audio_url=audio_url,
                 stream_token=None,
                 audio_duration_seconds=p.audio_duration_seconds,
@@ -404,8 +409,12 @@ def get_player_phrasebook(
         format="audio",
         source_language=getattr(course, "source_language", "en") or "en",
         target_language=getattr(course, "target_language", "de") or "de",
+        cefr_level=getattr(course, "cefr_level", None) or "A1",
         progress_pct=enrollment.progress_pct if enrollment else 0,
-        sections=[PlayerSectionOut(id=s.id, title=s.title, position=s.position) for s in sections],
+        sections=[
+            PlayerSectionOut(id=s.id, title=s.title, position=s.position, scene_key=getattr(s, "scene_key", None))
+            for s in sections
+        ],
         phrases=phrase_rows,
         learned_phrase_ids=learned_ids,
         module_assessments=module_assessments,

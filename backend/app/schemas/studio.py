@@ -33,6 +33,7 @@ class CourseStudioBasicsIn(BaseModel):
     format: CourseFormat = CourseFormat.VIDEO
     source_language: str = Field(default="en", max_length=8)
     target_language: str = Field(default="de", max_length=8)
+    cefr_level: str = Field(default="A1", max_length=8)
     level: CourseLevel = CourseLevel.BEGINNER
     language: str = Field(default="en", max_length=8)
     duration_minutes: int = Field(default=0, ge=0)
@@ -40,6 +41,8 @@ class CourseStudioBasicsIn(BaseModel):
     price_cents: int = Field(default=990000, ge=0)
     currency: str = Field(default="NGN", min_length=3, max_length=3)
     is_free: bool = False
+    discount_percent: int = Field(default=0, ge=0, le=100)
+    discount_expires_at: datetime | None = None
     promo_video_url: str | None = None
     instructor_id: UUID | None = None
 
@@ -55,6 +58,7 @@ class CourseStudioBasicsOut(BaseModel):
     format: str = "video"
     source_language: str = "en"
     target_language: str = "de"
+    cefr_level: str = "A1"
     level: str
     language: str
     duration_minutes: int
@@ -62,6 +66,8 @@ class CourseStudioBasicsOut(BaseModel):
     price_cents: int
     currency: str
     is_free: bool
+    discount_percent: int = 0
+    discount_expires_at: datetime | None = None
     promo_video_url: str | None = None
     instructor_id: UUID | None = None
     status: str
@@ -74,16 +80,19 @@ class SectionOut(BaseModel):
     id: UUID
     title: str
     position: int
+    scene_key: str | None = None
 
 
 class SectionCreateIn(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     position: int | None = Field(default=None, ge=0)
+    scene_key: str | None = Field(default=None, max_length=32)
 
 
 class SectionUpdateIn(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     position: int | None = Field(default=None, ge=0)
+    scene_key: str | None = Field(default=None, max_length=32)
 
 
 class ReorderSectionsIn(BaseModel):
@@ -158,7 +167,9 @@ class AudioPhraseIn(BaseModel):
     section_id: UUID | None = None
     position: int | None = Field(default=None, ge=0)
     source_text: str = Field(min_length=1, max_length=512)
-    target_text: str = Field(min_length=1, max_length=512)
+    target_text: str = Field(default="", max_length=512)
+    usage_note: str | None = Field(default=None, max_length=512)
+    ipa: str | None = Field(default=None, max_length=128)
     audio_source: str | None = None
     audio_url: str | None = None
     audio_duration_seconds: int = Field(default=0, ge=0)
@@ -169,6 +180,8 @@ class AudioPhraseUpdateIn(BaseModel):
     position: int | None = Field(default=None, ge=0)
     source_text: str | None = Field(default=None, min_length=1, max_length=512)
     target_text: str | None = Field(default=None, min_length=1, max_length=512)
+    usage_note: str | None = Field(default=None, max_length=512)
+    ipa: str | None = Field(default=None, max_length=128)
     audio_source: str | None = None
     audio_url: str | None = None
     audio_duration_seconds: int | None = Field(default=None, ge=0)
@@ -180,6 +193,8 @@ class AudioPhraseOut(BaseModel):
     position: int
     source_text: str
     target_text: str
+    usage_note: str | None = None
+    ipa: str | None = None
     audio_source: str | None
     audio_url: str | None
     audio_duration_seconds: int
@@ -189,10 +204,16 @@ class AudioPhraseReorderIn(BaseModel):
     phrase_ids: list[UUID]
 
 
+class EnglishLinesIn(BaseModel):
+    section_id: UUID | None = None
+    lines: list[str] = Field(min_length=1, max_length=40)
+
+
 class PlayerSectionOut(BaseModel):
     id: UUID
     title: str
     position: int
+    scene_key: str | None = None
 
 
 class PlayerPhraseOut(BaseModel):
@@ -201,6 +222,8 @@ class PlayerPhraseOut(BaseModel):
     position: int
     source_text: str
     target_text: str
+    usage_note: str | None = None
+    ipa: str | None = None
     audio_url: str | None
     stream_token: str | None = None
     audio_duration_seconds: int
@@ -220,6 +243,7 @@ class PlayerPhrasebookOut(BaseModel):
     format: str
     source_language: str
     target_language: str
+    cefr_level: str = "A1"
     progress_pct: int
     sections: list[PlayerSectionOut]
     phrases: list[PlayerPhraseOut]

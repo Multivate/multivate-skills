@@ -2,6 +2,7 @@
 
 import { Check, Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { usePathname } from "@/i18n/navigation";
 import {
   applyDocumentTheme,
@@ -74,6 +75,7 @@ export function AppearanceMenu({ variant = "desk" }: { variant?: "desk" | "admin
   const { choice, dark, choose } = useAppearance();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, undefined, "events");
 
   useEffect(() => {
     function onDoc(event: MouseEvent) {

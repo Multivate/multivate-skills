@@ -16,12 +16,12 @@ export type InstructorCourseCardData = {
 function Stat({ icon: Icon, value, label }: { icon: typeof BookOpen; value: number; label: string }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] bg-brand-sky text-brand-accent">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] bg-brand-sky text-brand-accent dark:bg-[#1457D0]/25 dark:text-[#8ec0ff]">
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-extrabold tabular-nums leading-none">{value}</span>
-        <span className="mt-0.5 block truncate text-[11px] text-[#011B33]/45">{label}</span>
+        <span className="mt-0.5 block truncate text-[11px] text-[#011B33]/45 dark:text-[#eef4ff]/50">{label}</span>
       </span>
     </div>
   );
@@ -58,7 +58,7 @@ export function InstructorCourseCard({
       </Link>
 
       <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
-        <h3 className="line-clamp-2 min-h-[2.7rem] text-[1.05rem] font-extrabold leading-snug text-[#011B33] transition group-hover:text-brand-accent">
+        <h3 className="line-clamp-2 min-h-[2.7rem] text-[1.05rem] font-extrabold leading-snug text-[#011B33] transition group-hover:text-brand-accent dark:text-[#eef4ff]">
           <Link href={`/instructor/studio/${course.slug}`}>{course.title}</Link>
         </h3>
 
@@ -77,12 +77,12 @@ export function InstructorCourseCard({
 
         <div className="mt-4">
           <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold">
-            <span className="text-[#011B33]/45">Enrollments vs your top course</span>
+            <span className="text-[#011B33]/45 dark:text-[#eef4ff]/50">Enrollments vs your top course</span>
             <span className="tabular-nums text-brand-accent">{rankPct}%</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[#E7F1FC]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#E7F1FC] dark:bg-white/10">
             <div
-              className="h-full origin-left rounded-full bg-gradient-to-r from-[#1457D0] to-[#10244F] transition duration-500 animate-rule-grow"
+              className="h-full origin-left rounded-full bg-gradient-to-r from-[#1457D0] to-[#10244F] transition duration-500 animate-rule-grow dark:from-[#5aa2ff] dark:to-[#8ec0ff]"
               style={{ width: `${Math.max(rankPct, course.enrollment_count > 0 ? 8 : 0)}%` }}
             />
           </div>

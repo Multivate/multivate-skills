@@ -5,7 +5,7 @@ import { MentorProfileClient } from "./MentorProfileClient";
 import type { PublicMentor } from "@/components/landing/MentorsSection";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { fetchPublicMentor } from "@/lib/backend-mentors";
-import { publicPageMetadata, truncateMeta } from "@/lib/seo";
+import { privateRobotsMetadata, publicPageMetadata, truncateMeta } from "@/lib/seo";
 import { absoluteAssetUrl, absoluteUrl } from "@/lib/site-url";
 import { resolveAvatarUrl } from "@/lib/avatar-url";
 import { notFound } from "next/navigation";
@@ -20,7 +20,7 @@ type MentorDetail = PublicMentor & {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const mentor = (await fetchPublicMentor(slug)) as MentorDetail | null;
-  if (!mentor) return { title: "Mentor" };
+  if (!mentor) return privateRobotsMetadata("Mentor not found");
   const description = truncateMeta(mentor.headline || mentor.bio || mentor.full_name);
   return publicPageMetadata({
     locale,
@@ -51,7 +51,7 @@ export default async function MentorProfilePage({ params }: Props) {
     <>
       <JsonLd data={person} />
       <SiteHeader />
-      <main className="bg-brand-surface dark:bg-zinc-950">
+      <main id="main-content" className="bg-brand-surface dark:bg-zinc-950">
         <MentorProfileClient
           mentor={{
             ...mentor,

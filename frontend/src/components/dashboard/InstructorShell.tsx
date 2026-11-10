@@ -2,7 +2,8 @@
 
 import { Menu, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import {
   DeskLocaleChips,
   DeskMobileSection,
@@ -36,11 +37,24 @@ function HoverMenu({
   children: ReactNode;
   align?: "left" | "right";
 }) {
+  const [hover, setHover] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(hover, scrollRef, "events");
   return (
-    <div className="group relative">
+    <div
+      className="group relative"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHover(false);
+      }}
+    >
       {trigger}
       <div className={`${flyout} ${align === "left" ? "left-0 right-auto" : ""}`}>
-        <div className={flyoutCard}>{children}</div>
+        <div ref={scrollRef} className={flyoutCard}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -56,6 +70,8 @@ export function InstructorShell({ children }: { children: ReactNode }) {
   const ti = (id: string) => tDash(`nav.instructor.${id}`);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const menuScrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, menuScrollRef);
 
   useEffect(() => {
     setOpen(false);
@@ -76,7 +92,7 @@ export function InstructorShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="desk-root flex min-h-screen flex-col bg-white text-[#011B33] dark:bg-[#070e22] dark:text-[#eef4ff]">
-      <header className="sticky top-0 z-50 border-b border-brand-ink/10 bg-brand-sky dark:border-white/10 dark:bg-[#0c1833]">
+      <header className="desk-topbar sticky top-0 z-50 isolate border-b border-brand-ink/10 dark:border-white/10">
         <div className="mx-auto flex h-[4.25rem] max-w-[84rem] items-center gap-2 overflow-visible px-3 sm:gap-5 sm:px-6">
           <Link href="/instructor" className="shrink-0" aria-label="Multivate home">
             <LogoMark className="max-w-[8.5rem] sm:max-w-[10rem]" />
@@ -88,7 +104,7 @@ export function InstructorShell({ children }: { children: ReactNode }) {
               placeholder={tDash("shell.searchInstructorPh")}
               className="h-11 w-full rounded-[5px] border border-brand-ink/15 bg-white pl-11 pr-4 text-sm outline-none transition duration-200 focus:border-brand-accent"
             />
-            <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#011B33]" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#011B33] dark:text-[#eef4ff]" viewBox="0 0 24 24" fill="none" aria-hidden>
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
               <path d="M20 20L16.5 16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -243,7 +259,12 @@ export function InstructorShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         {open ? (
-          <div className="border-t border-brand-ink/10 px-4 py-3 xl:hidden">
+          <>
+          <div className="fixed inset-0 top-[4.25rem] z-40 bg-[#10244F]/20 xl:hidden" onClick={() => setOpen(false)} />
+          <div
+            ref={menuScrollRef}
+            className="desk-sheet fixed inset-x-0 bottom-0 top-[4.25rem] z-50 overflow-y-auto overscroll-contain border-t border-brand-ink/10 px-4 py-3 pb-[env(safe-area-inset-bottom)] dark:border-white/10 xl:hidden"
+          >
             <form onSubmit={onSearch} className="mb-2 md:hidden" role="search">
               <input
                 value={query}
@@ -292,6 +313,7 @@ export function InstructorShell({ children }: { children: ReactNode }) {
               </div>
             </DeskMobileSection>
           </div>
+          </>
         ) : null}
       </header>
       <main className="w-full flex-1">{children}</main>

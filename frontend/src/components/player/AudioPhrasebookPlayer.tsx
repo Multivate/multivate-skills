@@ -23,6 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ClassroomGuide } from "@/components/player/ClassroomGuide";
 import { useAuth } from "@/contexts/auth-context";
 
 type Phrase = {
@@ -767,6 +768,13 @@ export function AudioPhrasebookPlayer({ slug, preview = false }: Props) {
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
+        <ClassroomGuide
+          courseSlug={slug}
+          courseTitle={data.course_title}
+          lessonTitle={activeModule.title}
+          preview={preview}
+          compact
+        />
         <header className="cr-surface cr-border sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 sm:px-6">
           <button
             type="button"

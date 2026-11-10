@@ -298,7 +298,7 @@ export function InstructorSectionContent({ section }: { section: string }) {
                 </Link>
               </div>
             </div>
-            <aside className="border-t border-brand-ink/10 bg-brand-sky/70 p-7 md:border-l md:border-t-0 sm:p-9">
+            <aside className="border-t border-brand-ink/10 bg-brand-sky/70 p-7 dark:bg-[#1457D0]/15 md:border-l md:border-t-0 sm:p-9">
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#011B33]/45">Snapshot</p>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between gap-3">

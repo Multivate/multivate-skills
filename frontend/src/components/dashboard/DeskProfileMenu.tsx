@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { persistPreferredLocale } from "@/lib/preferred-locale";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
@@ -26,6 +27,8 @@ export function DeskProfileMenu({ trigger, children }: { trigger: ReactNode; chi
   const pathname = usePathname();
   const buttonRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open, scrollRef);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => setOpen(false), [pathname]);
@@ -42,12 +45,9 @@ export function DeskProfileMenu({ trigger, children }: { trigger: ReactNode; chi
     }
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
     };
   }, [open]);
 
@@ -71,7 +71,7 @@ export function DeskProfileMenu({ trigger, children }: { trigger: ReactNode; chi
       <div
         ref={panelRef}
         role="menu"
-        className="fixed inset-x-3 bottom-3 top-[4.5rem] z-[80] flex flex-col overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_12px_32px_rgba(7,14,34,0.16)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:inset-x-auto sm:bottom-auto sm:right-3 sm:top-[4.5rem] sm:h-auto sm:max-h-[min(36rem,calc(100dvh-5.5rem))] sm:w-[20rem]"
+        className="desk-overlay fixed inset-x-3 top-[4.5rem] z-[80] flex max-h-[calc(100dvh-5.25rem)] flex-col overflow-hidden rounded-xl border border-brand-ink/10 bg-white text-[#011B33] shadow-[0_16px_40px_rgba(16,36,79,0.18)] dark:border-white/10 dark:bg-[#10192f] dark:text-[#eef4ff] sm:inset-x-auto sm:right-3 sm:max-h-[min(36rem,calc(100dvh-5.5rem))] sm:w-[20rem]"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-brand-ink/10 px-4 py-3 dark:border-white/10">
           <p className="text-sm font-semibold">Account</p>
@@ -84,7 +84,7 @@ export function DeskProfileMenu({ trigger, children }: { trigger: ReactNode; chi
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [-webkit-overflow-scrolling:touch]">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [-webkit-overflow-scrolling:touch]">
           {children}
         </div>
       </div>

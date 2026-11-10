@@ -15,6 +15,7 @@ from app.models.enrollment_status import EnrollmentStatus
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.course import CourseCreate, CourseOut, CourseUpdate
+from app.services.course_pricing import sale_price_cents
 
 
 def course_to_out(course: Course) -> CourseOut:
@@ -27,6 +28,9 @@ def course_to_out(course: Course) -> CourseOut:
             "level": course.level.value,
             "status": course.status.value,
             "duration_minutes": duration,
+            "discount_percent": int(getattr(course, "discount_percent", 0) or 0),
+            "discount_expires_at": getattr(course, "discount_expires_at", None),
+            "sale_price_cents": sale_price_cents(course),
         }
     )
 

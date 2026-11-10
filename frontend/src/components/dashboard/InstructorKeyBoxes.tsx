@@ -76,7 +76,7 @@ export function InstructorKeyBoxes({ items }: { items: InstructorKeyBox[] }) {
             href={item.href}
             className={`group relative overflow-hidden rounded-[5px] border px-5 py-5 transition duration-300 ease-out animate-fade-up hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(16,36,79,0.12)] ${
               item.featured
-                ? "border-brand-accent/20 bg-[#10244F] text-white hover:border-brand-accent"
+                ? "border-brand-accent/20 bg-[#10244F] text-white hover:border-brand-accent dark:border-[#7eb6ff]/30 dark:bg-[#16356e]"
                 : "border-brand-ink/10 bg-white hover:border-brand-accent/35 dark:border-white/10 dark:bg-[#10192f]"
             }`}
             style={{ animationDelay: `${index * 70}ms` }}
@@ -89,17 +89,17 @@ export function InstructorKeyBoxes({ items }: { items: InstructorKeyBox[] }) {
             <span className="flex items-start justify-between gap-3">
               <span
                 className={`inline-flex h-10 w-10 items-center justify-center rounded-[5px] transition duration-300 group-hover:scale-110 ${
-                  item.featured ? "bg-white/10 text-white" : "bg-brand-sky text-brand-accent dark:bg-white/10"
+                  item.featured ? "bg-white/10 text-white" : "bg-brand-sky text-brand-accent dark:bg-[#1457D0]/25 dark:text-[#8ec0ff]"
                 }`}
               >
                 <Icon className="h-5 w-5" aria-hidden />
               </span>
-              <span className={`text-[11px] font-bold uppercase tracking-[0.16em] ${item.featured ? "text-white/55" : "text-[#011B33]/40"}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-[0.16em] ${item.featured ? "text-white/55" : "text-[#011B33]/40 dark:text-[#eef4ff]/50"}`}>
                 {item.label}
               </span>
             </span>
             <BoxValue kind={item.kind} value={item.value} />
-            <p className={`mt-1.5 text-sm ${item.featured ? "text-white/70" : "text-[#011B33]/55"}`}>{item.hint}</p>
+            <p className={`mt-1.5 text-sm ${item.featured ? "text-white/70" : "text-[#011B33]/55 dark:text-[#eef4ff]/60"}`}>{item.hint}</p>
           </Link>
         );
       })}

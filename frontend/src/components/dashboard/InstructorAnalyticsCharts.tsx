@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-export const INSTRUCTOR_CHART_COLORS = ["#1457D0", "#10244F", "#3D8BFF", "#0E8A9A", "#5B6CFF", "#1D4ED8", "#0B3A8A", "#67A8FF"];
+export const INSTRUCTOR_CHART_COLORS = ["#1457D0", "#3D8BFF", "#67A8FF", "#0E8A9A", "#5B6CFF", "#1D4ED8", "#7EB6FF", "#4C9DFF"];
 
 type CoursePoint = {
   slug: string;
@@ -45,7 +45,7 @@ export function InstructorEnrollmentColumns({ courses }: { courses: CoursePoint[
           >
             <span
               className={`text-xs font-bold tabular-nums transition duration-200 ${
-                isActive || active === null ? "text-[#011B33]" : "text-[#011B33]/35"
+                isActive || active === null ? "text-[#011B33] dark:text-[#eef4ff]" : "text-[#011B33]/35 dark:text-[#eef4ff]/35"
               }`}
             >
               {course.enrollment_count}
@@ -55,14 +55,14 @@ export function InstructorEnrollmentColumns({ courses }: { courses: CoursePoint[
                 className="w-9 max-w-[85%] origin-bottom rounded-t-[6px] transition-all duration-500 ease-out animate-rule-grow"
                 style={{
                   height: `${height}%`,
-                  background: `linear-gradient(180deg, ${color} 0%, #10244F 140%)`,
+                  background: `linear-gradient(180deg, ${color} 0%, var(--desk-chart-deep, #10244F) 140%)`,
                   boxShadow: isActive ? `0 10px 22px ${color}55` : "none",
                   opacity: active === null || isActive ? 1 : 0.28,
                   transform: isActive ? "scaleX(1.08)" : "scaleX(1)",
                 }}
               />
             </span>
-            <span className={`line-clamp-2 h-8 w-full text-center text-[11px] leading-4 ${isActive ? "font-bold text-[#011B33]" : "text-[#011B33]/50"}`}>
+            <span className={`line-clamp-2 h-8 w-full text-center text-[11px] leading-4 ${isActive ? "font-bold text-[#011B33] dark:text-[#eef4ff]" : "text-[#011B33]/50 dark:text-[#eef4ff]/55"}`}>
               {course.title}
             </span>
           </button>
@@ -96,7 +96,7 @@ export function InstructorEnrollmentShare({ courses }: { courses: CoursePoint[] 
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
       <div className="relative h-44 w-44 shrink-0">
         <svg viewBox="0 0 148 148" className="h-full w-full -rotate-90">
-          <circle cx="74" cy="74" r={r} fill="none" stroke="#E7F1FC" strokeWidth="18" />
+          <circle cx="74" cy="74" r={r} fill="none" stroke="currentColor" className="text-[#E7F1FC] dark:text-white/10" strokeWidth="18" />
           {ranked.map((row, index) => {
             const dash = (row.enrollment_count / total) * c;
             const color = INSTRUCTOR_CHART_COLORS[index % INSTRUCTOR_CHART_COLORS.length];
@@ -125,12 +125,12 @@ export function InstructorEnrollmentShare({ courses }: { courses: CoursePoint[] 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           {activeRow && activePct !== null ? (
             <>
-              <span className="text-2xl font-extrabold tabular-nums text-[#10244F]">{activePct}%</span>
+              <span className="text-2xl font-extrabold tabular-nums text-[#10244F] dark:text-[#eef4ff]">{activePct}%</span>
               <span className="mt-0.5 max-w-[6.5rem] truncate text-[11px] font-semibold text-[#011B33]/50">{activeRow.title}</span>
             </>
           ) : (
             <>
-              <span className="text-2xl font-extrabold tabular-nums text-[#10244F]">{total}</span>
+              <span className="text-2xl font-extrabold tabular-nums text-[#10244F] dark:text-[#eef4ff]">{total}</span>
               <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#011B33]/40">Enrolled</span>
             </>
           )}
@@ -181,15 +181,15 @@ export function InstructorLessonMix({ courses }: { courses: CoursePoint[] }) {
             </p>
           </div>
           <div className="space-y-1.5">
-            <div className="h-2 overflow-hidden rounded-full bg-[#E7F1FC]">
+            <div className="h-2 overflow-hidden rounded-full bg-[#E7F1FC] dark:bg-white/10">
               <div
-                className="h-full origin-left rounded-full bg-[#1457D0] animate-rule-grow"
+                className="h-full origin-left rounded-full bg-[#1457D0] animate-rule-grow dark:bg-[#5aa2ff]"
                 style={{ width: `${Math.max(6, (row.enrollment_count / max) * 100)}%` }}
               />
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-[#E7F1FC]">
+            <div className="h-2 overflow-hidden rounded-full bg-[#E7F1FC] dark:bg-white/10">
               <div
-                className="h-full origin-left rounded-full bg-[#10244F] animate-rule-grow"
+                className="h-full origin-left rounded-full bg-[#10244F] animate-rule-grow dark:bg-[#8ec0ff]"
                 style={{
                   width: `${Math.max(6, (row.lessons_count / max) * 100)}%`,
                   animationDelay: `${80 + index * 40}ms`,
@@ -204,7 +204,7 @@ export function InstructorLessonMix({ courses }: { courses: CoursePoint[] }) {
           <span className="h-2 w-2 rounded-full bg-[#1457D0]" /> Enrollments
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-[#10244F]" /> Lessons
+          <span className="h-2 w-2 rounded-full bg-[#10244F] dark:bg-[#8ec0ff]" /> Lessons
         </span>
       </li>
     </ul>

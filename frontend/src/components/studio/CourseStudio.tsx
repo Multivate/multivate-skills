@@ -16,17 +16,50 @@ import {
   studioTextareaClass,
 } from "@/components/studio/studio-ui";
 import { resolveCourseImageUrl } from "@/lib/course-image";
-import { formatMoney } from "@/lib/format-money";
+import { DISCOUNT_PERCENTS } from "@/lib/course-price";
 import { Upload } from "@/components/ui/Upload";
 
 const CATEGORIES = [
-  "Artificial Intelligence",
-  "Design Thinking",
-  "Cloud Computing",
   "German Language",
+  "Work in Germany",
+  "Study in Germany",
+  "Ausbildung",
+  "Career Skills",
+  "Technology",
   "Data Science",
-  "general",
+  "Cloud Computing",
+  "Artificial Intelligence",
+  "Design",
 ];
+
+function parseNaira(raw: string) {
+  const cleaned = raw.replace(/[^\d]/g, "");
+  if (!cleaned) return 0;
+  return Number.parseInt(cleaned, 10);
+}
+
+function nairaLabel(naira: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(naira);
+}
+
+function toLocalInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(raw: string) {
+  if (!raw.trim()) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
 
 const LEVELS = [
   { value: "beginner", label: "Beginner" },
@@ -41,7 +74,22 @@ const LANGUAGES = [
   { value: "es", label: "Spanish" },
 ];
 
-type Section = { id: string; title: string; position: number };
+const CEFR = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+
+function levelFromCefr(cefr: string) {
+  if (cefr.startsWith("A")) return "beginner";
+  if (cefr.startsWith("B")) return "intermediate";
+  return "advanced";
+}
+
+function cefrFromLevel(level: string, stored?: string | null) {
+  if (stored && CEFR.includes(stored as (typeof CEFR)[number])) return stored;
+  if (level === "intermediate") return "B1";
+  if (level === "advanced") return "C1";
+  return "A1";
+}
+
+type Section = { id: string; title: string; position: number; scene_key?: string | null };
 type Resource = { id: string; title: string; file_type: string; file_size_bytes: number };
 type Lesson = {
   id: string;
@@ -72,6 +120,7 @@ type CourseDetail = {
   format?: string;
   source_language?: string;
   target_language?: string;
+  cefr_level?: string;
   level: string;
   language: string;
   duration_minutes: number;
@@ -79,6 +128,8 @@ type CourseDetail = {
   price_cents: number;
   currency: string;
   is_free: boolean;
+  discount_percent?: number;
+  discount_expires_at?: string | null;
   promo_video_url: string | null;
   status: string;
   rejection_reason: string | null;
@@ -90,6 +141,8 @@ type CourseDetail = {
     position: number;
     source_text: string;
     target_text: string;
+    usage_note?: string | null;
+    ipa?: string | null;
     audio_source: string | null;
     audio_url: string | null;
     audio_duration_seconds: number;
@@ -98,7 +151,8 @@ type CourseDetail = {
 
 type Props = { initialSlug?: string };
 
-const STEPS = ["Basics", "Cover", "Content", "Review"];
+const VIDEO_STEPS = ["Basics", "Cover", "Content", "Review"];
+const CLASSROOM_STEPS = ["Basics", "Cover", "Classroom", "Review"];
 
 function Field({
   label,
@@ -131,17 +185,19 @@ export function CourseStudio({ initialSlug }: Props) {
   const [subtitle, setSubtitle] = useState("");
   const [description, setDescription] = useState("");
   const [objectives, setObjectives] = useState("");
-  const [category, setCategory] = useState("general");
-  const [courseFormat, setCourseFormat] = useState<"video" | "audio">("video");
+  const [category, setCategory] = useState("German Language");
+  const [courseFormat, setCourseFormat] = useState<"video" | "audio">("audio");
+  const [cefrLevel, setCefrLevel] = useState("A1");
   const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("de");
   const [level, setLevel] = useState("beginner");
   const [language, setLanguage] = useState("en");
   const [tags, setTags] = useState("");
-  const [priceCents, setPriceCents] = useState(990000);
+  const [priceNaira, setPriceNaira] = useState("");
   const [isFree, setIsFree] = useState(false);
   const [customSlug, setCustomSlug] = useState("");
-  const [promoVideoUrl, setPromoVideoUrl] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountExpiresAt, setDiscountExpiresAt] = useState("");
   const [coverUrlInput, setCoverUrlInput] = useState("");
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
@@ -169,16 +225,18 @@ export function CourseStudio({ initialSlug }: Props) {
     setSubtitle(c.subtitle ?? "");
     setDescription(c.description);
     setObjectives(c.learning_objectives ?? "");
-    setCategory(c.category);
+    setCategory(c.category && c.category !== "general" ? c.category : "German Language");
     setCourseFormat(c.format === "audio" ? "audio" : "video");
     setSourceLanguage(c.source_language || "en");
     setTargetLanguage(c.target_language || "de");
+    setCefrLevel(cefrFromLevel(c.level, c.cefr_level));
     setLevel(c.level);
     setLanguage(c.language);
     setTags(c.tags ?? "");
-    setPriceCents(c.price_cents);
-    setIsFree(c.is_free);
-    setPromoVideoUrl(c.promo_video_url ?? "");
+    setIsFree(c.is_free || c.price_cents <= 0);
+    setPriceNaira(c.is_free || c.price_cents <= 0 ? "" : String(Math.round(c.price_cents / 100)));
+    setDiscountPercent(c.discount_percent ?? 0);
+    setDiscountExpiresAt(toLocalInput(c.discount_expires_at));
     setCoverUrlInput(c.image_url?.startsWith("http") ? c.image_url : "");
     setThumbPreview(c.image_url || null);
     setError(null);
@@ -204,20 +262,30 @@ export function CourseStudio({ initialSlug }: Props) {
       format: courseFormat,
       source_language: sourceLanguage,
       target_language: targetLanguage,
-      level,
+      cefr_level: cefrLevel,
+      level: courseFormat === "audio" ? levelFromCefr(cefrLevel) : level,
       language: courseFormat === "audio" ? targetLanguage : language,
       duration_minutes: course?.duration_minutes ?? 0,
       tags: tags.trim() || null,
-      price_cents: isFree ? 0 : priceCents,
+      price_cents: isFree ? 0 : parseNaira(priceNaira) * 100,
       currency: "NGN",
-      is_free: isFree,
-      promo_video_url: promoVideoUrl.trim() || null,
+      is_free: isFree || parseNaira(priceNaira) <= 0,
+      discount_percent: isFree ? 0 : discountPercent,
+      discount_expires_at: isFree || discountPercent <= 0 ? null : fromLocalInput(discountExpiresAt),
       slug: customSlug.trim() || undefined,
     }),
-    [title, subtitle, description, objectives, category, courseFormat, sourceLanguage, targetLanguage, level, language, tags, priceCents, isFree, promoVideoUrl, customSlug, course?.duration_minutes],
+    [title, subtitle, description, objectives, category, courseFormat, sourceLanguage, targetLanguage, cefrLevel, level, language, tags, priceNaira, isFree, discountPercent, discountExpiresAt, customSlug, course?.duration_minutes],
   );
 
   const saveBasics = async () => {
+    if (!isFree && (discountPercent < 0 || discountPercent > 100)) {
+      setError("Discount must be between 0 and 100.");
+      return;
+    }
+    if (!isFree && discountPercent > 0 && !fromLocalInput(discountExpiresAt)) {
+      setError("Pick when the discount ends.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -279,7 +347,9 @@ export function CourseStudio({ initialSlug }: Props) {
         setError(
           typeof data?.detail === "string"
             ? data.detail
-            : "We couldn't submit for review. Add a cover image and at least one lesson first.",
+            : isAudioCourse
+              ? "We couldn't submit for review. Add a cover, at least one module, and one classroom lesson."
+              : "We couldn't submit for review. Add a cover image and at least one lesson first.",
         );
         return;
       }
@@ -323,22 +393,27 @@ export function CourseStudio({ initialSlug }: Props) {
     return resolveCourseImageUrl(thumbPreview) ?? thumbPreview;
   }, [thumbPreview]);
 
-  const priceNaira = Math.round(priceCents / 100);
   const lessonsWithVideo = course?.lessons.filter((l) => l.video_url).length ?? 0;
-  const phrasesWithAudio = course?.phrases?.filter((p) => p.audio_url).length ?? 0;
+  const categoryOptions = CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES];
+  const pricedNaira = parseNaira(priceNaira);
   const isAudioCourse = course?.format === "audio" || courseFormat === "audio";
+  const STEPS = isAudioCourse ? CLASSROOM_STEPS : VIDEO_STEPS;
   const checklist = course
     ? isAudioCourse
       ? [
           { ok: Boolean(course.title?.trim()), label: "Title set" },
           { ok: Boolean(course.image_url), label: "Cover image" },
           {
-            ok: (course.phrases?.length ?? 0) > 0,
-            label: `${course.phrases?.length ?? 0} phrase${(course.phrases?.length ?? 0) === 1 ? "" : "s"}`,
+            ok: course.sections.length > 0,
+            label: `${course.sections.length} module${course.sections.length === 1 ? "" : "s"}`,
           },
           {
-            ok: phrasesWithAudio > 0,
-            label: `${phrasesWithAudio} of ${course.phrases?.length ?? 0} with audio`,
+            ok: (course.phrases?.length ?? 0) > 0,
+            label: `${course.phrases?.length ?? 0} classroom lesson${(course.phrases?.length ?? 0) === 1 ? "" : "s"}`,
+          },
+          {
+            ok: (course.phrases?.length ?? 0) > 0,
+            label: "German, scene, usage, and classroom voice are generated automatically",
           },
         ]
       : [
@@ -380,7 +455,7 @@ export function CourseStudio({ initialSlug }: Props) {
                 /courses/<span className="text-brand-ink/70">{slug}</span>
               </span>
             ) : (
-              <span className="text-sm text-brand-ink/55">Define the course, then build the curriculum.</span>
+              <span className="text-sm text-brand-ink/55">Define the course, then build classroom modules.</span>
             )}
           </div>
         </div>
@@ -396,7 +471,7 @@ export function CourseStudio({ initialSlug }: Props) {
       </div>
 
       {course?.rejection_reason ? (
-        <div className="rounded-[5px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-950">
+        <div className="rounded-[5px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-950 dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-100">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-amber-800">Revision needed</p>
           <p className="mt-2">{course.rejection_reason}</p>
         </div>
@@ -451,14 +526,6 @@ export function CourseStudio({ initialSlug }: Props) {
                   className={studioTextareaClass}
                 />
               </Field>
-              <Field label="Promo video" hint="Optional YouTube or Vimeo link">
-                <input
-                  value={promoVideoUrl}
-                  onChange={(e) => setPromoVideoUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=…"
-                  className={studioFieldClass}
-                />
-              </Field>
             </div>
           </StudioPanel>
 
@@ -466,11 +533,11 @@ export function CourseStudio({ initialSlug }: Props) {
             <div className="space-y-5">
               <div>
                 <p className={studioLabelClass}>Course format</p>
-                <div className="mt-2 grid grid-cols-2 gap-1 rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-1">
+                <div className="mt-2 grid grid-cols-2 gap-1 rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] p-1 dark:bg-white/5">
                   {(
                     [
                       ["video", "Video course"],
-                      ["audio", "Audio phrasebook"],
+                      ["audio", "Classroom"],
                     ] as const
                   ).map(([value, label]) => {
                     const locked = Boolean(slug) && (course?.lessons?.length || course?.phrases?.length);
@@ -482,7 +549,9 @@ export function CourseStudio({ initialSlug }: Props) {
                         disabled={Boolean(locked) && !active}
                         onClick={() => setCourseFormat(value)}
                         className={`rounded-[5px] px-3 py-2.5 text-sm font-semibold transition ${
-                          active ? "bg-white text-brand-ink shadow-sm" : "text-brand-ink/55 hover:text-brand-ink"
+                          active
+                            ? "bg-white text-brand-ink shadow-sm dark:bg-white/15 dark:text-[#eef4ff]"
+                            : "text-brand-ink/55 hover:text-brand-ink dark:text-[#eef4ff]/55 dark:hover:text-[#eef4ff]"
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                       >
                         {label}
@@ -492,29 +561,41 @@ export function CourseStudio({ initialSlug }: Props) {
                 </div>
                 <p className="mt-1.5 text-xs text-brand-ink/50">
                   {courseFormat === "audio"
-                    ? "Phrase pairs with playable audio, like a language phrasebook."
+                    ? "Modules of lessons. Students listen, speak, spell, write, then take an assessment after each module."
                     : "Sections and video lessons for a standard course."}
                 </p>
               </div>
               <Field label="Category">
                 <select value={category} onChange={(e) => setCategory(e.target.value)} className={studioSelectClass}>
-                  {CATEGORIES.map((c) => (
+                  {categoryOptions.map((c) => (
                     <option key={c} value={c}>
-                      {c === "general" ? "General" : c}
+                      {c}
                     </option>
                   ))}
                 </select>
               </Field>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Level">
-                  <select value={level} onChange={(e) => setLevel(e.target.value)} className={studioSelectClass}>
-                    {LEVELS.map((l) => (
-                      <option key={l.value} value={l.value}>
-                        {l.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                {courseFormat === "audio" ? (
+                  <Field label="CEFR level" hint="Shown on the classroom as A1, B1, and so on.">
+                    <select value={cefrLevel} onChange={(e) => setCefrLevel(e.target.value)} className={studioSelectClass}>
+                      {CEFR.map((row) => (
+                        <option key={row} value={row}>
+                          {row}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                ) : (
+                  <Field label="Level">
+                    <select value={level} onChange={(e) => setLevel(e.target.value)} className={studioSelectClass}>
+                      {LEVELS.map((l) => (
+                        <option key={l.value} value={l.value}>
+                          {l.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
                 {courseFormat === "video" ? (
                   <Field label="Language">
                     <select value={language} onChange={(e) => setLanguage(e.target.value)} className={studioSelectClass}>
@@ -565,29 +646,98 @@ export function CourseStudio({ initialSlug }: Props) {
                 />
               </Field>
 
-              <div className="rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] px-4 py-4">
-                <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-brand-ink">
+              <div className="rounded-[5px] border border-brand-ink/10 bg-[#f6f8fb] px-4 py-4 dark:bg-white/5">
+                <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-brand-ink dark:text-[#eef4ff]">
                   <input
                     type="checkbox"
                     checked={isFree}
-                    onChange={(e) => setIsFree(e.target.checked)}
+                    onChange={(e) => {
+                      setIsFree(e.target.checked);
+                      if (e.target.checked) {
+                        setPriceNaira("");
+                        setDiscountPercent(0);
+                        setDiscountExpiresAt("");
+                      }
+                    }}
                     className="h-4 w-4 border-brand-ink/25 text-brand-accent focus:ring-brand-accent/30"
                   />
                   Free course
                 </label>
                 {!isFree ? (
                   <div className="mt-4">
-                    <Field label="Price (NGN)" hint={`Shown as ${formatMoney(priceCents, "NGN")}`}>
+                    <Field
+                      label="Price (NGN)"
+                      hint={pricedNaira > 0 ? `Students see ${nairaLabel(pricedNaira)}` : "Type a whole amount, for example 15000. Do not add kobo."}
+                    >
                       <input
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        step={1}
                         value={priceNaira}
-                        onChange={(e) => setPriceCents(Math.max(0, Math.round(Number(e.target.value) || 0) * 100))}
+                        placeholder="15000"
+                        onChange={(e) => {
+                          const next = e.target.value.replace(/[^\d]/g, "");
+                          setPriceNaira(next);
+                          if (next) setIsFree(false);
+                        }}
                         className={studioFieldClass}
                       />
                     </Field>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <Field label="Discount" hint="Pick a preset or type any whole percent from 1 to 100.">
+                        <select
+                          value={(DISCOUNT_PERCENTS as readonly number[]).includes(discountPercent) || discountPercent === 0 ? String(discountPercent) : "custom"}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "custom") {
+                              if (discountPercent === 0) setDiscountPercent(5);
+                              return;
+                            }
+                            const next = Number(raw) || 0;
+                            setDiscountPercent(next);
+                            if (next <= 0) setDiscountExpiresAt("");
+                          }}
+                          className={studioSelectClass}
+                        >
+                          <option value={0}>No discount</option>
+                          {DISCOUNT_PERCENTS.map((pct) => (
+                            <option key={pct} value={pct}>
+                              {pct}% off{pct === 100 ? " (free until it ends)" : ""}
+                            </option>
+                          ))}
+                          <option value="custom">Type a percent</option>
+                        </select>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={discountPercent > 0 ? String(discountPercent) : ""}
+                          placeholder="e.g. 35"
+                          onChange={(e) => {
+                            const next = e.target.value.replace(/[^\d]/g, "");
+                            const n = next ? Math.min(100, Number.parseInt(next, 10)) : 0;
+                            setDiscountPercent(n);
+                            if (n <= 0) setDiscountExpiresAt("");
+                          }}
+                          className={`${studioFieldClass} mt-2`}
+                          aria-label="Discount percent"
+                        />
+                      </Field>
+                      {discountPercent > 0 ? (
+                        <Field label="Discount ends" hint="Catalog shows a countdown until this time.">
+                          <input
+                            type="datetime-local"
+                            value={discountExpiresAt}
+                            onChange={(e) => setDiscountExpiresAt(e.target.value)}
+                            className={studioFieldClass}
+                          />
+                        </Field>
+                      ) : null}
+                    </div>
+                    {discountPercent > 0 && pricedNaira > 0 ? (
+                      <p className="mt-3 text-xs text-brand-ink/55">
+                        Students see {nairaLabel(pricedNaira)} crossed out and{" "}
+                        {nairaLabel(Math.round((pricedNaira * (100 - discountPercent)) / 100))} until the offer ends.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -649,7 +799,7 @@ export function CourseStudio({ initialSlug }: Props) {
                   </button>
                 </div>
                 <button type="button" onClick={() => setStep(2)} className="btn-cta-accent inline-flex w-full items-center justify-center gap-2">
-                  Continue to curriculum
+                  {isAudioCourse ? "Continue to classroom" : "Continue to curriculum"}
                   <ChevronRight className="h-4 w-4" aria-hidden />
                 </button>
               </div>
@@ -726,7 +876,7 @@ export function CourseStudio({ initialSlug }: Props) {
                 href={`/learn/${course.slug}?preview=1`}
                 className="btn-outline-brand !min-w-0"
               >
-                {course.status === "published" ? "Open live course" : "Preview as learner"}
+                {isAudioCourse ? "Preview classroom" : course.status === "published" ? "Open live course" : "Preview as learner"}
               </Link>
             </div>
           </StudioPanel>
@@ -743,14 +893,18 @@ export function CourseStudio({ initialSlug }: Props) {
                   <dd className="mt-1 text-brand-ink">{course.category === "general" ? "General" : course.category}</dd>
                 </div>
                 <div>
-                  <dt className={studioLabelClass}>Level</dt>
-                  <dd className="mt-1 capitalize text-brand-ink">{course.level}</dd>
+                  <dt className={studioLabelClass}>{isAudioCourse ? "CEFR" : "Level"}</dt>
+                  <dd className="mt-1 capitalize text-brand-ink">{isAudioCourse ? course.cefr_level || cefrLevel : course.level}</dd>
                 </div>
               </div>
               <div>
                 <dt className={studioLabelClass}>Price</dt>
                 <dd className="mt-1 text-brand-ink">
-                  {course.is_free ? "Free" : formatMoney(course.price_cents, course.currency || "NGN")}
+                  {course.is_free || course.price_cents <= 0
+                    ? "Free"
+                    : course.discount_percent
+                      ? `${nairaLabel(Math.round(course.price_cents / 100))} · ${course.discount_percent}% off`
+                      : nairaLabel(Math.round(course.price_cents / 100))}
                 </dd>
               </div>
               <div>

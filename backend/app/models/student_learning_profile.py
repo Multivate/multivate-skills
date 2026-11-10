@@ -39,6 +39,9 @@ class StudentLearningProfile(Base):
     goal_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     german_level: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     instruction_locale: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    study_mode: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    campus_location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    cohort_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

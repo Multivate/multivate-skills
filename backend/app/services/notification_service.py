@@ -122,7 +122,7 @@ def notify_new_account(db: Session, user: User) -> None:
             user_id=user.id,
             kind="welcome",
             title="Welcome to Course Studio",
-            body="Your instructor account is ready. Start a course whenever you like.",
+            body="Open Course Studio to start a course.",
             link_href="/dashboard/instructor/studio",
         )
         notify_admins(
@@ -139,7 +139,7 @@ def notify_new_account(db: Session, user: User) -> None:
             user_id=user.id,
             kind="welcome",
             title="Welcome, mentor",
-            body="Complete your profile so students can find you for 1:1 sessions.",
+            body="Complete your profile so students can find you.",
             link_href="/dashboard/mentor/profile",
         )
         notify_admins(
@@ -157,7 +157,7 @@ def notify_new_account(db: Session, user: User) -> None:
         user_id=user.id,
         kind="welcome",
         title="Welcome to Multivate",
-        body="Your student account is ready. Pick a course and start learning.",
+        body="Pick a course and start.",
         link_href="/dashboard/courses",
     )
     notify_admins(
@@ -175,7 +175,7 @@ def notify_enrollment(db: Session, *, student: User, course: Course) -> None:
         user_id=student.id,
         kind="enrollment",
         title="You are enrolled",
-        body=f"You are in {course.title}. Open it from your courses whenever you are ready.",
+        body=course.title,
         link_href="/dashboard/courses",
     )
     if course.instructor_id and course.instructor_id != student.id:

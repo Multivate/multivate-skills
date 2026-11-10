@@ -12,6 +12,9 @@ export type StudentLearningProfileRegistrationPayload = {
   goal_code: string | null;
   german_level: string | null;
   instruction_locale: string | null;
+  study_mode?: string | null;
+  campus_location?: string | null;
+  cohort_name?: string | null;
 };
 
 export type InstructorTeachingProfileRegistrationPayload = {

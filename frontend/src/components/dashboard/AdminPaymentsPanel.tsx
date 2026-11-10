@@ -262,11 +262,11 @@ export function AdminPaymentsPanel() {
                   </div>
                   <div>
                     <dt className="admin-muted text-[0.65rem] font-semibold uppercase tracking-[0.12em]">Payment ref</dt>
-                    <dd className="mt-1 font-mono text-xs">{p.payment_reference ?? "—"}</dd>
+                    <dd className="mt-1 font-mono text-xs">{p.payment_reference ?? "-"}</dd>
                   </div>
                   <div>
                     <dt className="admin-muted text-[0.65rem] font-semibold uppercase tracking-[0.12em]">Bank / RRR txn</dt>
-                    <dd className="mt-1 font-mono text-xs">{p.transaction_reference ?? "—"}</dd>
+                    <dd className="mt-1 font-mono text-xs">{p.transaction_reference ?? "-"}</dd>
                   </div>
                   <div>
                     <dt className="admin-muted text-[0.65rem] font-semibold uppercase tracking-[0.12em]">Submitted</dt>

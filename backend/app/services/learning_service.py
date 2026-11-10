@@ -12,11 +12,20 @@ from app.models.course_section import CourseSection
 from app.models.course_status import CourseFormat
 from app.models.enrollment import Enrollment
 from app.models.enrollment_status import EnrollmentStatus
+from app.models.role import UserRole
 from app.models.lesson import Lesson
 from app.models.student_learning_profile import StudentLearningProfile
 from app.models.user import User
-from app.schemas.learning import MyCourseItem, ProgressUpdate, WeeklyCourseTargetOut
+from app.schemas.learning import (
+    MyCourseItem,
+    ProgressUpdate,
+    StudentPortalOut,
+    StudentPortalCourseOut,
+    StudentPortalPaymentOut,
+    WeeklyCourseTargetOut,
+)
 from app.schemas.student_profile import (
+    AdminStudentPlacementIn,
     StudentLearningProfileAdminRow,
     StudentLearningProfileOut,
     StudentLearningProfileUpsert,
@@ -170,6 +179,9 @@ def serialize_student_profile(user_id: UUID, row: StudentLearningProfile | None)
             goal_code=None,
             german_level=None,
             instruction_locale=None,
+            study_mode=None,
+            campus_location=None,
+            cohort_name=None,
             updated_at=None,
         )
     return StudentLearningProfileOut.model_validate(row)
@@ -200,6 +212,9 @@ def list_student_profiles_for_admin(db: Session, limit: int = 200) -> list[Stude
             goal_code=getattr(profile, "goal_code", None),
             german_level=getattr(profile, "german_level", None),
             instruction_locale=getattr(profile, "instruction_locale", None),
+            study_mode=getattr(profile, "study_mode", None),
+            campus_location=getattr(profile, "campus_location", None),
+            cohort_name=getattr(profile, "cohort_name", None),
             updated_at=profile.updated_at,
         )
         for profile, name, email in rows
@@ -239,3 +254,134 @@ def set_weekly_course_target(db: Session, user_id: UUID, target: int) -> WeeklyC
         db.add(row)
     db.commit()
     return WeeklyCourseTargetOut(weekly_course_target=value)
+
+
+def get_student_portal(db: Session, user: User) -> StudentPortalOut:
+    from datetime import date
+
+    from app.models.payment import PaymentStatus
+    from app.services.bank_transfer_service import ensure_student_code, list_student_payments
+    from app.services.learning_habit_service import get_habits
+    from app.services.learning_intent import DEFAULT_CAMPUS, intent_from_profile, normalize_study_mode
+
+    if user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students only")
+
+    code = ensure_student_code(db, user)
+    profile = get_student_profile(db, user.id)
+    if profile is None:
+        profile = StudentLearningProfile(user_id=user.id, study_mode="online")
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    if not getattr(profile, "study_mode", None):
+        profile.study_mode = "online"
+        db.add(profile)
+        db.commit()
+
+    intent = intent_from_profile(profile, learn_with=getattr(user, "learn_with", None))
+    mode = normalize_study_mode(getattr(profile, "study_mode", None))
+    campus = getattr(profile, "campus_location", None)
+    if mode != "online" and not campus:
+        campus = DEFAULT_CAMPUS
+        profile.campus_location = campus
+        db.add(profile)
+        db.commit()
+    courses = list_my_courses(db, user.id)
+    payments = list_student_payments(db, user.id)
+    def payment_status(row) -> str:
+        raw = getattr(row, "status", "")
+        return str(getattr(raw, "value", raw))
+
+    outstanding = [
+        row
+        for row in payments
+        if payment_status(row) in {PaymentStatus.PENDING.value, PaymentStatus.AWAITING_REVIEW.value, "pending", "awaiting_review"}
+    ]
+    habits = get_habits(db, user.id, date.today().isoformat())
+    return StudentPortalOut(
+        student_code=code,
+        name=user.name,
+        email=user.email,
+        study_mode=mode,
+        campus_location=campus,
+        cohort_name=getattr(profile, "cohort_name", None),
+        goal_code=intent.goal,
+        topic=intent.topic,
+        german_level=intent.german_level,
+        weekly_hours=intent.weekly_hours,
+        enrolled_count=len(courses),
+        outstanding_payments=len(outstanding),
+        courses=[
+            StudentPortalCourseOut(slug=row.slug, title=row.title, progress_pct=row.progress_pct, status=row.status)
+            for row in courses
+        ],
+        payments=[
+            StudentPortalPaymentOut(
+                status=payment_status(row),
+                amount_cents=row.amount_cents,
+                currency=row.currency,
+                course_title=getattr(row, "course_title", None),
+                payment_reference=getattr(row, "payment_reference", None),
+            )
+            for row in payments[:8]
+        ],
+        visits_this_week=habits.visits_this_week,
+        visit_goal=habits.visit_goal,
+        minutes_this_week=habits.minutes_this_week,
+        minutes_goal=habits.minutes_goal,
+        visited_today=habits.visited_today,
+    )
+
+
+def admin_patch_student_placement(
+    db: Session, user_id: UUID, payload: AdminStudentPlacementIn
+) -> StudentLearningProfileAdminRow:
+    from app.services.learning_intent import DEFAULT_CAMPUS, STUDY_MODE_FORMATS, normalize_study_mode
+
+    student = db.get(User, user_id)
+    if student is None or student.role != UserRole.STUDENT:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+    row = get_student_profile(db, user_id)
+    if row is None:
+        row = StudentLearningProfile(user_id=user_id, study_mode="online")
+        db.add(row)
+        db.flush()
+    if payload.study_mode is not None:
+        row.study_mode = normalize_study_mode(payload.study_mode)
+        row.preferred_formats = STUDY_MODE_FORMATS[row.study_mode]
+        if row.study_mode == "online":
+            row.campus_location = None
+            row.cohort_name = None
+    if payload.campus_location is not None and (payload.study_mode is None or normalize_study_mode(payload.study_mode) != "online"):
+        value = payload.campus_location.strip()
+        row.campus_location = value or None
+    if getattr(row, "study_mode", None) in {"hybrid", "physical"} and not getattr(row, "campus_location", None):
+        row.campus_location = DEFAULT_CAMPUS
+    if payload.cohort_name is not None and (payload.study_mode is None or normalize_study_mode(payload.study_mode) != "online"):
+        value = payload.cohort_name.strip()
+        row.cohort_name = value or None
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return StudentLearningProfileAdminRow(
+        user_id=row.user_id,
+        user_name=student.name,
+        user_email=student.email,
+        education_level=row.education_level,
+        current_skills=row.current_skills,
+        skills_to_learn=row.skills_to_learn,
+        learning_goals=row.learning_goals,
+        preferred_formats=row.preferred_formats,
+        weekly_hours=row.weekly_hours,
+        weekly_course_target=getattr(row, "weekly_course_target", 1) or 1,
+        career_direction=row.career_direction,
+        extra_notes=row.extra_notes,
+        goal_code=getattr(row, "goal_code", None),
+        german_level=getattr(row, "german_level", None),
+        instruction_locale=getattr(row, "instruction_locale", None),
+        study_mode=getattr(row, "study_mode", None),
+        campus_location=getattr(row, "campus_location", None),
+        cohort_name=getattr(row, "cohort_name", None),
+        updated_at=row.updated_at,
+    )

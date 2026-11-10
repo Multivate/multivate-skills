@@ -8,7 +8,7 @@ export default function SubscribePage() {
     <>
       <StudentPageHero
         title="Subscribe"
-        subtitle="Stay on a learning rhythm. There is no all-you-can-eat plan — you enroll in real courses, then we remind you to show up."
+        subtitle="Stay on a learning rhythm. There is no all-you-can-eat plan. You enroll in real courses, then we remind you to show up."
       />
       <StudentSurface>
         <div className="grid gap-4 lg:grid-cols-3">
@@ -36,7 +36,7 @@ export default function SubscribePage() {
             <p className="text-xs font-bold uppercase tracking-wide text-[#6a6f73]">Teams</p>
             <h2 className="mt-2 text-xl font-bold">For organizations</h2>
             <p className="mt-2 text-sm text-[#6a6f73]">
-              Training for a school or company? Email us with the skills you need — we will not invent a fake team SKU here.
+              Training for a school or company? Email us with the skills you need. We will not invent a fake team SKU here.
             </p>
             <a href="mailto:info@multivate.com.ng" className="mt-5 inline-flex h-11 items-center border border-[#1c1d1f] px-4 text-sm font-bold">
               info@multivate.com.ng

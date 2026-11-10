@@ -124,6 +124,7 @@ def get_habits(db: Session, user_id: UUID, local_date: str) -> LearningHabitsOut
         reminder_time=time_value,
         reminder_dismissed=dismissed,
         reminder_enabled=bool(days and time_value) and not dismissed,
+        visit_dates=sorted({row.visited_on.isoformat() for row in week_rows}),
     )
 
 

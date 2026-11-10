@@ -66,6 +66,7 @@ export const studentNavGroups: DashboardNavGroup[] = [
     id: "learning",
     labelKey: "learning",
     items: [
+      { href: "/dashboard/portal", id: "portal" },
       { href: "/dashboard/courses", id: "myCourses" },
       { href: "/dashboard/progress", id: "progress" },
       { href: "/dashboard/certificates", id: "certificates" },

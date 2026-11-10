@@ -24,6 +24,7 @@ from app.schemas.studio import (
     CourseStudioBasicsOut,
     CourseStudioDetailOut,
     CoverImageUrlIn,
+    EnglishLinesIn,
     LessonReorderIn,
     LessonResourceOut,
     LessonStudioIn,
@@ -240,6 +241,16 @@ def add_phrase(
     user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
 ) -> AudioPhraseOut:
     return course_studio_service.create_audio_phrase(db, slug, payload, user)
+
+
+@router.post("/courses/{slug}/phrases/from-english", response_model=list[AudioPhraseOut], status_code=status.HTTP_201_CREATED)
+def add_phrases_from_english(
+    slug: str,
+    payload: EnglishLinesIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_roles(UserRole.INSTRUCTOR, UserRole.ADMIN))],
+) -> list[AudioPhraseOut]:
+    return course_studio_service.create_phrases_from_english(db, slug, payload, user)
 
 
 @router.patch("/phrases/{phrase_id}", response_model=AudioPhraseOut)

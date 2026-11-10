@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, Field, model_validator
 from uuid import UUID
 
@@ -49,6 +50,9 @@ class LibraryCourseOut(BaseModel):
     price_cents: int = 0
     currency: str = "NGN"
     is_free: bool = False
+    discount_percent: int = 0
+    discount_expires_at: datetime | None = None
+    sale_price_cents: int | None = None
 
 
 class LibraryCourseIn(BaseModel):
@@ -79,6 +83,7 @@ class LearningHabitsOut(BaseModel):
     reminder_time: str | None
     reminder_dismissed: bool
     reminder_enabled: bool
+    visit_dates: list[str] = Field(default_factory=list)
 
 
 class ProgressUpdate(BaseModel):
@@ -110,6 +115,9 @@ class RecommendedCourseOut(BaseModel):
     price_cents: int = 0
     currency: str = "NGN"
     is_free: bool = False
+    discount_percent: int = 0
+    discount_expires_at: datetime | None = None
+    sale_price_cents: int | None = None
     status: str = "draft"
     promo_video_url: str | None = None
     match_score: float = 0
@@ -122,6 +130,43 @@ class LearningPathStepOut(BaseModel):
     role: str
     reason: str
     course: RecommendedCourseOut
+
+
+class StudentPortalCourseOut(BaseModel):
+    slug: str
+    title: str
+    progress_pct: int
+    status: str
+
+
+class StudentPortalPaymentOut(BaseModel):
+    status: str
+    amount_cents: int
+    currency: str
+    course_title: str | None = None
+    payment_reference: str | None = None
+
+
+class StudentPortalOut(BaseModel):
+    student_code: str
+    name: str
+    email: str
+    study_mode: str
+    campus_location: str | None = None
+    cohort_name: str | None = None
+    goal_code: str
+    topic: str
+    german_level: str
+    weekly_hours: str
+    enrolled_count: int
+    outstanding_payments: int
+    courses: list[StudentPortalCourseOut] = Field(default_factory=list)
+    payments: list[StudentPortalPaymentOut] = Field(default_factory=list)
+    visits_this_week: int = 0
+    visit_goal: int = 0
+    minutes_this_week: int = 0
+    minutes_goal: int = 0
+    visited_today: bool = False
 
 
 class LearningPathOut(BaseModel):

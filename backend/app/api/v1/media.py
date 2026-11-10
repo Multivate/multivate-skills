@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -31,12 +31,23 @@ async def upload_media(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     file: UploadFile = File(..., description="The file to upload."),
-    folder: str = Query(default="general", description="Logical upload folder/bucket."),
+    folder: str = Query(default="avatars", description="Logical upload folder/bucket."),
     subfolder: str | None = Query(
         default=None,
         description="Optional sub-path within the folder (e.g., a course or lesson UUID).",
     ),
 ) -> MediaUploadOut:
+    allowed = {
+        UserRole.STUDENT: {"avatars"},
+        UserRole.INSTRUCTOR: {"avatars", "courses", "lessons", "resources"},
+        UserRole.MENTOR: {"avatars", "mentors"},
+        UserRole.ADMIN: {"avatars", "mentors", "courses", "lessons", "resources", "general"},
+    }
+    if folder not in allowed.get(user.role, set()):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You cannot upload to that folder.",
+        )
     media = await media_service.upload_file(
         db,
         file=file,

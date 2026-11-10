@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { fetchInternal } from "@/lib/internal-api";
-import { publicPageMetadata, truncateMeta } from "@/lib/seo";
+import { privateRobotsMetadata, publicPageMetadata, truncateMeta } from "@/lib/seo";
 import { absoluteAssetUrl, absoluteUrl } from "@/lib/site-url";
 import { notFound } from "next/navigation";
 
@@ -32,7 +32,7 @@ type PageProps = { params: Promise<{ locale: string; slug: string }> };
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
   const profile = await loadProfile(slug);
-  if (!profile) return { title: "Profile" };
+  if (!profile) return privateRobotsMetadata("Profile not found");
   return publicPageMetadata({
     locale,
     path: `/u/${profile.slug}`,

@@ -80,11 +80,11 @@ export default function PrivacyPage() {
         },
         {
           id: "kazzy",
-          title: "Lena and automated guidance",
+          title: "Kay and automated guidance",
           body: (
             <>
               <p>
-                Lena is Multivate’s in-product guide. Chat messages you send to Lena may be processed by our systems and
+                Kay is Multivate’s in-product guide. Chat messages you send to Kay may be processed by our systems and
                 third-party AI providers we configure to generate a response. Do not submit passwords, payment card numbers,
                 or government ID documents in chat.
               </p>

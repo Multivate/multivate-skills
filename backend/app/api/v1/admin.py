@@ -21,7 +21,7 @@ from app.schemas.instructor_profile import InstructorTeachingProfileAdminRow
 from app.schemas.mentor import MentorAdminFeatureIn, MentorAdminRejectIn, MentorProfileAdminRow
 from app.schemas.review import ReviewOut
 from app.schemas.studio import AdminCourseRejectIn, CourseStudioBasicsOut, StudioCourseListItem
-from app.schemas.student_profile import StudentLearningProfileAdminRow
+from app.schemas.student_profile import AdminStudentPlacementIn, StudentLearningProfileAdminRow
 from app.schemas.user import UserPublic, user_public_from_orm
 from app.services import analytics_service, authenticator_service, bank_transfer_service, course_studio_service, discount_service, instructor_profile_service, learning_service, mentor_service, review_service
 
@@ -99,6 +99,17 @@ def list_student_learning_profiles(
 ) -> list[StudentLearningProfileAdminRow]:
     """Questionnaire responses submitted by learners (joined to user name/email)."""
     return learning_service.list_student_profiles_for_admin(db, limit=limit)
+
+
+@router.patch("/student-learning-profiles/{user_id}", response_model=StudentLearningProfileAdminRow)
+def patch_student_placement(
+    user_id: UUID,
+    body: AdminStudentPlacementIn,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> StudentLearningProfileAdminRow:
+    """Set enrolment mode, campus, and cohort. Students cannot change this themselves."""
+    return learning_service.admin_patch_student_placement(db, user_id, body)
 
 
 @router.get("/instructor-teaching-profiles", response_model=list[InstructorTeachingProfileAdminRow])

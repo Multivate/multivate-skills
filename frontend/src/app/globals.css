@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: light;
+  --desk-chart-deep: #10244f;
   --brand-ink: #10244f;
   --brand-paper: #ffffff;
   --brand-surface: #ffffff;
@@ -23,6 +24,7 @@ body {
 
 html.dark {
   color-scheme: dark;
+  --desk-chart-deep: #8ec0ff;
 }
 
 html.dark body {
@@ -30,78 +32,109 @@ html.dark body {
   color: #eef4ff;
 }
 
-/* Student / mentor / instructor desks: hardcoded light cards and navy copy */
-html.dark .desk-root {
+/* Student / mentor / instructor desks + portaled sheets (notifications, account) */
+html.dark :is(.desk-root, .desk-overlay) {
   color: #eef4ff;
 }
 
-html.dark .desk-root .bg-white {
+html.dark :is(.desk-root, .desk-overlay) :is(.bg-white, .bg-brand-paper, .bg-brand-surface, .bg-brand-muted),
+html.dark :is(.desk-root, .desk-overlay):is(.bg-white, .bg-brand-paper, .bg-brand-surface, .bg-brand-muted) {
   background-color: #10192f;
 }
 
-html.dark .desk-root .bg-white\/95 {
+html.dark :is(.desk-root, .desk-overlay) .bg-brand-sky {
+  background-color: rgba(126, 182, 255, 0.16);
+}
+
+.desk-topbar,
+.desk-sheet {
+  background-color: #e7f1fc;
+}
+
+html.dark .desk-topbar,
+html.dark .desk-sheet,
+html.dark .desk-root .desk-topbar,
+html.dark .desk-root .desk-sheet {
+  background-color: #0c1833;
+}
+
+html.dark :is(.desk-root, .desk-overlay) .bg-brand-sky\/70 {
+  background-color: rgba(126, 182, 255, 0.12);
+}
+
+html.dark :is(.desk-root, .desk-overlay) .bg-white\/95 {
   background-color: rgba(16, 25, 47, 0.95);
 }
 
-html.dark .desk-root .bg-white\/70 {
+html.dark :is(.desk-root, .desk-overlay) .bg-white\/70 {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-html.dark .desk-root .bg-neutral-100 {
+html.dark :is(.desk-root, .desk-overlay) :is(.bg-neutral-100, .bg-neutral-50) {
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-html.dark .desk-root [class*="bg-[#f"],
-html.dark .desk-root [class*="bg-[#eef"],
-html.dark .desk-root [class*="bg-[#E7"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="bg-[#f"],
+html.dark :is(.desk-root, .desk-overlay) [class*="bg-[#F"],
+html.dark :is(.desk-root, .desk-overlay) [class*="bg-[#eef"],
+html.dark :is(.desk-root, .desk-overlay) [class*="bg-[#E7"] {
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-html.dark .desk-root [class*="bg-brand-ink/"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="bg-brand-ink/"] {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-html.dark .desk-root [class*="text-[#011B33]"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#011B33]"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#1c1d1f]"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#10244F]"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#111"] {
   color: #eef4ff;
 }
 
-html.dark .desk-root [class*="text-[#011B33]/"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#011B33]/"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#10244F]/"] {
   color: color-mix(in srgb, #eef4ff 58%, transparent);
 }
 
-html.dark .desk-root [class*="text-brand-ink"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="text-brand-ink"] {
   color: #eef4ff;
 }
 
-html.dark .desk-root [class*="text-brand-ink/"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="text-brand-ink/"] {
   color: color-mix(in srgb, #eef4ff 62%, transparent);
 }
 
-html.dark .desk-root [class*="text-[#71758e]"],
-html.dark .desk-root [class*="text-[#6a6f73]"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#71758e]"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#6a6f73]"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-[#d1d7dc]"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-zinc-800"],
+html.dark :is(.desk-root, .desk-overlay) [class*="text-neutral-"] {
   color: rgba(238, 244, 255, 0.55);
 }
 
-html.dark .desk-root [class*="border-brand-ink/"],
-html.dark .desk-root [class*="border-[#d1"],
-html.dark .desk-root [class*="border-[#e9"] {
+html.dark :is(.desk-root, .desk-overlay) [class*="border-brand-ink/"],
+html.dark :is(.desk-root, .desk-overlay) [class*="border-[#d1"],
+html.dark :is(.desk-root, .desk-overlay) [class*="border-[#e9"],
+html.dark :is(.desk-root, .desk-overlay) [class*="border-[#1c"],
+html.dark :is(.desk-root, .desk-overlay) [class*="border-neutral"] {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-html.dark .desk-root [class*="divide-brand-ink/"] > :not([hidden]) ~ :not([hidden]) {
+html.dark :is(.desk-root, .desk-overlay) [class*="divide-brand-ink/"] > :not([hidden]) ~ :not([hidden]) {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-html.dark .desk-root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-html.dark .desk-root textarea,
-html.dark .desk-root select {
+html.dark :is(.desk-root, .desk-overlay) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.dark :is(.desk-root, .desk-overlay) textarea,
+html.dark :is(.desk-root, .desk-overlay) select {
   color: #eef4ff;
   background-color: #0c1833;
   border-color: rgba(255, 255, 255, 0.14);
 }
 
-html.dark .desk-root input::placeholder,
-html.dark .desk-root textarea::placeholder {
+html.dark :is(.desk-root, .desk-overlay) input::placeholder,
+html.dark :is(.desk-root, .desk-overlay) textarea::placeholder {
   color: rgba(238, 244, 255, 0.42);
 }
 
@@ -296,7 +329,8 @@ input[type="number"] {
 /* Audio classroom: white canvas, logo navy + blue */
 .classroom-room {
   color-scheme: light;
-  --cr-bg: #f4f7fb;
+  --cr-bg: #eef4ff;
+  --cr-stage: linear-gradient(#e8f1ff 0%, #e8f1ff 70%, #f4ead2 100%);
   --cr-surface: #ffffff;
   --cr-surface-soft: #e7f1fc;
   --cr-text: #10244f;
@@ -308,8 +342,38 @@ input[type="number"] {
   --cr-yellow: #1457d0;
   --cr-blue: #0c1b4a;
   --cr-overlay: rgba(12, 27, 74, 0.45);
+  --cr-bubble: #ffffff;
+  --cr-bubble-ink: #10244f;
   color: var(--cr-text);
   background: var(--cr-bg);
+}
+
+.classroom-room {
+  --cr-dc-rail: #d5e4f8;
+  --cr-dc-chan: #e7eef8;
+  --cr-dc-chat: #ffffff;
+  --cr-dc-hover: rgba(16, 36, 79, 0.07);
+}
+
+html.dark .classroom-room {
+  color-scheme: dark;
+  --cr-bg: #070e22;
+  --cr-stage: linear-gradient(#0b1730 0%, #102040 72%, #1a2744 100%);
+  --cr-surface: #10192f;
+  --cr-surface-soft: #1a2744;
+  --cr-text: #eef4ff;
+  --cr-muted: rgba(238, 244, 255, 0.72);
+  --cr-faint: rgba(238, 244, 255, 0.5);
+  --cr-border: rgba(238, 244, 255, 0.14);
+  --cr-overlay: rgba(7, 14, 34, 0.55);
+  --cr-bubble: #ffffff;
+  --cr-bubble-ink: #10244f;
+  --cr-dc-rail: #1e1f22;
+  --cr-dc-chan: #2b2d31;
+  --cr-dc-chat: #313338;
+  --cr-dc-hover: rgba(255, 255, 255, 0.06);
+  background: var(--cr-bg) !important;
+  color: var(--cr-text) !important;
 }
 
 .classroom-room .cr-surface {
@@ -398,4 +462,225 @@ input[type="number"] {
 
 .classroom-room .cr-hover:hover {
   background: var(--cr-surface-soft);
+}
+
+.classroom-room .cr-stage {
+  background: var(--cr-stage);
+}
+
+.classroom-room .cr-chip {
+  background: var(--cr-surface-soft);
+  color: var(--cr-text);
+}
+
+.classroom-room .cr-chip-on {
+  background: var(--cr-accent);
+  color: var(--cr-accent-text);
+}
+
+.classroom-room .cr-option,
+.classroom-room .cr-option-on,
+.classroom-room .cr-option-ok,
+.classroom-room .cr-option-bad {
+  border: 1px solid var(--cr-border);
+  color: var(--cr-text) !important;
+}
+
+.classroom-room .cr-option {
+  background: var(--cr-surface-soft) !important;
+}
+
+.classroom-room .cr-option-on {
+  background: color-mix(in srgb, var(--cr-accent) 28%, var(--cr-surface)) !important;
+  border-color: var(--cr-accent);
+  box-shadow: inset 0 0 0 1px var(--cr-accent);
+}
+
+.classroom-room .cr-option-ok {
+  background: color-mix(in srgb, #10b981 28%, var(--cr-surface)) !important;
+  border-color: #10b981;
+}
+
+.classroom-room .cr-option-bad {
+  background: color-mix(in srgb, #f43f5e 28%, var(--cr-surface)) !important;
+  border-color: #f43f5e;
+}
+
+.classroom-room .cr-dc-rail {
+  background: var(--cr-dc-rail);
+  color: var(--cr-text);
+}
+
+.classroom-room .cr-dc-chan {
+  background: var(--cr-dc-chan);
+  color: var(--cr-text);
+}
+
+.classroom-room .cr-dc-chat {
+  background: var(--cr-dc-chat);
+  color: var(--cr-text);
+}
+
+@keyframes cr-kid-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes cr-kid-talk {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.2deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(1.8deg);
+  }
+}
+
+@keyframes cr-wave-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.classroom-room .cr-kid {
+  animation: cr-kid-bob 2.8s ease-in-out infinite;
+  transform-origin: bottom center;
+  background: transparent;
+}
+
+.classroom-room .cr-kid-talk {
+  animation: cr-kid-talk 0.38s ease-in-out infinite;
+  transform-origin: bottom center;
+  background: transparent;
+}
+
+.classroom-room .cr-say {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  max-width: 16rem;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: flex-start;
+  align-self: flex-start;
+  gap: 0.4rem;
+  margin-top: 10%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.85rem;
+  background: var(--cr-bubble);
+  color: var(--cr-bubble-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  white-space: normal;
+  box-shadow: 0 8px 20px rgba(16, 36, 79, 0.16);
+}
+
+.classroom-room .cr-say::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 18px;
+  width: 12px;
+  height: 12px;
+  background: var(--cr-bubble);
+  transform: rotate(45deg);
+}
+
+.classroom-room .cr-say-left::before {
+  left: auto;
+  right: -5px;
+}
+
+.classroom-room {
+  min-width: 0;
+}
+
+.classroom-room .cr-say-sm {
+  max-width: 11rem;
+  margin-top: 0;
+  align-self: center;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .classroom-room .cr-say-sm {
+    max-width: 42vw;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.55rem;
+  }
+}
+
+.classroom-room .cr-say-up {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+  align-self: center;
+}
+
+.classroom-room .cr-say-up::before {
+  left: 50%;
+  top: auto;
+  bottom: -6px;
+  margin-left: -6px;
+}
+
+.classroom-room .cr-wave span {
+  display: inline-block;
+  width: 3px;
+  border-radius: 99px;
+  background: currentColor;
+  transform-origin: center;
+  animation: cr-wave-bar 0.7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classroom-room .cr-kid,
+  .classroom-room .cr-kid-talk,
+  .classroom-room .cr-say,
+  .classroom-room .cr-wave span {
+    animation: none !important;
+  }
+}
+
+html.dark .desk-root .classroom-room :is(.bg-white, .bg-brand-paper, .bg-brand-surface) {
+  background-color: var(--cr-surface) !important;
+  color: var(--cr-text) !important;
+}
+
+html.dark .desk-root .classroom-room [class*="bg-[#EEF4FF]"],
+html.dark .desk-root .classroom-room [class*="bg-[#eef4ff]"],
+html.dark .desk-root .classroom-room [class*="bg-[#E8F1FF]"] {
+  background-color: var(--cr-surface-soft) !important;
+  color: var(--cr-text) !important;
+}
+
+html.dark .desk-root .classroom-room [class*="text-[#10244F]"] {
+  color: var(--cr-text) !important;
+}
+
+html.dark .desk-root .classroom-room [class*="text-[#10244F]/"] {
+  color: var(--cr-muted) !important;
+}
+
+html.dark .desk-root .classroom-room .cr-say,
+html.dark .classroom-room .cr-say {
+  background: #ffffff !important;
+  color: #10244f !important;
+}
+
+html.dark .desk-root .classroom-room .cr-say::before,
+html.dark .classroom-room .cr-say::before {
+  background: #ffffff !important;
 }

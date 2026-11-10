@@ -33,6 +33,8 @@ class AudioPhrase(Base):
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     source_text: Mapped[str] = mapped_column(String(512), nullable=False)
     target_text: Mapped[str] = mapped_column(String(512), nullable=False)
+    usage_note: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    ipa: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     audio_source: Mapped[Optional[AudioSource]] = mapped_column(
         value_string_enum(AudioSource),
         nullable=True,

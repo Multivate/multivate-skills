@@ -2,14 +2,28 @@ export function nextWeekTitle(existingTitles: string[]): string {
   const used = new Set(
     existingTitles
       .map((t) => {
-        const m = t.trim().match(/^week\s+(\d+)$/i);
+        const m = t.trim().match(/^(?:week|lesson)\s+(\d+)$/i);
         return m ? Number(m[1]) : 0;
       })
       .filter((n) => n > 0),
   );
   let n = existingTitles.length + 1;
   while (used.has(n)) n += 1;
-  return `Week ${n}`;
+  return `Lesson ${n}`;
+}
+
+export function nextModuleTitle(existingTitles: string[]): string {
+  const used = new Set(
+    existingTitles
+      .map((t) => {
+        const m = t.trim().match(/^(?:week|lesson|module)\s+(\d+)$/i);
+        return m ? Number(m[1]) : 0;
+      })
+      .filter((n) => n > 0),
+  );
+  let n = existingTitles.length + 1;
+  while (used.has(n)) n += 1;
+  return `Module ${n}`;
 }
 
 export function currentWeekStorageKey(slug: string) {

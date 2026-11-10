@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { FooterSocialMarks } from "@/components/layout/FooterSocialMarks";
 import { LogoMark } from "@/components/layout/LogoMark";
 
 const CONTACT_EMAIL = "info@multivate.com.ng";
@@ -26,6 +27,7 @@ export function StudentSiteFooter() {
     {
       title: tStudent("myCourses"),
       links: [
+        { href: "/dashboard/portal", label: tStudent("portal") },
         { href: "/dashboard/courses", label: tStudent("myCourses") },
         { href: "/dashboard/courses?tab=wishlist", label: tStudent("wishlist") },
         { href: "/dashboard/subscribe", label: tStudent("subscribe") },
@@ -35,9 +37,9 @@ export function StudentSiteFooter() {
     {
       title: t("company"),
       links: [
-        { href: "/#about", label: t("coAbout") },
-        { href: "/#mission", label: t("coMission") },
-        { href: `mailto:${CONTACT_EMAIL}`, label: t("coContact"), external: true },
+        { href: "/about", label: t("coAbout") },
+        { href: "/about#mission", label: t("coMission") },
+        { href: "/contact", label: t("coContact") },
       ],
     },
     {
@@ -62,6 +64,7 @@ export function StudentSiteFooter() {
             <a href={`mailto:${CONTACT_EMAIL}`} className="mt-4 inline-block text-sm font-medium text-[#b7dcff] hover:text-white">
               {CONTACT_EMAIL}
             </a>
+            <FooterSocialMarks heading={t("follow")} />
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4">
             {columns.map((column) => (

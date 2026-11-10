@@ -27,11 +27,13 @@ from app.models.payment import Payment, PaymentStatus
 from app.models.role import UserRole
 from app.models.user import User
 from app.models.video_watch_history import VideoWatchHistory
+from app.services.classroom_generate_service import fill_lesson, suggest_scene
 from app.schemas.studio import (
     AudioPhraseIn,
     AudioPhraseOut,
     AudioPhraseReorderIn,
     AudioPhraseUpdateIn,
+    EnglishLinesIn,
     CourseStudioAnalyticsOut,
     CourseStudioBasicsIn,
     CourseStudioBasicsOut,
@@ -49,9 +51,41 @@ from app.schemas.studio import (
 )
 from app.core.cache_service import invalidate_catalog_cache
 from app.services import course_service, media_service
+from app.services.course_pricing import normalize_discount
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
+SCENE_KEYS = {"cafe", "office", "campus", "street"}
+CEFR_LEVELS = {"A1", "A2", "B1", "B2", "C1", "C2"}
+
+
+def _cefr(value: str | None) -> str:
+    raw = (value or "A1").strip().upper()
+    return raw if raw in CEFR_LEVELS else "A1"
+
+
+def _level_from_cefr(cefr: str) -> CourseLevel:
+    if cefr.startswith("A"):
+        return CourseLevel.BEGINNER
+    if cefr.startswith("B"):
+        return CourseLevel.INTERMEDIATE
+    return CourseLevel.ADVANCED
+
+
+def _scene_key(value: str | None) -> str | None:
+    if not value:
+        return None
+    key = value.strip().lower()
+    return key if key in SCENE_KEYS else None
+
+
+def _section_out(section: CourseSection) -> SectionOut:
+    return SectionOut(
+        id=section.id,
+        title=section.title,
+        position=section.position,
+        scene_key=getattr(section, "scene_key", None),
+    )
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -84,6 +118,7 @@ def _basics_out(course: Course) -> CourseStudioBasicsOut:
         else str(getattr(course, "format", "video")),
         source_language=getattr(course, "source_language", "en") or "en",
         target_language=getattr(course, "target_language", "de") or "de",
+        cefr_level=getattr(course, "cefr_level", None) or "A1",
         level=course.level.value,
         language=course.language,
         duration_minutes=course.duration_minutes,
@@ -91,6 +126,8 @@ def _basics_out(course: Course) -> CourseStudioBasicsOut:
         price_cents=course.price_cents,
         currency=course.currency,
         is_free=course.is_free,
+        discount_percent=int(getattr(course, "discount_percent", 0) or 0),
+        discount_expires_at=getattr(course, "discount_expires_at", None),
         promo_video_url=course.promo_video_url,
         instructor_id=course.instructor_id,
         status=course.status.value,
@@ -116,6 +153,8 @@ def _phrase_out(p: AudioPhrase) -> AudioPhraseOut:
         position=p.position,
         source_text=p.source_text,
         target_text=p.target_text,
+        usage_note=getattr(p, "usage_note", None),
+        ipa=getattr(p, "ipa", None),
         audio_source=p.audio_source.value if p.audio_source else None,
         audio_url=p.audio_url,
         audio_duration_seconds=p.audio_duration_seconds,
@@ -221,9 +260,16 @@ def create_studio_course(db: Session, payload: CourseStudioBasicsIn, actor: User
 
     price_cents = payload.price_cents
     is_free = payload.is_free or price_cents <= 0
+    discount_percent, discount_expires_at = normalize_discount(
+        is_free=is_free,
+        percent=payload.discount_percent,
+        expires_at=payload.discount_expires_at,
+    )
     course_format = payload.format or CourseFormat.VIDEO
     source_lang = (payload.source_language or "en").strip().lower()[:8]
     target_lang = (payload.target_language or payload.language or "de").strip().lower()[:8]
+    cefr = _cefr(payload.cefr_level)
+    course_level = _level_from_cefr(cefr) if course_format == CourseFormat.AUDIO else payload.level
 
     course = Course(
         slug=slug,
@@ -236,19 +282,24 @@ def create_studio_course(db: Session, payload: CourseStudioBasicsIn, actor: User
         format=course_format,
         source_language=source_lang,
         target_language=target_lang,
-        level=payload.level,
+        cefr_level=cefr,
+        level=course_level,
         language=payload.language if course_format == CourseFormat.VIDEO else target_lang,
         duration_minutes=payload.duration_minutes,
         tags=payload.tags.strip() if payload.tags else None,
         price_cents=0 if is_free else price_cents,
         currency=payload.currency.upper(),
         is_free=is_free,
+        discount_percent=discount_percent,
+        discount_expires_at=discount_expires_at,
         promo_video_url=payload.promo_video_url,
         status=CourseStatus.DRAFT,
         instructor_id=instructor_id,
     )
     db.add(course)
     db.flush()
+    if course_format == CourseFormat.AUDIO:
+        db.add(CourseSection(course_id=course.id, title="Greetings", position=0, scene_key="cafe"))
     _audit(db, course.id, actor.id, "created", f"slug={slug} format={course_format.value}")
     db.commit()
     db.refresh(course)
@@ -300,7 +351,7 @@ def get_studio_course(db: Session, slug: str, actor: User) -> CourseStudioDetail
 
     return CourseStudioDetailOut(
         **_basics_out(course).model_dump(),
-        sections=[SectionOut(id=s.id, title=s.title, position=s.position) for s in sections],
+        sections=[_section_out(s) for s in sections],
         lessons=lessons_out,
         phrases=[
             _phrase_out(p)
@@ -333,7 +384,12 @@ def update_studio_basics(db: Session, slug: str, payload: CourseStudioBasicsIn, 
         course.format = payload.format or CourseFormat.VIDEO
     course.source_language = (payload.source_language or "en").strip().lower()[:8]
     course.target_language = (payload.target_language or payload.language or "de").strip().lower()[:8]
-    course.level = payload.level
+    course.cefr_level = _cefr(payload.cefr_level)
+    course.level = (
+        _level_from_cefr(course.cefr_level)
+        if _course_format(course) == CourseFormat.AUDIO
+        else payload.level
+    )
     course.language = (
         payload.language
         if _course_format(course) == CourseFormat.VIDEO
@@ -346,6 +402,11 @@ def update_studio_basics(db: Session, slug: str, payload: CourseStudioBasicsIn, 
     course.is_free = is_free
     course.price_cents = 0 if is_free else payload.price_cents
     course.currency = payload.currency.upper()
+    course.discount_percent, course.discount_expires_at = normalize_discount(
+        is_free=is_free,
+        percent=payload.discount_percent,
+        expires_at=payload.discount_expires_at,
+    )
 
     db.add(course)
     _audit(db, course.id, actor.id, "basics_updated")
@@ -412,13 +473,19 @@ def create_section(db: Session, slug: str, payload: SectionCreateIn, actor: User
         select(func.max(CourseSection.position)).where(CourseSection.course_id == course.id)
     )
     pos = payload.position if payload.position is not None else int(max_pos or -1) + 1
-    section = CourseSection(course_id=course.id, title=payload.title.strip(), position=pos)
+    section = CourseSection(
+        course_id=course.id,
+        title=payload.title.strip(),
+        position=pos,
+        scene_key=_scene_key(payload.scene_key)
+        or (suggest_scene(payload.title.strip()) if _course_format(course) == CourseFormat.AUDIO else None),
+    )
     db.add(section)
     db.flush()
     _audit(db, course.id, actor.id, "section_created", section.title)
     db.commit()
     db.refresh(section)
-    return SectionOut(id=section.id, title=section.title, position=section.position)
+    return _section_out(section)
 
 
 def update_section(db: Session, section_id: UUID, payload: SectionUpdateIn, actor: User) -> SectionOut:
@@ -431,12 +498,20 @@ def update_section(db: Session, section_id: UUID, payload: SectionUpdateIn, acto
     course_service.assert_can_manage_course(actor, course)
     if payload.title is not None:
         section.title = payload.title.strip()
+        if payload.scene_key is None and _course_format(course) == CourseFormat.AUDIO:
+            english = " ".join(
+                p.source_text
+                for p in db.scalars(select(AudioPhrase).where(AudioPhrase.section_id == section.id)).all()
+            )
+            section.scene_key = suggest_scene(section.title, english)
     if payload.position is not None:
         section.position = payload.position
+    if payload.scene_key is not None:
+        section.scene_key = _scene_key(payload.scene_key)
     db.add(section)
     db.commit()
     db.refresh(section)
-    return SectionOut(id=section.id, title=section.title, position=section.position)
+    return _section_out(section)
 
 
 def delete_section(db: Session, section_id: UUID, actor: User) -> None:
@@ -450,6 +525,10 @@ def delete_section(db: Session, section_id: UUID, actor: User) -> None:
     for lesson in db.scalars(select(Lesson).where(Lesson.section_id == section.id)).all():
         lesson.section_id = None
         db.add(lesson)
+    if _course_format(course) == CourseFormat.AUDIO:
+        for phrase in db.scalars(select(AudioPhrase).where(AudioPhrase.section_id == section.id)).all():
+            db.delete(phrase)
+        _sync_lessons_count(db, course.id)
     db.delete(section)
     _audit(db, course.id, actor.id, "section_deleted", str(section_id))
     db.commit()
@@ -471,7 +550,7 @@ def reorder_sections(db: Session, slug: str, payload: ReorderSectionsIn, actor: 
     ordered = db.scalars(
         select(CourseSection).where(CourseSection.course_id == course.id).order_by(CourseSection.position)
     ).all()
-    return [SectionOut(id=s.id, title=s.title, position=s.position) for s in ordered]
+    return [_section_out(s) for s in ordered]
 
 
 def create_lesson(db: Session, slug: str, payload: LessonStudioIn, actor: User) -> LessonStudioOut:
@@ -734,11 +813,20 @@ def submit_for_review(db: Session, slug: str, actor: User) -> CourseStudioBasics
     db.flush()
     if course.lessons_count < 1:
         detail = (
-            "Add at least one phrase"
+            "Add at least one classroom lesson"
             if _course_format(course) == CourseFormat.AUDIO
             else "Add at least one lesson"
         )
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
+    if _course_format(course) == CourseFormat.AUDIO:
+        modules = int(
+            db.scalar(select(func.count()).select_from(CourseSection).where(CourseSection.course_id == course.id)) or 0
+        )
+        if modules < 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Add at least one module. Students take an assessment after each module.",
+            )
     if not course.image_url:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Upload a course cover image")
     course.status = CourseStatus.PENDING_REVIEW
@@ -792,43 +880,85 @@ def create_audio_phrase(db: Session, slug: str, payload: AudioPhraseIn, actor: U
     course = course_service.get_course_for_management(db, slug, actor)
     course_service.assert_can_manage_course(actor, course)
     if _course_format(course) != CourseFormat.AUDIO:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="This course is not an audio course")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="This course is not a classroom course")
     if payload.section_id:
         sec = db.get(CourseSection, payload.section_id)
         if not sec or sec.course_id != course.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
     pos = payload.position
     if pos is None:
-        pos = int(
-            db.scalar(
-                select(func.coalesce(func.max(AudioPhrase.position), -1)).where(AudioPhrase.course_id == course.id)
-            )
-            or -1
-        ) + 1
+        q = select(func.coalesce(func.max(AudioPhrase.position), -1)).where(AudioPhrase.course_id == course.id)
+        if payload.section_id:
+            q = q.where(AudioPhrase.section_id == payload.section_id)
+        pos = int(db.scalar(q) or -1) + 1
     audio_source = None
     if payload.audio_source:
         try:
             audio_source = AudioSource(payload.audio_source)
         except ValueError as exc:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid audio source") from exc
+    section = db.get(CourseSection, payload.section_id) if payload.section_id else None
+    filled = fill_lesson(
+        payload.source_text,
+        module_title=section.title if section else "",
+        cefr=getattr(course, "cefr_level", None) or "A1",
+        target_text=payload.target_text,
+        ipa=payload.ipa,
+        usage_note=payload.usage_note,
+    )
     phrase = AudioPhrase(
         course_id=course.id,
         section_id=payload.section_id,
         position=pos,
         source_text=payload.source_text.strip(),
-        target_text=payload.target_text.strip(),
+        target_text=filled["target_text"],
+        usage_note=filled["usage_note"] or None,
+        ipa=filled["ipa"] or None,
         audio_source=audio_source,
         audio_url=payload.audio_url.strip() if payload.audio_url else None,
         audio_duration_seconds=payload.audio_duration_seconds,
     )
     db.add(phrase)
     db.flush()
+    if section:
+        count = int(
+            db.scalar(select(func.count()).select_from(AudioPhrase).where(AudioPhrase.section_id == section.id)) or 0
+        )
+        if count <= 1 or not section.scene_key:
+            english = " ".join(
+                p.source_text for p in db.scalars(select(AudioPhrase).where(AudioPhrase.section_id == section.id)).all()
+            )
+            section.scene_key = filled.get("scene_key") or suggest_scene(section.title, english)
+            db.add(section)
     _sync_lessons_count(db, course.id)
     _sync_duration_minutes(db, course.id)
     _audit(db, course.id, actor.id, "phrase_created", str(phrase.id))
     db.commit()
     db.refresh(phrase)
     return _phrase_out(phrase)
+
+
+def create_phrases_from_english(db: Session, slug: str, payload: EnglishLinesIn, actor: User) -> list[AudioPhraseOut]:
+    rows: list[AudioPhraseOut] = []
+    seen: set[str] = set()
+    for raw in payload.lines:
+        line = (raw or "").strip()
+        if not line or line.lower() in seen:
+            continue
+        seen.add(line.lower())
+        rows.append(
+            create_audio_phrase(
+                db,
+                slug,
+                AudioPhraseIn(section_id=payload.section_id, source_text=line),
+                actor,
+            )
+        )
+        if len(rows) >= 40:
+            break
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Add at least one English line.")
+    return rows
 
 
 def update_audio_phrase(db: Session, phrase_id: UUID, payload: AudioPhraseUpdateIn, actor: User) -> AudioPhraseOut:
@@ -849,8 +979,22 @@ def update_audio_phrase(db: Session, phrase_id: UUID, payload: AudioPhraseUpdate
         phrase.position = payload.position
     if payload.source_text is not None:
         phrase.source_text = payload.source_text.strip()
+        if payload.target_text is None:
+            section = db.get(CourseSection, phrase.section_id) if phrase.section_id else None
+            filled = fill_lesson(
+                phrase.source_text,
+                module_title=section.title if section else "",
+                cefr=getattr(course, "cefr_level", None) or "A1",
+            )
+            phrase.target_text = filled["target_text"]
+            phrase.ipa = filled["ipa"] or None
+            phrase.usage_note = filled["usage_note"] or None
     if payload.target_text is not None:
         phrase.target_text = payload.target_text.strip()
+    if payload.usage_note is not None:
+        phrase.usage_note = payload.usage_note.strip() or None
+    if payload.ipa is not None:
+        phrase.ipa = payload.ipa.strip() or None
     if payload.audio_source is not None:
         try:
             phrase.audio_source = AudioSource(payload.audio_source) if payload.audio_source else None

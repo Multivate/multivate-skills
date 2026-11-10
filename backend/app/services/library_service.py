@@ -13,6 +13,7 @@ from app.models.course_wishlist import CourseWishlist
 from app.models.learning_list import LearningList, LearningListItem
 from app.models.user import User
 from app.schemas.learning import LearningListOut, LibraryCourseOut
+from app.services.course_pricing import sale_price_cents
 
 instructor_user = aliased(User)
 
@@ -26,6 +27,9 @@ def _course_out(course: Course, instructor: User | None) -> LibraryCourseOut:
         price_cents=course.price_cents,
         currency=course.currency,
         is_free=course.is_free,
+        discount_percent=int(getattr(course, "discount_percent", 0) or 0),
+        discount_expires_at=getattr(course, "discount_expires_at", None),
+        sale_price_cents=sale_price_cents(course),
     )
 
 
