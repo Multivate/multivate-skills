@@ -3,10 +3,11 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, String, Uuid, func
+from sqlalchemy import Boolean, DateTime, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
+from app.models.enum_column import FlexibleStrEnum
 from app.models.role import UserRole
 
 
@@ -22,7 +23,7 @@ class User(Base):
     auth_provider: Mapped[str] = mapped_column(String(16), nullable=False, default="password")
     oauth_subject: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, native_enum=False, length=32),
+        FlexibleStrEnum(UserRole, length=32),
         nullable=False,
         default=UserRole.STUDENT,
     )

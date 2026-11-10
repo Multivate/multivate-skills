@@ -27,6 +27,7 @@ from app.core.security import (
     verify_token_type,
 )
 from app.core.rate_limit import enforce_rate_limit
+from app.schemas.instructor_profile import InstructorTeachingProfileUpsert
 from app.services import instructor_profile_service
 from app.services import learning_service
 from app.services import mail_service
@@ -51,9 +52,15 @@ def _require_profile_for_session(db: Session, user: User) -> None:
             )
     elif user.role == UserRole.INSTRUCTOR:
         if instructor_profile_service.get_instructor_profile(db, user.id) is None:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="profile_incomplete",
+            instructor_profile_service.upsert_instructor_profile(
+                db,
+                user.id,
+                InstructorTeachingProfileUpsert(
+                    expertise_areas="German language",
+                    teaching_bio="Course instructor.",
+                    subjects_taught="German",
+                    teaching_formats="online",
+                ),
             )
 
 
@@ -65,7 +72,14 @@ def login_user(db: Session, data: LoginRequest) -> AuthResponse | LoginMfaRequir
         window_sec=900,
         detail="Too many sign-in attempts. Please wait and try again.",
     )
-    user = db.execute(select(User).where(User.email == email_key)).scalar_one_or_none()
+    try:
+        user = db.execute(select(User).where(User.email == email_key)).scalar_one_or_none()
+    except LookupError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        ) from None
     if not user or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

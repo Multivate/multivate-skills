@@ -36,8 +36,9 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE users ALTER COLUMN two_factor_enabled SET DEFAULT FALSE")
         _run(
             conn,
-            "UPDATE users SET two_factor_enabled = FALSE WHERE role <> 'admin' AND two_factor_enabled IS TRUE",
+            "UPDATE users SET two_factor_enabled = FALSE WHERE lower(role) <> 'admin' AND two_factor_enabled IS TRUE",
         )
+        _run(conn, "UPDATE users SET role = lower(role) WHERE role <> lower(role)")
         _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS authenticator_secret VARCHAR(64)")
         _run(
             conn,
@@ -903,6 +904,20 @@ def apply_schema_patches(engine: Engine, *, database_url: str = "") -> None:
         _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS credentials_notes TEXT")
         _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS professional_links TEXT")
         _run(conn, "ALTER TABLE instructor_teaching_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        _run(
+            conn,
+            """
+            INSERT INTO instructor_teaching_profiles (
+              id, user_id, expertise_areas, teaching_bio, subjects_taught, teaching_formats
+            )
+            SELECT gen_random_uuid(), u.id, 'German language', 'Course instructor.', 'German', 'online'
+            FROM users u
+            WHERE lower(u.role) = 'instructor'
+              AND NOT EXISTS (
+                SELECT 1 FROM instructor_teaching_profiles p WHERE p.user_id = u.id
+              )
+            """,
+        )
 
         _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_topic VARCHAR(64)")
         _run(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_with VARCHAR(8)")
