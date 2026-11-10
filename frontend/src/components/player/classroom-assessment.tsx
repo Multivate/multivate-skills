@@ -3,6 +3,7 @@
 import { CheckCircle2, Headphones, Lock, Mic, PenLine, Star, Trophy, Type, Volume2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { phraseUsage } from "@/lib/classroom-copy";
+import { SpeechHeardFeedback, speechMatches } from "@/components/player/SpeechHeardFeedback";
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 
 export const PASS_MARK = 70;
@@ -75,17 +76,6 @@ export function normalize(text: string) {
 
 function blanks(text: string) {
   return text.replace(/[^\s]/g, "_");
-}
-
-function closeMatch(expect: string, heard: string) {
-  const a = normalize(expect);
-  const b = normalize(heard);
-  if (!a || !b) return false;
-  if (a === b) return true;
-  if (b.includes(a) || a.includes(b)) return true;
-  const aw = a.split(" ");
-  const bw = new Set(b.split(" "));
-  return aw.length > 0 && aw.every((word) => bw.has(word));
 }
 
 function mcq(id: string, kind: Kind, skill: string, prompt: string, correct: string, pool: string[], extra: string[]): Question {
@@ -246,6 +236,7 @@ export function ClassroomAssessment({
     setPct(previous?.scorePct ?? 0);
     setXpEarned(0);
     speak.setHeard("");
+    speak.clearClip();
   }, [lessonKey, seed]);
 
   const current = quiz[index];
@@ -258,6 +249,12 @@ export function ClassroomAssessment({
     const timer = window.setTimeout(() => playClip(current, voiceLine), 400);
     return () => window.clearTimeout(timer);
   }, [current?.id, checked]);
+
+  useEffect(() => {
+    if (!current || current.kind !== "speak" || checked || speak.recording) return;
+    if (!speak.heard.trim()) return;
+    check();
+  }, [speak.recording, speak.heard, current?.id, checked]);
 
   function ready() {
     if (!current) return false;
@@ -272,7 +269,7 @@ export function ClassroomAssessment({
     let pass = false;
     if (isChoice) pass = picked === current.correctId;
     else if (isTyped) pass = normalize(typed) === normalize(current.answer ?? "");
-    else if (current.kind === "speak") pass = closeMatch(current.answer ?? "", speak.heard);
+    else if (current.kind === "speak") pass = speechMatches(current.answer ?? "", speak.heard);
     setOk(pass);
     if (pass) setCorrect((n) => n + 1);
     setChecked(true);
@@ -305,6 +302,7 @@ export function ClassroomAssessment({
     setChecked(false);
     setOk(false);
     speak.setHeard("");
+    speak.clearClip();
     speak.stop();
   }
 
@@ -464,9 +462,13 @@ export function ClassroomAssessment({
               <Mic className="h-5 w-5" />
               {speak.recording ? "Listening… release" : "Hold to speak"}
             </button>
-            <p className="cr-muted mt-3 text-sm">{speak.heard || "Allow the microphone, then say the German line."}</p>
-            {speak.error ? <p className="mt-1 text-sm text-rose-500">{speak.error}</p> : null}
-            {checked && !ok ? <p className="mt-2 text-sm font-semibold text-rose-400">Aim for: {current.answer}</p> : null}
+            <SpeechHeardFeedback
+              expect={current.answer ?? ""}
+              heard={speak.heard}
+              recording={speak.recording}
+              error={speak.error}
+              clipUrl={speak.clipUrl}
+            />
           </div>
         ) : null}
       </div>
@@ -485,7 +487,11 @@ export function ClassroomAssessment({
             )
           ) : (
             <span className="cr-muted">
-              {isChoice ? "Pick an answer, then check it." : current.kind === "speak" ? "Speak, then check." : "Type your answer, then check it."}
+              {isChoice
+                ? "Pick an answer, then check it."
+                : current.kind === "speak"
+                  ? "Hold Speak. You will see if the line matches."
+                  : "Type your answer, then check it."}
             </span>
           )}
         </p>

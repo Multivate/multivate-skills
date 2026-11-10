@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { LogoMark, LogoTile } from "@/components/layout/LogoMark";
+import { SpeechHeardFeedback } from "@/components/player/SpeechHeardFeedback";
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 import { useClassroomMeeting } from "@/hooks/useClassroomMeeting";
 import { useAppearance } from "@/components/theme/AppearanceMenu";
@@ -893,7 +894,7 @@ export function ClassroomSettings({
       <section className="cr-surface rounded-[22px] p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] opacity-55">Microphone</p>
         <h2 className="mt-1 text-lg font-extrabold">Test speak</h2>
-        <p className="cr-muted mt-1 text-sm">Allow access, then say a German line.</p>
+        <p className="cr-muted mt-1 text-sm">Allow access, then say Hallo.</p>
         <button
           type="button"
           onClick={() => voice.toggle()}
@@ -901,9 +902,14 @@ export function ClassroomSettings({
         >
           {voice.recording ? "Stop" : "Speak"}
         </button>
-        {voice.heard ? <p className="mt-3 text-sm">Heard: {voice.heard}</p> : null}
-        {voice.clipUrl ? <audio className="mt-3 w-full" controls src={voice.clipUrl} /> : null}
-        {voice.error ? <p className="mt-3 text-sm text-rose-500">{voice.error}</p> : null}
+        <SpeechHeardFeedback
+          expect="Hallo"
+          heard={voice.heard}
+          recording={voice.recording}
+          error={voice.error}
+          clipUrl={voice.clipUrl}
+          missHint="Heard a different line. Aim for: Hallo"
+        />
         <Link href="/dashboard/settings" className="mt-6 inline-block text-sm font-semibold text-[#1457D0]">
           Account settings
         </Link>

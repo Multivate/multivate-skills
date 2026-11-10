@@ -35,6 +35,7 @@ import {
   type StudentLook,
   type TeacherVoice,
 } from "@/lib/classroom-prefs";
+import { SpeechHeardFeedback, speechMatches } from "@/components/player/SpeechHeardFeedback";
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 import { getCurrentUser } from "@/services/auth";
 import {
@@ -413,7 +414,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
   }
 
   function scoreSpeech(expect: string, heard: string) {
-    const ok = Boolean(heard) && normalize(heard) === normalize(expect);
+    const ok = Boolean(heard) && speechMatches(expect, heard);
     setVerdict(ok ? "ok" : heard ? "bad" : null);
     if (ok && phrase) markLearned(phrase.id);
     return ok;
@@ -693,7 +694,13 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     </button>
                     <div className="text-sm">
                       <p className="font-semibold">{pronounce.recording ? "Listening… release to stop" : "Hold Speak and say the German line"}</p>
-                      <p className="cr-muted">{pronounce.heard || "Allow the microphone when asked."}</p>
+                      <SpeechHeardFeedback
+                        expect={phrase.target_text}
+                        heard={pronounce.heard}
+                        recording={pronounce.recording}
+                        error={pronounce.error}
+                        clipUrl={pronounce.clipUrl}
+                      />
                     </div>
                   </div>
                 ) : null}
@@ -780,6 +787,11 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     <Mic className="h-5 w-5" />
                   </button>
                   <p className="mt-2 text-xs text-white/80">Hold to speak</p>
+                  {pronounce.heard && !pronounce.recording ? (
+                    <p className={`mt-2 text-xs font-semibold ${verdict === "ok" ? "text-emerald-200" : "text-rose-200"}`}>
+                      {verdict === "ok" ? "That matches the German line." : "Heard a different line."}
+                    </p>
+                  ) : null}
                 </section>
               </div>
 
@@ -932,8 +944,18 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     Send
                   </button>
                 </div>
-                {scenarioVoice.heard ? <p className="cr-muted px-3 pb-2 text-[11px]">Heard: {scenarioVoice.heard}</p> : null}
-                {scenarioVoice.error ? <p className="px-3 pb-2 text-[11px] text-rose-600">{scenarioVoice.error}</p> : null}
+                {scenarioVoice.recording || scenarioVoice.heard || scenarioVoice.error || scenarioVoice.clipUrl ? (
+                  <div className="px-3 pb-2">
+                    <SpeechHeardFeedback
+                      expect={phrase.target_text}
+                      heard={scenarioVoice.heard}
+                      recording={scenarioVoice.recording}
+                      error={scenarioVoice.error}
+                      clipUrl={scenarioVoice.clipUrl}
+                      missHint={`That is not this lesson line. Aim for: ${phrase.target_text}`}
+                    />
+                  </div>
+                ) : null}
               </aside>
             </div>
           ) : null}
