@@ -73,7 +73,7 @@ class RecentPaymentRow(BaseModel):
     id: UUID
     amount_cents: int
     currency: str
-    status: PaymentStatus
+    status: str
     created_at: datetime
     user_email: str
     course_slug: str | None

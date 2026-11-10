@@ -97,6 +97,20 @@ def _payment_status_breakdown(db: Session) -> list[PaymentStatusCount]:
 
 
 def _mentor_stats(db: Session) -> MentorStats:
+    try:
+        return _mentor_stats_query(db)
+    except Exception:
+        logger.exception("Admin mentor stats query failed")
+        db.rollback()
+        return MentorStats(
+            approved_profiles=0,
+            pending_profiles=0,
+            total_conversations=0,
+            mentors_who_replied=0,
+        )
+
+
+def _mentor_stats_query(db: Session) -> MentorStats:
     approved = int(
         db.scalar(
             select(func.count())
@@ -191,8 +205,18 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
         enrollments=_daily_count_series(db, Enrollment, Enrollment.created_at),
         revenue=_daily_revenue_series(db),
     )
-    users_by_role = _users_by_role(db)
-    payment_statuses = _payment_status_breakdown(db)
+    try:
+        users_by_role = _users_by_role(db)
+    except Exception:
+        logger.exception("Admin users-by-role query failed")
+        db.rollback()
+        users_by_role = []
+    try:
+        payment_statuses = _payment_status_breakdown(db)
+    except Exception:
+        logger.exception("Admin payment-status query failed")
+        db.rollback()
+        payment_statuses = []
     mentor_stats = _mentor_stats(db)
     logger.info(
         "Admin dashboard analytics growth_days=%s mentor_conversations=%s avg_progress=%s",
@@ -212,10 +236,15 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
         TopCourseRow(slug=r[0], title=r[1], image_url=r[2], enrollment_count=int(r[3] or 0)) for r in top_rows
     ]
 
-    recent_user_models = list(
-        db.scalars(select(User).order_by(User.created_at.desc()).limit(8)).unique().all()
-    )
-    recent_users = [user_public_from_orm(u) for u in recent_user_models]
+    try:
+        recent_user_models = list(
+            db.scalars(select(User).order_by(User.created_at.desc()).limit(8)).unique().all()
+        )
+        recent_users = [user_public_from_orm(u) for u in recent_user_models]
+    except Exception:
+        logger.exception("Admin recent-users query failed")
+        db.rollback()
+        recent_users = []
 
     recent_enrollments = _recent_enrollment_rows(db, 12)
 
@@ -233,7 +262,7 @@ def admin_dashboard(db: Session) -> AdminDashboardOut:
                 id=p.id,
                 amount_cents=p.amount_cents,
                 currency=p.currency,
-                status=p.status,
+                status=p.status.value if hasattr(p.status, "value") else str(p.status),
                 created_at=p.created_at,
                 user_email=str(email),
                 course_slug=cslug,

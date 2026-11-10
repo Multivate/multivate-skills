@@ -121,7 +121,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
       const res = await fetch("/api/admin/dashboard", { credentials: "include", cache: "no-store" });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(res.status === 401 ? "Your session expired. Sign in again." : "The admin overview could not be loaded.");
+        const detail = body && typeof body === "object" && typeof (body as { detail?: unknown }).detail === "string"
+          ? (body as { detail: string }).detail
+          : null;
+        if (res.status === 401) {
+          setError("Your session expired. Sign in again.");
+        } else if (detail) {
+          setError(detail);
+        } else {
+          setError("The admin overview could not be loaded.");
+        }
         setData(null);
         return;
       }

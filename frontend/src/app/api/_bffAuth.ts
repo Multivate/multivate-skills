@@ -70,7 +70,15 @@ export async function forwardAuthenticatedUpstream(
     headers.set("Authorization", `Bearer ${access!}`);
   }
 
-  let upstream = await call();
+  let upstream: Response;
+  try {
+    upstream = await call();
+  } catch {
+    return NextResponse.json(
+      { detail: "We couldn't reach the server right now. Please try again in a moment." },
+      { status: 502 },
+    );
+  }
   if (upstream.status === 401) {
     if (!(await refreshPair())) {
       const data = await upstream.json().catch(() => ({}));
@@ -153,7 +161,15 @@ export async function forwardAuthenticatedMultipart(
     }
   }
 
-  let upstream = await call();
+  let upstream: Response;
+  try {
+    upstream = await call();
+  } catch {
+    return NextResponse.json(
+      { detail: "We couldn't reach the server right now. Please try again in a moment." },
+      { status: 502 },
+    );
+  }
   if (upstream.status === 401) {
     if (!(await refreshPair())) {
       const data = await upstream.json().catch(() => ({}));
@@ -161,7 +177,14 @@ export async function forwardAuthenticatedMultipart(
       clearAuthCookies(res, secure);
       return res;
     }
-    upstream = await call();
+    try {
+      upstream = await call();
+    } catch {
+      return NextResponse.json(
+        { detail: "We couldn't reach the server right now. Please try again in a moment." },
+        { status: 502 },
+      );
+    }
   }
 
   const data = await upstream.json().catch(() => ({}));
