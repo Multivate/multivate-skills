@@ -38,6 +38,7 @@ export function SpeechHeardFeedback({
   clipUrl,
   missHint,
   tone = "default",
+  showVerdict = true,
 }: {
   expect: string;
   heard: string;
@@ -46,9 +47,10 @@ export function SpeechHeardFeedback({
   clipUrl?: string | null;
   missHint?: string;
   tone?: "default" | "onDark";
+  showVerdict?: boolean;
 }) {
-  const match = Boolean(heard.trim()) && !recording && speechMatches(expect, heard);
-  const miss = Boolean(heard.trim()) && !recording && !match;
+  const match = showVerdict && Boolean(heard.trim()) && !recording && speechMatches(expect, heard);
+  const miss = showVerdict && Boolean(heard.trim()) && !recording && !match;
   const okClass = tone === "onDark" ? "text-emerald-200" : "text-emerald-600";
   const badClass = tone === "onDark" ? "text-rose-200" : "text-rose-500";
   return (

@@ -241,6 +241,10 @@ export function ClassroomAssessment({
   }, [lessonKey, seed]);
 
   const current = quiz[index];
+  const correctLabel =
+    current?.answer ||
+    current?.options.find((option) => option.id === current.correctId)?.text ||
+    "";
   const progress = quiz.length ? Math.round(((index + (checked ? 1 : 0)) / quiz.length) * 100) : 0;
   const isChoice = current ? ["listen", "meaning", "choose", "usage"].includes(current.kind) : false;
   const isTyped = current ? current.kind === "spell" || current.kind === "write" : false;
@@ -251,17 +255,11 @@ export function ClassroomAssessment({
     return () => window.clearTimeout(timer);
   }, [current?.id, checked]);
 
-  useEffect(() => {
-    if (!current || current.kind !== "speak" || checked || speak.recording) return;
-    if (!speak.heard.trim()) return;
-    check();
-  }, [speak.recording, speak.heard, current?.id, checked]);
-
   function ready() {
     if (!current) return false;
     if (isChoice) return Boolean(picked);
     if (isTyped) return Boolean(typed.trim());
-    if (current.kind === "speak") return Boolean(speak.heard.trim());
+    if (current.kind === "speak") return !speak.recording && Boolean(speak.heard.trim() || speak.clipUrl);
     return false;
   }
 
@@ -464,29 +462,39 @@ export function ClassroomAssessment({
               recording={speak.recording}
               error={speak.error}
               clipUrl={speak.clipUrl}
+              showVerdict={checked}
             />
           </div>
         ) : null}
       </div>
 
+      {checked ? (
+        <div
+          className={`mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3 ${
+            ok ? "bg-emerald-500/15 text-emerald-500" : "bg-rose-500/15 text-rose-500"
+          }`}
+          role="status"
+        >
+          {ok ? <CheckCircle2 className="h-10 w-10 shrink-0" aria-hidden /> : <XCircle className="h-10 w-10 shrink-0" aria-hidden />}
+          <div>
+            <p className="text-lg font-extrabold">{ok ? "Correct" : "Incorrect"}</p>
+            <p className="text-sm font-semibold">
+              {ok ? `+${XP_CORRECT} XP` : correctLabel ? `Aim for: ${correctLabel}` : "Try the next question."}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--cr-border)] pt-4">
         <p className="min-h-5 text-sm font-semibold">
           {checked ? (
-            ok ? (
-              <span className="inline-flex items-center gap-1.5 text-emerald-400">
-                <CheckCircle2 className="h-4 w-4" /> Correct · +{XP_CORRECT} XP
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 text-rose-400">
-                <XCircle className="h-4 w-4" /> Not quite
-              </span>
-            )
+            <span className={ok ? "text-emerald-500" : "text-rose-500"}>{ok ? "Correct" : "Incorrect"}</span>
           ) : (
             <span className="cr-muted">
               {isChoice
                 ? "Pick an answer, then check it."
                 : current.kind === "speak"
-                  ? "Tap Speak, say the line, tap Stop."
+                  ? "Tap Speak, tap Stop, then check your answer."
                   : "Type your answer, then check it."}
             </span>
           )}
