@@ -25,8 +25,8 @@ def course_to_out(course: Course) -> CourseOut:
         duration = max(1, course.lessons_count)
     return row.model_copy(
         update={
-            "level": course.level.value,
-            "status": course.status.value,
+            "level": course.level.value if hasattr(course.level, "value") else str(course.level or "beginner"),
+            "status": course.status.value if hasattr(course.status, "value") else str(course.status or "draft"),
             "duration_minutes": duration,
             "discount_percent": int(getattr(course, "discount_percent", 0) or 0),
             "discount_expires_at": getattr(course, "discount_expires_at", None),

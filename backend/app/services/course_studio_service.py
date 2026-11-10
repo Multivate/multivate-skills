@@ -59,6 +59,13 @@ SCENE_KEYS = {"cafe", "office", "campus", "street"}
 CEFR_LEVELS = {"A1", "A2", "B1", "B2", "C1", "C2"}
 
 
+def _enum_value(value, default: str) -> str:
+    if value is None:
+        return default
+    raw = getattr(value, "value", value)
+    return str(raw)
+
+
 def _cefr(value: str | None) -> str:
     raw = (value or "A1").strip().upper()
     return raw if raw in CEFR_LEVELS else "A1"
@@ -113,13 +120,11 @@ def _basics_out(course: Course) -> CourseStudioBasicsOut:
         description=course.description,
         learning_objectives=course.learning_objectives,
         category=course.category,
-        format=getattr(course, "format", CourseFormat.VIDEO).value
-        if hasattr(getattr(course, "format", CourseFormat.VIDEO), "value")
-        else str(getattr(course, "format", "video")),
+        format=_enum_value(getattr(course, "format", None), "video"),
         source_language=getattr(course, "source_language", "en") or "en",
         target_language=getattr(course, "target_language", "de") or "de",
         cefr_level=getattr(course, "cefr_level", None) or "A1",
-        level=course.level.value,
+        level=_enum_value(course.level, "beginner"),
         language=course.language,
         duration_minutes=course.duration_minutes,
         tags=course.tags,
@@ -130,7 +135,7 @@ def _basics_out(course: Course) -> CourseStudioBasicsOut:
         discount_expires_at=getattr(course, "discount_expires_at", None),
         promo_video_url=course.promo_video_url,
         instructor_id=course.instructor_id,
-        status=course.status.value,
+        status=_enum_value(course.status, "draft"),
         image_url=course.image_url,
         lessons_count=course.lessons_count,
         rejection_reason=course.rejection_reason,
@@ -237,8 +242,8 @@ def list_instructor_studio_courses(db: Session, instructor_id: UUID) -> list[Stu
             id=c.id,
             slug=c.slug,
             title=c.title,
-            status=c.status.value,
-            format=_course_format(c).value,
+            status=_enum_value(c.status, "draft"),
+            format=_enum_value(_course_format(c), "video"),
             lessons_count=c.lessons_count,
             image_url=c.image_url,
             updated_at=c.updated_at,
@@ -866,8 +871,8 @@ def admin_list_pending(db: Session) -> list[StudioCourseListItem]:
             id=c.id,
             slug=c.slug,
             title=c.title,
-            status=c.status.value,
-            format=_course_format(c).value,
+            status=_enum_value(c.status, "draft"),
+            format=_enum_value(_course_format(c), "video"),
             lessons_count=c.lessons_count,
             image_url=c.image_url,
             updated_at=c.updated_at,

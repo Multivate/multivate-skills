@@ -47,6 +47,7 @@ from app.models.course import Course  # noqa: E402
 from app.models.course_section import CourseSection  # noqa: E402
 from app.models.course_status import CourseFormat, CourseLevel, CourseStatus  # noqa: E402
 from app.models.lesson import Lesson  # noqa: E402
+from app.models.instructor_teaching_profile import InstructorTeachingProfile  # noqa: E402
 from app.models.role import UserRole  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.admin_bootstrap import ADMIN_EMAIL  # noqa: E402
@@ -71,6 +72,21 @@ def _course_owner(db, admin: User) -> User:
         owner.role = UserRole.INSTRUCTOR
         db.add(owner)
         print(f"Set {email} role to instructor so they can open Course Studio")
+    profile = db.execute(
+        select(InstructorTeachingProfile).where(InstructorTeachingProfile.user_id == owner.id)
+    ).scalar_one_or_none()
+    if profile is None:
+        db.add(
+            InstructorTeachingProfile(
+                user_id=owner.id,
+                expertise_areas="German language",
+                teaching_bio="German A1 instruction for learners starting from zero.",
+                subjects_taught="German A1",
+                years_experience="3_5",
+                teaching_formats="online",
+            )
+        )
+        print(f"Created teaching profile for {email}")
     return owner
 
 
