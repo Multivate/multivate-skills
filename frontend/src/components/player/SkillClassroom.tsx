@@ -788,9 +788,12 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   </button>
                   <p className="mt-2 text-xs text-white/80">Hold to speak</p>
                   {pronounce.heard && !pronounce.recording ? (
-                    <p className={`mt-2 text-xs font-semibold ${verdict === "ok" ? "text-emerald-200" : "text-rose-200"}`}>
-                      {verdict === "ok" ? "That matches the German line." : "Heard a different line."}
-                    </p>
+                    <SpeechHeardFeedback
+                      expect={phrase.target_text}
+                      heard={pronounce.heard}
+                      recording={pronounce.recording}
+                      tone="onDark"
+                    />
                   ) : null}
                 </section>
               </div>

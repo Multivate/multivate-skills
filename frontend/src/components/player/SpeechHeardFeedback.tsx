@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2, XCircle } from "lucide-react";
+
 export function speechMatches(expect: string, heard: string) {
   const a = expect
     .toLowerCase()
@@ -30,6 +32,7 @@ export function SpeechHeardFeedback({
   error,
   clipUrl,
   missHint,
+  tone = "default",
 }: {
   expect: string;
   heard: string;
@@ -37,17 +40,31 @@ export function SpeechHeardFeedback({
   error?: string | null;
   clipUrl?: string | null;
   missHint?: string;
+  tone?: "default" | "onDark";
 }) {
   const match = Boolean(heard.trim()) && !recording && speechMatches(expect, heard);
   const miss = Boolean(heard.trim()) && !recording && !match;
+  const okClass = tone === "onDark" ? "text-emerald-200" : "text-emerald-600";
+  const badClass = tone === "onDark" ? "text-rose-200" : "text-rose-500";
   return (
     <div className="mt-2 text-sm">
-      <p className="cr-muted">{heard || (recording ? "Listening…" : "Allow the microphone when asked.")}</p>
-      {error ? <p className="mt-1 text-rose-500">{error}</p> : null}
-      {match ? <p className="mt-1 font-semibold text-emerald-600">That matches the German line.</p> : null}
-      {miss ? (
-        <p className="mt-1 font-semibold text-rose-500">{missHint ?? `Heard a different line. Aim for: ${expect}`}</p>
+      {match ? (
+        <p className={`mt-1 inline-flex items-center gap-2 text-base font-extrabold ${okClass}`} role="status">
+          <CheckCircle2 className="h-8 w-8 shrink-0" aria-hidden />
+          Correct
+        </p>
       ) : null}
+      {miss ? (
+        <p className={`mt-1 inline-flex items-center gap-2 text-base font-extrabold ${badClass}`} role="status">
+          <XCircle className="h-8 w-8 shrink-0" aria-hidden />
+          Incorrect
+        </p>
+      ) : null}
+      <p className={tone === "onDark" ? "mt-1 text-white/80" : "cr-muted"}>
+        {heard || (recording ? "Listening…" : "Allow the microphone when asked.")}
+      </p>
+      {error ? <p className={`mt-1 ${badClass}`}>{error}</p> : null}
+      {miss ? <p className={`mt-1 font-semibold ${badClass}`}>{missHint ?? `Aim for: ${expect}`}</p> : null}
       {clipUrl ? <audio className="mt-2 max-w-full" controls src={clipUrl} /> : null}
     </div>
   );
