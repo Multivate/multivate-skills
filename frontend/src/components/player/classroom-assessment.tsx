@@ -7,6 +7,7 @@ import { SpeechHeardFeedback, speechMatches } from "@/components/player/SpeechHe
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 
 export const PASS_MARK = 70;
+export const QUIZ_SIZE = 20;
 export const XP_LEARNED = 40;
 export const XP_PASS = 120;
 export const XP_CORRECT = 20;
@@ -86,9 +87,7 @@ function mcq(id: string, kind: Kind, skill: string, prompt: string, correct: str
   return { id, kind, skill, prompt, options, correctId: `c_${id}` };
 }
 
-export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
-  const pool = phrases.filter((row) => row.source_text.trim() && row.target_text.trim());
-  if (!pool.length) return [];
+function fillQuestionBuckets(pool: LessonPhrase[], round: number) {
   const sources = pool.map((row) => phraseEnglish(row.source_text, row.target_text));
   const targets = pool.map((row) => row.target_text);
   const uses = pool.map((row) => phraseUsage(row.source_text, row.target_text));
@@ -101,33 +100,33 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
     speak: [],
     usage: [],
   };
-
   shuffle(pool).forEach((row, index) => {
+    const key = `${row.id}_${round}_${index}`;
     const english = phraseEnglish(row.source_text, row.target_text);
     buckets.meaning.push(
-      mcq(`m_${row.id}_${index}`, "meaning", "Reading", `What does “${row.target_text}” mean?`, english, sources, FALLBACK_EN),
+      mcq(`m_${key}`, "meaning", "Reading", `What does “${row.target_text}” mean?`, english, sources, FALLBACK_EN),
     );
     buckets.choose.push(
-      mcq(`c_${row.id}_${index}`, "choose", "Vocabulary", `Choose the German for “${english}”.`, row.target_text, targets, FALLBACK_DE),
+      mcq(`c_${key}`, "choose", "Vocabulary", `Choose the German for “${english}”.`, row.target_text, targets, FALLBACK_DE),
     );
     buckets.usage.push(
-      mcq(`u_${row.id}_${index}`, "usage", "Usage", `When would you say “${row.target_text}”?`, phraseUsage(row.source_text, row.target_text), uses, FALLBACK_USE),
+      mcq(`u_${key}`, "usage", "Usage", `When would you say “${row.target_text}”?`, phraseUsage(row.source_text, row.target_text), uses, FALLBACK_USE),
     );
     buckets.listen.push({
-      id: `l_${row.id}_${index}`,
+      id: `l_${key}`,
       kind: "listen",
       skill: "Listening",
       prompt: "Listen to the German, then choose the English meaning.",
       options: shuffle([
-        { id: `c_l_${row.id}_${index}`, text: english },
-        ...distractors(english, sources, FALLBACK_EN).map((text, i) => ({ id: `d_l_${row.id}_${index}_${i}`, text })),
+        { id: `c_l_${key}`, text: english },
+        ...distractors(english, sources, FALLBACK_EN).map((text, i) => ({ id: `d_l_${key}_${i}`, text })),
       ]),
-      correctId: `c_l_${row.id}_${index}`,
+      correctId: `c_l_${key}`,
       speak: row.target_text,
       audioUrl: row.audio_url,
     });
     buckets.spell.push({
-      id: `sp_${row.id}_${index}`,
+      id: `sp_${key}`,
       kind: "spell",
       skill: "Spelling",
       prompt: `Spell the German for “${english}”.`,
@@ -135,7 +134,7 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       answer: row.target_text,
     });
     buckets.write.push({
-      id: `w_${row.id}_${index}`,
+      id: `w_${key}`,
       kind: "write",
       skill: "Writing",
       prompt: `Write the German line for “${english}”.`,
@@ -143,7 +142,7 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       answer: row.target_text,
     });
     buckets.speak.push({
-      id: `sk_${row.id}_${index}`,
+      id: `sk_${key}`,
       kind: "speak",
       skill: "Speaking",
       prompt: `Say ${row.target_text}`,
@@ -153,22 +152,31 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       audioUrl: row.audio_url,
     });
   });
+  return buckets;
+}
 
+export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
+  const pool = phrases.filter((row) => row.source_text.trim() && row.target_text.trim());
+  if (!pool.length) return [];
   const mixed: Question[] = [];
   const order: Kind[] = ["listen", "speak", "meaning", "spell", "write", "choose", "usage"];
-  const cap = Math.min(8, Math.max(6, pool.length * 2));
-  while (mixed.length < cap) {
+  let round = 0;
+  let buckets = fillQuestionBuckets(pool, round);
+  while (mixed.length < QUIZ_SIZE && round < 8) {
     let added = false;
     for (const kind of order) {
       const next = buckets[kind].shift();
       if (!next) continue;
       mixed.push(next);
       added = true;
-      if (mixed.length >= cap) break;
+      if (mixed.length >= QUIZ_SIZE) break;
     }
-    if (!added) break;
+    if (!added) {
+      round += 1;
+      buckets = fillQuestionBuckets(pool, round);
+    }
   }
-  return mixed;
+  return mixed.slice(0, QUIZ_SIZE);
 }
 
 function playClip(question: Question, voice: (text: string) => void) {
@@ -374,7 +382,7 @@ export function ClassroomAssessment({
         </span>
       </div>
       <p className="cr-muted mt-1 text-xs">
-        Question {index + 1} of {quiz.length} · pass mark {PASS_MARK}%
+        Question {index + 1} of {QUIZ_SIZE} · {quiz.length} questions · pass mark {PASS_MARK}%
       </p>
       <div className="cr-surface-soft mt-3 h-2 overflow-hidden rounded-full">
         <div className="h-full rounded-full bg-[#1457D0]" style={{ width: `${progress}%` }} />

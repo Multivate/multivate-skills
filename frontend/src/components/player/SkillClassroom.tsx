@@ -48,6 +48,7 @@ import { AppearanceMenu } from "@/components/theme/AppearanceMenu";
 import {
   ClassroomAssessment,
   classroomXp,
+  QUIZ_SIZE,
   type AssessmentRecord,
 } from "@/components/player/classroom-assessment";
 
@@ -321,6 +322,9 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
   const xp = classroomXp(learned.size, passedCount);
   const nextModule = modules[moduleIndex + 1] ?? null;
   const lastLesson = phraseIndex >= lessonPhrases.length - 1;
+  const learnedInModule = lessonPhrases.filter((item) => learned.has(item.id)).length;
+  const moduleComplete = lessonPhrases.length > 0 && learnedInModule >= lessonPhrases.length;
+  const assessmentUnlocked = Boolean(preview || moduleComplete);
   const moduleScores = modules.map((row, index) => ({
     id: row.id,
     title: row.title,
@@ -401,7 +405,8 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
       setVerdict(null);
       return;
     }
-    setView("assessment");
+    const unfinished = lessonPhrases.filter((item) => item.id !== phrase?.id && !learned.has(item.id));
+    if (unfinished.length === 0) setView("assessment");
   }
 
   function playPhrase() {
@@ -518,15 +523,18 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                 key={item.id}
                 type="button"
                 onClick={() => {
+                  if (item.id === "assessment" && !assessmentUnlocked) return;
                   setView(item.id);
                   setNavOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm font-semibold ${
+                disabled={item.id === "assessment" && !assessmentUnlocked}
+                className={`flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm font-semibold disabled:cursor-not-allowed ${
                   on ? "cr-chip-on" : "cr-muted hover:bg-[var(--cr-surface-soft)]"
-                }`}
+                } ${item.id === "assessment" && !assessmentUnlocked ? "opacity-50" : ""}`}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
+                {item.id === "assessment" && !assessmentUnlocked ? <Lock className="ml-auto h-3.5 w-3.5 opacity-50" /> : null}
               </button>
             );
           })}
@@ -755,7 +763,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     ))}
                   </div>
                   <button type="button" onClick={afterLearn} className="h-9 rounded-full bg-[#1457D0] px-4 text-sm font-semibold text-white">
-                    {tab !== "usage" ? "Continue" : lastLesson ? "Module assessment" : "Next lesson"}
+                    {tab !== "usage" ? "Continue" : lastLesson && assessmentUnlocked ? "Module assessment" : "Next lesson"}
                   </button>
                 </div>
               </section>
@@ -806,25 +814,46 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       <Trophy className="h-4 w-4 text-amber-500" /> Module assessment
                     </h2>
                     <p className="cr-muted text-xs">
-                      {lastLesson
-                        ? `Finish this module at 70% to unlock the next one.${assessments[moduleKey]?.passed ? ` Last score ${assessments[moduleKey].scorePct}%.` : ""}`
-                        : `Complete all ${lessonPhrases.length} lessons, then take the module test.`}
+                      {assessmentUnlocked
+                        ? `20 questions. Score 70% to unlock the next module.${assessments[moduleKey]?.passed ? ` Last score ${assessments[moduleKey].scorePct}%.` : ""}`
+                        : `Complete all ${lessonPhrases.length} lessons first (${learnedInModule}/${lessonPhrases.length} done).`}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setView("assessment")}
-                    disabled={!lastLesson && !assessments[moduleKey]?.passed}
+                    disabled={!assessmentUnlocked}
                     className="h-10 w-full shrink-0 rounded-full bg-[#1457D0] px-4 text-sm font-semibold text-white disabled:opacity-40 sm:w-auto"
                   >
-                    {assessments[moduleKey]?.passed ? "Retake assessment" : lastLesson ? "Start assessment" : "Locked until last lesson"}
+                    {assessments[moduleKey]?.passed
+                      ? "Retake assessment"
+                      : assessmentUnlocked
+                        ? `Start assessment · ${QUIZ_SIZE} questions`
+                        : "Locked until module is complete"}
                   </button>
                 </div>
               </section>
             </div>
           ) : null}
 
-          {view === "assessment" ? (
+          {view === "assessment" && !assessmentUnlocked ? (
+            <div className="cr-surface mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col items-center justify-center rounded-[22px] p-8 text-center">
+              <Lock className="h-10 w-10 text-[#1457D0]" />
+              <p className="mt-3 text-lg font-extrabold">Assessment locked</p>
+              <p className="cr-muted mt-2 text-sm">
+                Finish every lesson in this module first ({learnedInModule}/{lessonPhrases.length} done). Then take {QUIZ_SIZE} questions.
+              </p>
+              <button
+                type="button"
+                onClick={() => setView("classroom")}
+                className="mt-5 h-11 rounded-full bg-[#1457D0] px-5 text-sm font-semibold text-white"
+              >
+                Back to lessons
+              </button>
+            </div>
+          ) : null}
+
+          {view === "assessment" && assessmentUnlocked ? (
             <ClassroomAssessment
               lessonTitle={`Module ${moduleNumber}: ${currentModule?.title}`}
               lessonKey={moduleKey}

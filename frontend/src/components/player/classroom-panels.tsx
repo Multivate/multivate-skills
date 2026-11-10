@@ -702,7 +702,7 @@ export function ClassroomProgress({
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-extrabold">My Progress</h1>
-          <p className="cr-muted mt-1 text-sm">Scores from each module assessment. Pass a module to unlock the next.</p>
+          <p className="cr-muted mt-1 text-sm">Complete a module, then pass its 20-question assessment to unlock the next.</p>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="cr-surface-soft rounded-[14px] px-2 py-3">
               <p className="text-lg font-extrabold">{xp}</p>
