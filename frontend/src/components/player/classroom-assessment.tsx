@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Headphones, Lock, Mic, PenLine, Star, Trophy, Type, Volume2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { phraseUsage } from "@/lib/classroom-copy";
+import { isAlphabetLetter, phraseEnglish, phraseUsage } from "@/lib/classroom-copy";
 import { SpeechHeardFeedback, speechMatches } from "@/components/player/SpeechHeardFeedback";
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 
@@ -89,7 +89,7 @@ function mcq(id: string, kind: Kind, skill: string, prompt: string, correct: str
 export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
   const pool = phrases.filter((row) => row.source_text.trim() && row.target_text.trim());
   if (!pool.length) return [];
-  const sources = pool.map((row) => row.source_text);
+  const sources = pool.map((row) => phraseEnglish(row.source_text, row.target_text));
   const targets = pool.map((row) => row.target_text);
   const uses = pool.map((row) => phraseUsage(row.source_text, row.target_text));
   const buckets: Record<Kind, Question[]> = {
@@ -103,11 +103,12 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
   };
 
   shuffle(pool).forEach((row, index) => {
+    const english = phraseEnglish(row.source_text, row.target_text);
     buckets.meaning.push(
-      mcq(`m_${row.id}_${index}`, "meaning", "Reading", `What does “${row.target_text}” mean?`, row.source_text, sources, FALLBACK_EN),
+      mcq(`m_${row.id}_${index}`, "meaning", "Reading", `What does “${row.target_text}” mean?`, english, sources, FALLBACK_EN),
     );
     buckets.choose.push(
-      mcq(`c_${row.id}_${index}`, "choose", "Vocabulary", `Choose the German for “${row.source_text}”.`, row.target_text, targets, FALLBACK_DE),
+      mcq(`c_${row.id}_${index}`, "choose", "Vocabulary", `Choose the German for “${english}”.`, row.target_text, targets, FALLBACK_DE),
     );
     buckets.usage.push(
       mcq(`u_${row.id}_${index}`, "usage", "Usage", `When would you say “${row.target_text}”?`, phraseUsage(row.source_text, row.target_text), uses, FALLBACK_USE),
@@ -118,8 +119,8 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       skill: "Listening",
       prompt: "Listen to the German, then choose the English meaning.",
       options: shuffle([
-        { id: `c_l_${row.id}_${index}`, text: row.source_text },
-        ...distractors(row.source_text, sources, FALLBACK_EN).map((text, i) => ({ id: `d_l_${row.id}_${index}_${i}`, text })),
+        { id: `c_l_${row.id}_${index}`, text: english },
+        ...distractors(english, sources, FALLBACK_EN).map((text, i) => ({ id: `d_l_${row.id}_${index}_${i}`, text })),
       ]),
       correctId: `c_l_${row.id}_${index}`,
       speak: row.target_text,
@@ -129,7 +130,7 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       id: `sp_${row.id}_${index}`,
       kind: "spell",
       skill: "Spelling",
-      prompt: `Spell the German for “${row.source_text}”.`,
+      prompt: `Spell the German for “${english}”.`,
       options: [],
       answer: row.target_text,
     });
@@ -137,7 +138,7 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       id: `w_${row.id}_${index}`,
       kind: "write",
       skill: "Writing",
-      prompt: `Write the German line for “${row.source_text}”.`,
+      prompt: `Write the German line for “${english}”.`,
       options: [],
       answer: row.target_text,
     });
@@ -145,7 +146,9 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       id: `sk_${row.id}_${index}`,
       kind: "speak",
       skill: "Speaking",
-      prompt: `Say this German line clearly: “${row.target_text}”.`,
+      prompt: isAlphabetLetter(row.target_text)
+        ? `Say ${row.target_text}`
+        : `Say this German line clearly: “${row.target_text}”.`,
       options: [],
       answer: row.target_text,
       speak: row.target_text,

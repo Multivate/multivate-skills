@@ -1,23 +1,28 @@
 "use client";
 
 import { CheckCircle2, XCircle } from "lucide-react";
+import { isAlphabetLetter, letterSpeechAliases } from "@/lib/classroom-copy";
+
+function foldSpeech(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(the\s+)?letters?\b/g, " ")
+    .replace(/\bbuchstaben?\b/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export function speechMatches(expect: string, heard: string) {
-  const a = expect
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\p{L}\p{N}\s]/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  const b = heard
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\p{L}\p{N}\s]/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const a = foldSpeech(expect);
+  const b = foldSpeech(heard);
   if (!a || !b) return false;
+  if (isAlphabetLetter(expect.trim())) {
+    const aliases = letterSpeechAliases(expect).map(foldSpeech).filter(Boolean);
+    return aliases.includes(b) || b === a;
+  }
   if (a === b) return true;
   if (b.includes(a) || a.includes(b)) return true;
   const words = a.split(" ");

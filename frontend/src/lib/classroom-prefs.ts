@@ -1,3 +1,5 @@
+import { spokenGermanLine } from "@/lib/classroom-copy";
+
 export type StudentLook = "boy" | "girl";
 export type TeacherVoice = "female" | "male";
 
@@ -119,7 +121,7 @@ export function streakCount(days: string[], from = new Date()): number {
 export function speakGerman(text: string, gender: TeacherVoice, lang = "de-DE") {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
+  const utter = new SpeechSynthesisUtterance(spokenGermanLine(text));
   utter.lang = lang;
   utter.rate = 0.92;
   utter.pitch = gender === "female" ? 1.12 : 0.84;

@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { Link } from "@/i18n/navigation";
-import { phraseIpa, phraseTips, phraseUsage, spellLetters } from "@/lib/classroom-copy";
+import { isAlphabetLetter, phraseEnglish, phraseIpa, phraseTips, phraseUsage, spellLetters } from "@/lib/classroom-copy";
 import {
   loadLook,
   loadPracticeDays,
@@ -675,7 +675,11 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       ▶
                     </button>
                   </div>
-                  <p className="cr-muted mt-3 text-center text-sm font-medium">Meaning: {phrase.source_text}</p>
+                  {tab === "pronounce" && isAlphabetLetter(phrase.target_text) ? (
+                    <p className="cr-muted mt-3 text-center text-sm font-medium">Say {phrase.target_text}</p>
+                  ) : (
+                    <p className="cr-muted mt-3 text-center text-sm font-medium">Meaning: {phraseEnglish(phrase.source_text, phrase.target_text)}</p>
+                  )}
                 </div>
 
                 {tab === "pronounce" ? (
@@ -693,7 +697,13 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       <Mic className="h-6 w-6" />
                     </button>
                     <div className="text-sm">
-                      <p className="font-semibold">{pronounce.recording ? "Listening… release to stop" : "Hold Speak and say the German line"}</p>
+                      <p className="font-semibold">
+                        {pronounce.recording
+                          ? "Listening… release to stop"
+                          : isAlphabetLetter(phrase.target_text)
+                            ? `Hold Speak and say ${phrase.target_text}`
+                            : "Hold Speak and say the German line"}
+                      </p>
                       <SpeechHeardFeedback
                         expect={phrase.target_text}
                         heard={pronounce.heard}
@@ -711,9 +721,6 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   <div>
                     <p className="text-sm font-extrabold">When to use</p>
                     <ul className="mt-2 space-y-2 text-sm">
-                      <li className="flex gap-2">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> When greeting someone.
-                      </li>
                       <li className="flex gap-2">
                         <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {usage}
                       </li>
@@ -859,7 +866,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                 <p className="absolute bottom-2 left-3 right-3 inline-flex min-w-0 items-center gap-2 truncate rounded-lg bg-[#10244F]/70 px-3 py-1.5 text-xs font-semibold text-white sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-sm sm:py-2 sm:text-sm">
                   <LogoMark size="sm" variant="inverse" />
                   <span className="truncate">
-                    {phrase.target_text} · {phrase.source_text}
+                    {phrase.target_text} · {phraseEnglish(phrase.source_text, phrase.target_text)}
                   </span>
                 </p>
               </div>
