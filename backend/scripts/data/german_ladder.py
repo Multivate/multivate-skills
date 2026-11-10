@@ -22,6 +22,7 @@ def make_course(
     focus: str,
     objectives: list[str],
     price_cents: int = 990_000,
+    image_url: str | None = None,
 ) -> dict:
     lesson_count = sum(len(row[2]) for row in modules)
     return {
@@ -37,7 +38,7 @@ def make_course(
         "learning_objectives": "\n".join(objectives),
         "category": "german",
         "tags": f"german,{cefr.lower()},{band},cefr,goethe,telc",
-        "image_url": "/marketing/german-a1-cover.jpg",
+        "image_url": image_url or f"/marketing/{slug}-cover.jpg",
         "price_cents": price_cents,
         "currency": "NGN",
         "duration_minutes": lesson_count * MINUTES_PER_LESSON,
