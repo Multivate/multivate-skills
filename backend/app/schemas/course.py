@@ -19,6 +19,7 @@ class CourseOut(BaseModel):
     instructor_id: UUID | None = None
     category: str = "general"
     level: str = "beginner"
+    cefr_level: str | None = None
     language: str = "en"
     duration_minutes: int = 0
     tags: str | None = None

@@ -10,7 +10,7 @@ import { useWishlist } from "@/contexts/wishlist-context";
 import type { BackendCourse } from "@/lib/backend-courses";
 import type { CartLine } from "@/lib/cart-types";
 import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
-import { courseSizeBits, formatCoursePrice, saleIsLive, salePriceCents } from "@/lib/course-price";
+import { courseLevelLabel, courseSizeBits, formatCoursePrice, saleIsLive, salePriceCents } from "@/lib/course-price";
 
 type Props = {
   course: BackendCourse;
@@ -45,6 +45,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
   const ratingCount = course.rating_count ?? 0;
   const rating = course.average_rating ?? 0;
   const sizeBits = courseSizeBits(course);
+  const levelLabel = courseLevelLabel(course);
   const shell = layout === "scroll" ? "w-[18.5rem] shrink-0 snap-start" : "h-full w-full min-w-0";
 
   return (
@@ -59,6 +60,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
           />
         </div>
         <div className="flex flex-col gap-1">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#1457D0]">{levelLabel}</p>
           <h3 className="line-clamp-2 min-h-[2.6rem] text-[17px] font-medium leading-[1.2] text-[#011B33] dark:text-[#eef4ff]">
             {course.title}
           </h3>

@@ -13,6 +13,7 @@ export type BackendCourse = {
   instructor_id: string | null;
   category?: string;
   level?: string;
+  cefr_level?: string | null;
   language?: string;
   duration_minutes?: number;
   price_cents?: number;

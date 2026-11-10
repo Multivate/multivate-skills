@@ -8,7 +8,7 @@ import { CourseEnrollCta } from "@/components/courses/CourseEnrollCta";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { fetchBackendCourse, fetchBackendLessons } from "@/lib/backend-courses";
 import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
-import { courseSizeBits, saleIsLive, salePriceCents } from "@/lib/course-price";
+import { courseLevelLabel, courseSizeBits, saleIsLive, salePriceCents } from "@/lib/course-price";
 import { resolveCourseImageUrl } from "@/lib/course-image";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { privateRobotsMetadata, publicPageMetadata, SITE_NAME, truncateMeta } from "@/lib/seo";
@@ -76,7 +76,7 @@ export default async function CourseDetailPage({ params }: Props) {
     ? (course.sale_price_cents ?? salePriceCents(listCents, course.discount_percent, course.discount_expires_at))
     : null;
   const sizeBits = courseSizeBits(course);
-  const levelLabel = course.level ? course.level.charAt(0).toUpperCase() + course.level.slice(1) : "All levels";
+  const levelLabel = courseLevelLabel(course);
 
   const courseUrl = absoluteUrl(locale, `/courses/${course.slug}`);
   const image = absoluteAssetUrl(resolveCourseImageUrl(course.image_url));

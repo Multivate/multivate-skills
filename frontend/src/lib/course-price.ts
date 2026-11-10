@@ -55,6 +55,19 @@ export function formatCourseDuration(minutes: number): string {
   return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
+export function courseLevelLabel(course: {
+  level?: string | null;
+  cefr_level?: string | null;
+  category?: string | null;
+}): string {
+  const raw = (course.level || "beginner").toLowerCase();
+  const label = raw === "intermediate" ? "Intermediate" : raw === "advanced" ? "Advanced" : "Beginner";
+  const cefr = (course.cefr_level || "").trim().toUpperCase();
+  const german = (course.category || "").toLowerCase() === "german";
+  if (german && cefr) return `${label} · ${cefr}`;
+  return label;
+}
+
 export function courseSizeBits(course: {
   duration_minutes?: number | null;
   modules_count?: number | null;
