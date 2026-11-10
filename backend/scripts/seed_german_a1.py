@@ -47,8 +47,11 @@ from app.models.course import Course  # noqa: E402
 from app.models.course_section import CourseSection  # noqa: E402
 from app.models.course_status import CourseFormat, CourseLevel, CourseStatus  # noqa: E402
 from app.models.lesson import Lesson  # noqa: E402
+from app.models.role import UserRole  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.admin_bootstrap import ADMIN_EMAIL  # noqa: E402
+
+COURSE_INSTRUCTOR_EMAIL = "adewaledata@gmail.com"
 
 
 def _admin(db) -> User:
@@ -56,6 +59,19 @@ def _admin(db) -> User:
     if user is None:
         raise SystemExit(f"No admin account {ADMIN_EMAIL}. Start the API once so admin bootstrap can run.")
     return user
+
+
+def _course_owner(db, admin: User) -> User:
+    email = COURSE_INSTRUCTOR_EMAIL.lower().strip()
+    owner = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if owner is None:
+        print(f"Instructor {email} not found; course stays with {admin.email}")
+        return admin
+    if owner.role != UserRole.INSTRUCTOR:
+        owner.role = UserRole.INSTRUCTOR
+        db.add(owner)
+        print(f"Set {email} role to instructor so they can open Course Studio")
+    return owner
 
 
 def _upsert_course(db, admin: User) -> Course:
@@ -81,7 +97,8 @@ def _upsert_course(db, admin: User) -> Course:
     course.currency = COURSE["currency"]
     course.is_free = False
     course.discount_percent = 0
-    course.instructor_id = admin.id
+    owner = _course_owner(db, admin)
+    course.instructor_id = owner.id
     course.status = CourseStatus.PUBLISHED
     course.published_at = datetime.now(timezone.utc)
     course.rejection_reason = None
@@ -129,9 +146,10 @@ def main() -> None:
         modules, phrases = _replace_curriculum(db, course)
         db.commit()
         invalidate_catalog_cache()
+        owner = db.get(User, course.instructor_id)
         print(
             f"Published {course.slug}: {modules} modules, {phrases} lessons, "
-            f"status={course.status.value}, instructor={admin.email}"
+            f"status={course.status.value}, instructor={owner.email if owner else admin.email}"
         )
     except Exception:
         db.rollback()
