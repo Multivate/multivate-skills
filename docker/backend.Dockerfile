@@ -10,6 +10,8 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
+RUN mkdir -p /app/app/assets/email
+COPY ["frontend/public/MULTIVATE MAIN LOGO.png", "/app/app/assets/email/multivate-logo.png"]
 COPY docker/backend-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

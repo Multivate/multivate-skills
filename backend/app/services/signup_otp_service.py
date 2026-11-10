@@ -101,7 +101,6 @@ def _send_signup_verification_email(to_email: str, display_name: str, code: str)
     first = _first_name(display_name)
     support = _support_href()
     footer = _footer_line()
-    use_logo = otp_email.resolve_brand_logo_path() is not None
     subject = "Multivate: Verify your email to finish signing up"
     lead = "You are creating a Multivate account. Enter this code in the app to continue."
     ctx = "Your verification code:"
@@ -113,7 +112,7 @@ def _send_signup_verification_email(to_email: str, display_name: str, code: str)
         code_context_line=ctx,
         support_href=support,
         footer_line=footer,
-        include_logo_cid=use_logo,
+        include_logo_cid=True,
         expiry_minutes=_SIGNUP_OTP_MINUTES,
     )
     return mail_service.send_plain_email(to_email, subject, plain, html_body)

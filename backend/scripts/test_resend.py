@@ -26,11 +26,19 @@ def main() -> None:
     if not (s.resend_api_key or "").strip():
         print("Set RESEND_API_KEY (and RESEND_FROM) in backend/.env first.", file=sys.stderr)
         sys.exit(1)
+    from app.services.otp_email import public_brand_logo_url
+
+    logo = public_brand_logo_url()
+    logo_html = (
+        f'<img src="{logo}" width="180" alt="Multivate" style="display:block;margin:0 auto 16px;" />'
+        if logo
+        else ""
+    )
     send_plain_email(
         to,
         "Multivate email test",
         "If you received this, outbound email is configured.\n",
-        "<p>If you received this, outbound email is configured.</p>",
+        f"<div>{logo_html}<p>If you received this, outbound email is configured.</p></div>",
     )
     print("OK: message accepted for", to)
 

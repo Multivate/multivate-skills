@@ -79,6 +79,10 @@ class Settings(BaseSettings):
         default="mailto:info@multivate.com.ng",
         description="Optional https or mailto link for Contact us in OTP emails.",
     )
+    mail_logo_url: str = Field(
+        default="",
+        description="Optional HTTPS URL for the logo in OTP emails. Defaults to PLATFORM_PUBLIC_URL + main logo.",
+    )
 
     bank_name: str = Field(default="Wema Bank")
     bank_account_name: str = Field(default="Multivate Technological Services and Consultancy Limited")

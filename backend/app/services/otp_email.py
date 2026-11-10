@@ -16,13 +16,40 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
+_LOGO_FILE_NAMES = (
+    "multivate-logo.png",
+    "MULTIVATE MAIN LOGO.png",
+    "MULTIVATE LOGO WHITE.png",
+)
+_LOGO_PUBLIC_PATH = "/MULTIVATE%20MAIN%20LOGO.png"
+
+
 def resolve_brand_logo_path() -> Path | None:
-    """PNG in frontend/public if present (same asset as Next.js LogoMark)."""
-    public = _repo_root() / "frontend" / "public"
-    for name in ("MULTIVATE MAIN LOGO.png", "MULTIVATE LOGO WHITE.png", "multivate-logo.png"):
-        p = public / name
-        if p.is_file():
-            return p
+    """PNG shipped with the API image, or frontend/public in a full checkout."""
+    here = Path(__file__).resolve()
+    search_dirs = (
+        here.parents[1] / "assets" / "email",
+        _repo_root() / "frontend" / "public",
+        here.parents[2] / "frontend" / "public",
+    )
+    for folder in search_dirs:
+        for name in _LOGO_FILE_NAMES:
+            path = folder / name
+            if path.is_file():
+                return path
+    return None
+
+
+def public_brand_logo_url() -> str | None:
+    """Absolute HTTPS URL for the logo on the live site (email clients load this)."""
+    from app.core.config import get_settings
+
+    custom = (get_settings().mail_logo_url or "").strip()
+    if custom.startswith("https://"):
+        return custom
+    base = (get_settings().platform_public_url or "").strip().rstrip("/")
+    if base.startswith("https://"):
+        return f"{base}{_LOGO_PUBLIC_PATH}"
     return None
 
 
@@ -61,10 +88,12 @@ def build_otp_email(
         f"{footer_line}\n"
     )
 
-    logo_block = ""
-    if include_logo_cid:
+    logo_src = public_brand_logo_url()
+    if not logo_src and include_logo_cid and resolve_brand_logo_path() is not None:
+        logo_src = "cid:multivate_logo"
+    if logo_src:
         logo_block = (
-            f'<img src="cid:multivate_logo" width="180" alt="Multivate" '
+            f'<img src="{_esc(logo_src)}" width="180" alt="Multivate" '
             'style="display:block;margin:0 auto 8px;max-width:220px;height:auto;border:0;" />'
         )
     else:

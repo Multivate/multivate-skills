@@ -91,8 +91,6 @@ def create_and_send_otp(
     first = _first_name(user)
     support = _support_href()
     footer = _footer_line()
-    use_logo = otp_email.resolve_brand_logo_path() is not None
-
     if purpose == "login":
         subject = "Multivate: Here's your 6-digit sign-in code"
         lead = "Use the code below to finish signing in to your Multivate account."
@@ -118,7 +116,7 @@ def create_and_send_otp(
         code_context_line=ctx,
         support_href=support,
         footer_line=footer,
-        include_logo_cid=use_logo,
+        include_logo_cid=True,
     )
 
     try:
