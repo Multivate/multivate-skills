@@ -26,7 +26,10 @@ if str(BACKEND_DIR) not in sys.path:
 
 
 def _load_curriculum():
-    path = Path(__file__).resolve().parent / "data" / "german_a1_modules.py"
+    data_dir = Path(__file__).resolve().parent / "data"
+    if str(data_dir) not in sys.path:
+        sys.path.insert(0, str(data_dir))
+    path = data_dir / "german_a1_modules.py"
     spec = importlib.util.spec_from_file_location("german_a1_modules", path)
     if spec is None or spec.loader is None:
         raise SystemExit(f"Could not load curriculum file: {path}")
