@@ -44,7 +44,7 @@ COURSE = {
     ),
     "category": "german",
     "tags": "german,a1,cefr,beginner,goethe",
-    "image_url": "/marketing/germany.jpg",
+    "image_url": "/marketing/german-a1-cover.jpg",
     "price_cents": 990000,
     "currency": "NGN",
     "duration_minutes": DURATION_MINUTES,
