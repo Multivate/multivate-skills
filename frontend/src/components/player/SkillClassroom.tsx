@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { Link } from "@/i18n/navigation";
-import { isAlphabetLetter, phraseEnglish, phraseIpa, phraseTips, phraseUsage, spellLetters } from "@/lib/classroom-copy";
+import { phraseEnglish, phraseIpa, phraseTips, phraseUsage, spellLetters } from "@/lib/classroom-copy";
 import {
   loadLook,
   loadPracticeDays,
@@ -675,7 +675,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       ▶
                     </button>
                   </div>
-                  {tab === "pronounce" && isAlphabetLetter(phrase.target_text) ? (
+                  {tab === "pronounce" ? (
                     <p className="cr-muted mt-3 text-center text-sm font-medium">Say {phrase.target_text}</p>
                   ) : (
                     <p className="cr-muted mt-3 text-center text-sm font-medium">Meaning: {phraseEnglish(phrase.source_text, phrase.target_text)}</p>
@@ -700,9 +700,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       <p className="font-semibold">
                         {pronounce.recording
                           ? "Listening… release to stop"
-                          : isAlphabetLetter(phrase.target_text)
-                            ? `Hold Speak and say ${phrase.target_text}`
-                            : "Hold Speak and say the German line"}
+                          : `Hold Speak and say ${phrase.target_text}`}
                       </p>
                       <SpeechHeardFeedback
                         expect={phrase.target_text}

@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Headphones, Lock, Mic, PenLine, Star, Trophy, Type, Volume2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { isAlphabetLetter, phraseEnglish, phraseUsage } from "@/lib/classroom-copy";
+import { phraseEnglish, phraseUsage } from "@/lib/classroom-copy";
 import { SpeechHeardFeedback, speechMatches } from "@/components/player/SpeechHeardFeedback";
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 
@@ -146,9 +146,7 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
       id: `sk_${row.id}_${index}`,
       kind: "speak",
       skill: "Speaking",
-      prompt: isAlphabetLetter(row.target_text)
-        ? `Say ${row.target_text}`
-        : `Say this German line clearly: “${row.target_text}”.`,
+      prompt: `Say ${row.target_text}`,
       options: [],
       answer: row.target_text,
       speak: row.target_text,

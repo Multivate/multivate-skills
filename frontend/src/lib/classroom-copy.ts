@@ -67,10 +67,14 @@ const DE_LETTER_HEAR: Record<string, string[]> = {
 
 export function spokenGermanLine(text: string) {
   const key = text.trim();
-  if (DE_LETTER_SAY[key]) return DE_LETTER_SAY[key];
-  const upper = key.toUpperCase();
-  if (key.length === 1 && DE_LETTER_SAY[upper]) return DE_LETTER_SAY[upper];
-  return text;
+  const named = key.match(/^(?:the\s+)?letter\s+([A-Za-zÄÖÜäöüß])\b/i);
+  const letter = named?.[1] ?? (key.length === 1 ? key : "");
+  if (letter) {
+    const say = DE_LETTER_SAY[letter] ?? DE_LETTER_SAY[letter.toUpperCase()];
+    if (say) return say;
+  }
+  if (/^[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)+$/u.test(key)) return key.replace(/-/g, "");
+  return key;
 }
 
 export function isAlphabetLetter(text: string) {
@@ -78,7 +82,9 @@ export function isAlphabetLetter(text: string) {
 }
 
 export function phraseEnglish(source: string, target: string) {
-  if (isAlphabetLetter(target) && /^(the\s+)?letter\s+/i.test(source.trim())) return target.trim();
+  const german = target.trim();
+  if (isAlphabetLetter(german)) return german;
+  if (/^(the\s+)?letter\s+/i.test(source.trim())) return german;
   return source;
 }
 
