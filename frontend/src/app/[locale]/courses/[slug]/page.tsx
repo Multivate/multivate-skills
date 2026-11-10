@@ -8,7 +8,7 @@ import { CourseEnrollCta } from "@/components/courses/CourseEnrollCta";
 import { CourseThumbnail } from "@/components/courses/CourseThumbnail";
 import { fetchBackendCourse, fetchBackendLessons } from "@/lib/backend-courses";
 import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
-import { formatCourseDuration, saleIsLive, salePriceCents } from "@/lib/course-price";
+import { courseSizeBits, saleIsLive, salePriceCents } from "@/lib/course-price";
 import { resolveCourseImageUrl } from "@/lib/course-image";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { privateRobotsMetadata, publicPageMetadata, SITE_NAME, truncateMeta } from "@/lib/seo";
@@ -75,7 +75,7 @@ export default async function CourseDetailPage({ params }: Props) {
   const saleCents = liveSale
     ? (course.sale_price_cents ?? salePriceCents(listCents, course.discount_percent, course.discount_expires_at))
     : null;
-  const durationLabel = formatCourseDuration(course.duration_minutes ?? 0);
+  const sizeBits = courseSizeBits(course);
   const levelLabel = course.level ? course.level.charAt(0).toUpperCase() + course.level.slice(1) : "All levels";
 
   const courseUrl = absoluteUrl(locale, `/courses/${course.slug}`);
@@ -169,10 +169,12 @@ export default async function CourseDetailPage({ params }: Props) {
                 <span className="text-neutral-300" aria-hidden>
                   ·
                 </span>
-                <span className="inline-flex items-center gap-1 text-neutral-500">
-                  <Clock className="h-4 w-4 text-neutral-400" strokeWidth={2} />
-                  {durationLabel} · {course.lessons_count} {tDetail("lessonsUnit")}
-                </span>
+                {sizeBits.length ? (
+                  <span className="inline-flex items-center gap-1 text-neutral-500">
+                    <Clock className="h-4 w-4 text-neutral-400" strokeWidth={2} />
+                    {sizeBits.join(" · ")}
+                  </span>
+                ) : null}
               </div>
 
               <p className="mt-6 text-base leading-relaxed text-neutral-500">{course.description}</p>

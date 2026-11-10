@@ -7,8 +7,11 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.cache_service import CATALOG_KEY, cache_get_json, cache_set_json, invalidate_catalog_cache
+from app.models.audio_phrase import AudioPhrase
 from app.models.course import Course
 from app.models.course_review import CourseReview
+from app.models.course_section import CourseSection
+from app.models.lesson import Lesson
 from app.models.course_status import CourseStatus
 from app.models.enrollment import Enrollment
 from app.models.enrollment_status import EnrollmentStatus
@@ -20,9 +23,7 @@ from app.services.course_pricing import sale_price_cents
 
 def course_to_out(course: Course) -> CourseOut:
     row = CourseOut.model_validate(course)
-    duration = course.duration_minutes
-    if duration <= 0 and course.lessons_count > 0:
-        duration = max(1, course.lessons_count)
+    duration = int(course.duration_minutes or 0)
     return row.model_copy(
         update={
             "level": course.level.value if hasattr(course.level, "value") else str(course.level or "beginner"),
@@ -68,10 +69,42 @@ def _with_public_stats(db: Session, courses: list[Course]) -> list[CourseOut]:
     }
     top = max(enrollments.values(), default=0)
 
+    modules_map = {
+        row[0]: int(row[1] or 0)
+        for row in db.execute(
+            select(CourseSection.course_id, func.count())
+            .where(CourseSection.course_id.in_(ids))
+            .group_by(CourseSection.course_id)
+        ).all()
+    }
+    phrases_map = {
+        row[0]: int(row[1] or 0)
+        for row in db.execute(
+            select(AudioPhrase.course_id, func.count())
+            .where(AudioPhrase.course_id.in_(ids))
+            .group_by(AudioPhrase.course_id)
+        ).all()
+    }
+    video_map = {
+        row[0]: int(row[1] or 0)
+        for row in db.execute(
+            select(Lesson.course_id, func.count()).where(Lesson.course_id.in_(ids)).group_by(Lesson.course_id)
+        ).all()
+    }
+
     enriched: list[CourseOut] = []
     for course in courses:
         average, count = ratings.get(course.id, (0.0, 0))
         enrolled = enrollments.get(course.id, 0)
+        modules = modules_map.get(course.id, 0)
+        phrases = phrases_map.get(course.id, 0)
+        videos = video_map.get(course.id, 0)
+        lessons = max(int(course.lessons_count or 0), phrases, videos)
+        duration = int(course.duration_minutes or 0)
+        if duration <= 0 and phrases:
+            duration = phrases * 8
+        elif duration <= 0 and videos:
+            duration = videos * 10
         enriched.append(
             course_to_out(course).model_copy(
                 update={
@@ -79,6 +112,9 @@ def _with_public_stats(db: Session, courses: list[Course]) -> list[CourseOut]:
                     "average_rating": average if count else None,
                     "rating_count": count,
                     "is_bestseller": top > 0 and enrolled == top,
+                    "modules_count": modules,
+                    "lessons_count": lessons,
+                    "duration_minutes": duration,
                 }
             )
         )

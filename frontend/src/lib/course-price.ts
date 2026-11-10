@@ -48,9 +48,24 @@ export function formatCountdown(expiresAt: string, now = Date.now()) {
 }
 
 export function formatCourseDuration(minutes: number): string {
-  if (minutes <= 0) return "Flexible";
+  if (minutes <= 0) return "";
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+export function courseSizeBits(course: {
+  duration_minutes?: number | null;
+  modules_count?: number | null;
+  lessons_count?: number | null;
+}): string[] {
+  const bits: string[] = [];
+  const hours = formatCourseDuration(course.duration_minutes ?? 0);
+  if (hours) bits.push(hours);
+  const modules = course.modules_count ?? 0;
+  if (modules > 0) bits.push(modules === 1 ? "1 module" : `${modules} modules`);
+  const lessons = course.lessons_count ?? 0;
+  if (lessons > 0) bits.push(lessons === 1 ? "1 lesson" : `${lessons} lessons`);
+  return bits;
 }

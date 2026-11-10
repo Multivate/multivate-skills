@@ -9,6 +9,7 @@ export type BackendCourse = {
   learning_objectives?: string | null;
   image_url: string;
   lessons_count: number;
+  modules_count?: number;
   instructor_id: string | null;
   category?: string;
   level?: string;

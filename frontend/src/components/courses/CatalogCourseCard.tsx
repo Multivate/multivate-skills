@@ -10,7 +10,7 @@ import { useWishlist } from "@/contexts/wishlist-context";
 import type { BackendCourse } from "@/lib/backend-courses";
 import type { CartLine } from "@/lib/cart-types";
 import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
-import { formatCoursePrice, saleIsLive, salePriceCents } from "@/lib/course-price";
+import { courseSizeBits, formatCoursePrice, saleIsLive, salePriceCents } from "@/lib/course-price";
 
 type Props = {
   course: BackendCourse;
@@ -44,6 +44,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
   };
   const ratingCount = course.rating_count ?? 0;
   const rating = course.average_rating ?? 0;
+  const sizeBits = courseSizeBits(course);
   const shell = layout === "scroll" ? "w-[18.5rem] shrink-0 snap-start" : "h-full w-full min-w-0";
 
   return (
@@ -63,6 +64,9 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
           </h3>
           {course.instructor_name ? (
             <p className="truncate text-xs font-normal text-[#71758e]">{course.instructor_name}</p>
+          ) : null}
+          {sizeBits.length ? (
+            <p className="mt-1 text-xs font-medium text-[#011B33]/70 dark:text-[#eef4ff]/70">{sizeBits.join(" · ")}</p>
           ) : null}
         </div>
         <ul className="flex min-h-[1.375rem] flex-wrap items-center gap-1 text-xs text-[#71758e]">

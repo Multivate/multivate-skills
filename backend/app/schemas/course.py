@@ -15,6 +15,7 @@ class CourseOut(BaseModel):
     learning_objectives: str | None = None
     image_url: str
     lessons_count: int
+    modules_count: int = 0
     instructor_id: UUID | None = None
     category: str = "general"
     level: str = "beginner"
