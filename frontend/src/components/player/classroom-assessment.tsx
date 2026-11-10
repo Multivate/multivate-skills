@@ -451,17 +451,12 @@ export function ClassroomAssessment({
           <div>
             <button
               type="button"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                void speak.start();
-              }}
-              onPointerUp={() => speak.stop()}
-              onPointerCancel={() => speak.stop()}
+              onClick={() => speak.toggle()}
               disabled={checked}
               className={`inline-flex h-14 items-center gap-2 rounded-full px-5 text-sm font-semibold text-white ${speak.recording ? "bg-rose-500" : "bg-[#1457D0]"}`}
             >
               <Mic className="h-5 w-5" />
-              {speak.recording ? "Listening… release" : "Hold to speak"}
+              {speak.recording ? "Stop" : "Speak"}
             </button>
             <SpeechHeardFeedback
               expect={current.answer ?? ""}
@@ -491,7 +486,7 @@ export function ClassroomAssessment({
               {isChoice
                 ? "Pick an answer, then check it."
                 : current.kind === "speak"
-                  ? "Hold Speak. You will see if the line matches."
+                  ? "Tap Speak, say the line, tap Stop."
                   : "Type your answer, then check it."}
             </span>
           )}

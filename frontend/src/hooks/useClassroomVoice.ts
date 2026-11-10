@@ -35,6 +35,7 @@ export function useClassroomVoice(lang = "de-DE") {
   const speechRef = useRef<Rec | null>(null);
   const clipRef = useRef<string | null>(null);
   const heardRef = useRef("");
+  const liveRef = useRef(false);
 
   const clearClip = useCallback(() => {
     if (clipRef.current) URL.revokeObjectURL(clipRef.current);
@@ -43,6 +44,7 @@ export function useClassroomVoice(lang = "de-DE") {
   }, []);
 
   const stop = useCallback(() => {
+    liveRef.current = false;
     try {
       if (recRef.current && recRef.current.state !== "inactive") recRef.current.stop();
     } catch {
@@ -67,46 +69,64 @@ export function useClassroomVoice(lang = "de-DE") {
     };
   }, [stop]);
 
+  const startSpeech = useCallback(
+    (Engine: new () => Rec) => {
+      const speech = new Engine();
+      speech.lang = lang;
+      speech.interimResults = true;
+      speech.continuous = true;
+      speech.maxAlternatives = 1;
+      speech.onresult = (event) => {
+        let text = "";
+        for (let i = 0; i < event.results.length; i += 1) {
+          text += event.results[i]?.[0]?.transcript ?? "";
+        }
+        heardRef.current = text.trim();
+        setHeard(text.trim());
+      };
+      speech.onerror = (event) => {
+        if (event.error === "not-allowed") {
+          setError("Allow the microphone, then tap Speak again.");
+          liveRef.current = false;
+          setRecording(false);
+        } else if (event.error === "no-speech") {
+          setError("No speech heard. Tap Speak, talk, then tap Stop.");
+        }
+      };
+      speech.onend = () => {
+        if (!liveRef.current) return;
+        try {
+          speech.start();
+        } catch {
+          /* Chrome ended the session */
+        }
+      };
+      speechRef.current = speech;
+      speech.start();
+    },
+    [lang],
+  );
+
   const start = useCallback(async () => {
+    if (liveRef.current) return;
+    liveRef.current = true;
     setError(null);
     setHeard("");
     heardRef.current = "";
     clearClip();
+    setRecording(true);
 
     const Engine = speechEngine();
     if (!Engine && !navigator.mediaDevices?.getUserMedia) {
+      liveRef.current = false;
+      setRecording(false);
       setError("This browser cannot take speech. Open Chrome and allow the microphone.");
       return;
     }
 
     if (Engine) {
       try {
-        const speech = new Engine();
-        speech.lang = lang;
-        speech.interimResults = true;
-        speech.continuous = true;
-        speech.maxAlternatives = 1;
-        speech.onresult = (event) => {
-          let text = "";
-          for (let i = 0; i < event.results.length; i += 1) {
-            text += event.results[i]?.[0]?.transcript ?? "";
-          }
-          heardRef.current = text.trim();
-          setHeard(text.trim());
-        };
-        speech.onerror = (event) => {
-          if (event.error === "not-allowed") {
-            setError("Allow the microphone, then tap Speak again.");
-          } else if (event.error === "no-speech") {
-            setError("No speech heard. Hold Speak and talk closer to the mic.");
-          }
-        };
-        speech.onend = () => {
-          if (speechRef.current === speech) setRecording(false);
-        };
-        speechRef.current = speech;
-        speech.start();
-        setRecording(true);
+        startSpeech(Engine);
       } catch {
         setError("Could not start speech. Tap Speak and allow the mic.");
       }
@@ -116,6 +136,10 @@ export function useClassroomVoice(lang = "de-DE") {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });
+      if (!liveRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
       chunksRef.current = [];
       const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
@@ -126,20 +150,24 @@ export function useClassroomVoice(lang = "de-DE") {
       rec.onstop = () => {
         if (!chunksRef.current.length) return;
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+        if (blob.size < 200) return;
         const url = URL.createObjectURL(blob);
         clipRef.current = url;
         setClipUrl(url);
       };
       rec.start(250);
       recRef.current = rec;
-      setRecording(true);
     } catch {
-      if (!Engine) setError("Allow the microphone to speak.");
+      if (!Engine) {
+        liveRef.current = false;
+        setRecording(false);
+        setError("Allow the microphone to speak.");
+      }
     }
-  }, [clearClip, lang]);
+  }, [clearClip, startSpeech]);
 
   const toggle = useCallback(() => {
-    if (recording) stop();
+    if (liveRef.current || recording) stop();
     else void start();
   }, [recording, start, stop]);
 

@@ -686,21 +686,17 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <button
                       type="button"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        void pronounce.start();
-                      }}
-                      onPointerUp={() => pronounce.stop()}
-                      onPointerCancel={() => pronounce.stop()}
+                      onClick={() => pronounce.toggle()}
                       className={`inline-flex h-14 w-14 items-center justify-center rounded-full text-white ${pronounce.recording ? "bg-rose-500" : "bg-[#1457D0]"}`}
+                      aria-label={pronounce.recording ? "Stop recording" : "Start recording"}
                     >
                       <Mic className="h-6 w-6" />
                     </button>
                     <div className="text-sm">
                       <p className="font-semibold">
                         {pronounce.recording
-                          ? "Listening… release to stop"
-                          : `Hold Speak and say ${phrase.target_text}`}
+                          ? "Recording… tap again to stop"
+                          : `Tap Speak, say ${phrase.target_text}, tap Stop`}
                       </p>
                       <SpeechHeardFeedback
                         expect={phrase.target_text}
@@ -787,11 +783,11 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       pronounce.toggle();
                     }}
                     className="cr-surface mt-3 inline-flex h-12 w-12 items-center justify-center rounded-full text-[#5B4DFF]"
-                    aria-label="Hold to speak"
+                    aria-label={pronounce.recording ? "Stop recording" : "Start recording"}
                   >
                     <Mic className="h-5 w-5" />
                   </button>
-                  <p className="mt-2 text-xs text-white/80">Hold to speak</p>
+                  <p className="mt-2 text-xs text-white/80">{pronounce.recording ? "Tap to stop" : "Tap to record"}</p>
                   {pronounce.heard && !pronounce.recording ? (
                     <SpeechHeardFeedback
                       expect={phrase.target_text}
@@ -937,14 +933,9 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   />
                   <button
                     type="button"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      void scenarioVoice.start();
-                    }}
-                    onPointerUp={() => scenarioVoice.stop()}
-                    onPointerCancel={() => scenarioVoice.stop()}
+                    onClick={() => scenarioVoice.toggle()}
                     className={`inline-flex h-10 w-10 items-center justify-center rounded-full ${scenarioVoice.recording ? "bg-rose-500 text-white" : "cr-chip text-[#1457D0]"}`}
-                    aria-label="Hold to speak"
+                    aria-label={scenarioVoice.recording ? "Stop recording" : "Start recording"}
                   >
                     <Mic className="h-4 w-4" />
                   </button>
