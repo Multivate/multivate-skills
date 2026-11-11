@@ -1,4 +1,4 @@
-import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { THEME_BOOT_SCRIPT } from "@/lib/appearance";
@@ -7,16 +7,18 @@ import { DEFAULT_OG_IMAGE, SITE_NAME, encodedAssetPath } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const plusJakarta = localFont({
+  src: "../fonts/plus-jakarta-sans.woff2",
+  weight: "400 800",
   display: "swap",
   variable: "--font-sans",
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["500", "600"],
+const ibmPlexMono = localFont({
+  src: [
+    { path: "../fonts/ibm-plex-mono-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/ibm-plex-mono-600.woff2", weight: "600", style: "normal" },
+  ],
   display: "swap",
   variable: "--font-mono",
 });
