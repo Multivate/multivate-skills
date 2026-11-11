@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -39,9 +39,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register_student_start(
     data: StudentRegisterRequest,
     db: Annotated[Session, Depends(get_db)],
+    request: Request,
 ) -> RegisterStartResponse:
     """Send a 5-minute email OTP; complete with POST /register/student/verify."""
-    return signup_otp_service.start_student_signup(db, data)
+    from app.services.geo_ip_service import resolve_visitor
+
+    return signup_otp_service.start_student_signup(db, data, visitor=resolve_visitor(request))
 
 
 @router.post("/register/student/verify", response_model=AuthResponse, status_code=201)

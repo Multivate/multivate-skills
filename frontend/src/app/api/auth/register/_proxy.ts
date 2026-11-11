@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clearAuthCookies, setAuthCookies } from "@/app/api/auth/_cookie";
 import { fetchInternal, handleProxyError } from "@/lib/internal-api";
+import { visitorForwardHeaders } from "@/lib/visitor-headers";
 
 const secure = process.env.NODE_ENV === "production";
 
@@ -22,7 +23,7 @@ export async function proxyRegisterPost(
   try {
     const upstream = await fetchInternal(upstreamPath, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...visitorForwardHeaders(req.headers) },
       body: JSON.stringify(body),
     });
     const data = await upstream.json().catch(() => ({}));

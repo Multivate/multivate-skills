@@ -139,7 +139,15 @@ def _payload_for_mentor(data: MentorRegisterRequest) -> dict[str, Any]:
     return {"kind": "mentor", "payload": d}
 
 
-def start_student_signup(db: Session, data: StudentRegisterRequest) -> RegisterStartResponse:
+def start_student_signup(
+    db: Session,
+    data: StudentRegisterRequest,
+    visitor: object | None = None,
+) -> RegisterStartResponse:
+    from app.services.geo_ip_service import VisitorGeo, reject_on_premise_if_blocked
+
+    if isinstance(visitor, VisitorGeo):
+        reject_on_premise_if_blocked(data.learning_profile.study_mode, visitor)
     email = str(data.email).lower()
     enforce_rate_limit(
         f"signup:email:{email}",

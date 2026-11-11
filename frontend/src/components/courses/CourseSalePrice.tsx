@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useVisitorGeo } from "@/contexts/visitor-geo-context";
 import {
   formatCountdown,
   formatCoursePrice,
   saleIsLive,
   salePriceCents,
 } from "@/lib/course-price";
+import { toDisplayMoney } from "@/lib/visitor-geo";
 
 type Props = {
   priceCents: number;
@@ -27,6 +29,7 @@ export function CourseSalePrice({
   salePriceCentsOverride,
   size = "card",
 }: Props) {
+  const geo = useVisitorGeo();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -37,9 +40,11 @@ export function CourseSalePrice({
   const live = saleIsLive(discountPercent, discountExpiresAt, now);
   const computedSale = salePriceCents(priceCents, discountPercent, discountExpiresAt, now);
   const saleCents = live ? (salePriceCentsOverride ?? computedSale) : null;
-  const listLabel = formatCoursePrice(priceCents, currency, isFree);
+  const listShown = toDisplayMoney(priceCents, currency, geo);
+  const saleShown = saleCents != null ? toDisplayMoney(saleCents, currency, geo) : listShown;
+  const listLabel = formatCoursePrice(listShown.cents, listShown.currency, isFree);
   const saleLabel =
-    saleCents != null ? formatCoursePrice(saleCents, currency, false) : listLabel;
+    saleCents != null ? formatCoursePrice(saleShown.cents, saleShown.currency, false) : listLabel;
 
   if (!live || saleCents == null || saleCents >= priceCents) {
     return (

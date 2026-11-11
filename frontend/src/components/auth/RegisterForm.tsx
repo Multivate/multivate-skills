@@ -18,6 +18,7 @@ import {
 import { PasswordField } from "@/components/auth/PasswordField";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { useAuth } from "@/contexts/auth-context";
+import { useVisitorGeo } from "@/contexts/visitor-geo-context";
 import { Link, usePathname } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { hardNavigate, homeForRole } from "@/lib/auth-navigation";
@@ -119,6 +120,8 @@ export function RegisterForm() {
   const [why, setWhy] = useState("");
   const [level, setLevel] = useState("");
   const [hours, setHours] = useState("5to10");
+  const geo = useVisitorGeo();
+  const onPremiseAllowed = geo?.on_premise_allowed !== false;
   const [studyMode, setStudyMode] = useState<"online" | "hybrid" | "physical">("online");
   const [campusLocation, setCampusLocation] = useState("Ibadan, Oyo state");
   const [cohortName, setCohortName] = useState("");
@@ -139,6 +142,12 @@ export function RegisterForm() {
     const savedEmail = readAuthEmail();
     if (savedEmail) setEmail(savedEmail);
   }, []);
+
+  useEffect(() => {
+    if (geo && !geo.on_premise_allowed && studyMode !== "online") {
+      setStudyMode("online");
+    }
+  }, [geo, studyMode]);
 
   useEffect(() => {
     if (loading || !user || !pathname.includes("/register")) return;
@@ -505,6 +514,11 @@ export function RegisterForm() {
             <section>
               <h1 className="text-[1.45rem] font-extrabold leading-tight text-[#10244F] sm:text-[1.7rem]">{t("onboard.modeTitle")}</h1>
               <p className="mt-2 text-[15px] text-[#10244F]/65">{t("onboard.modeBody")}</p>
+              {!onPremiseAllowed ? (
+                <p className="mt-4 rounded-[14px] border border-[#1457D0]/25 bg-[#1457D0]/8 px-4 py-3 text-[14px] leading-snug text-[#10244F]" role="status">
+                  On-premise and hybrid classes in Ibadan are only for learners in Nigeria. Choose online classes.
+                </p>
+              ) : null}
               <div className="mt-4 grid gap-2.5 sm:mt-6 sm:gap-3">
                 <ChoiceCard
                   title={t("onboard.modeOnline")}
@@ -512,18 +526,28 @@ export function RegisterForm() {
                   selected={studyMode === "online"}
                   onClick={() => pickThenNext(() => setStudyMode("online"), role, learn, "online")}
                 />
-                <ChoiceCard
-                  title={t("onboard.modeHybrid")}
-                  hint={t("onboard.modeHybridHint")}
-                  selected={studyMode === "hybrid"}
-                  onClick={() => pickThenNext(() => setStudyMode("hybrid"), role, learn, "hybrid")}
-                />
-                <ChoiceCard
-                  title={t("onboard.modePhysical")}
-                  hint={t("onboard.modePhysicalHint")}
-                  selected={studyMode === "physical"}
-                  onClick={() => pickThenNext(() => setStudyMode("physical"), role, learn, "physical")}
-                />
+                <div className={!onPremiseAllowed ? "pointer-events-none opacity-45" : undefined}>
+                  <ChoiceCard
+                    title={t("onboard.modeHybrid")}
+                    hint={!onPremiseAllowed ? "Not available outside Nigeria" : t("onboard.modeHybridHint")}
+                    selected={studyMode === "hybrid"}
+                    onClick={() => {
+                      if (!onPremiseAllowed) return;
+                      pickThenNext(() => setStudyMode("hybrid"), role, learn, "hybrid");
+                    }}
+                  />
+                </div>
+                <div className={!onPremiseAllowed ? "pointer-events-none opacity-45" : undefined}>
+                  <ChoiceCard
+                    title={t("onboard.modePhysical")}
+                    hint={!onPremiseAllowed ? "Not available outside Nigeria" : t("onboard.modePhysicalHint")}
+                    selected={studyMode === "physical"}
+                    onClick={() => {
+                      if (!onPremiseAllowed) return;
+                      pickThenNext(() => setStudyMode("physical"), role, learn, "physical");
+                    }}
+                  />
+                </div>
               </div>
             </section>
           ) : null}

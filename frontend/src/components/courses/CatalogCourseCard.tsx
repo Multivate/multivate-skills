@@ -11,6 +11,8 @@ import type { BackendCourse } from "@/lib/backend-courses";
 import type { CartLine } from "@/lib/cart-types";
 import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
 import { courseLevelLabel, courseSizeBits, formatCoursePrice, saleIsLive, salePriceCents } from "@/lib/course-price";
+import { useVisitorGeo } from "@/contexts/visitor-geo-context";
+import { toDisplayMoney } from "@/lib/visitor-geo";
 
 type Props = {
   course: BackendCourse;
@@ -22,6 +24,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
   const tTop = useTranslations("topCourses");
   const tCart = useTranslations("cart");
   const { user } = useAuth();
+  const geo = useVisitorGeo();
   const { hasSlug, toggle } = useWishlist();
   const wished = hasSlug(course.slug);
 
@@ -30,11 +33,8 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
   const saleCents = liveSale
     ? (course.sale_price_cents ?? salePriceCents(listCents, course.discount_percent, course.discount_expires_at))
     : null;
-  const priceLabel = formatCoursePrice(
-    saleCents ?? listCents,
-    course.currency ?? "NGN",
-    course.is_free ?? false,
-  );
+  const shown = toDisplayMoney(saleCents ?? listCents, course.currency ?? "NGN", geo);
+  const priceLabel = formatCoursePrice(shown.cents, shown.currency, course.is_free ?? false);
   const cartLine: CartLine = {
     slug: course.slug,
     title: course.title,

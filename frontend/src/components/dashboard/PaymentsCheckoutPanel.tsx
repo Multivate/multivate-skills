@@ -6,9 +6,20 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
+import { CourseSalePrice } from "@/components/courses/CourseSalePrice";
 import { checkoutDisplayPriceForSlug } from "@/lib/checkout-pricing";
 
-type CoursePreview = { slug: string; title: string; description: string };
+type CoursePreview = {
+  slug: string;
+  title: string;
+  description: string;
+  price_cents?: number;
+  currency?: string;
+  is_free?: boolean;
+  discount_percent?: number | null;
+  discount_expires_at?: string | null;
+  sale_price_cents?: number | null;
+};
 
 export function PaymentsCheckoutPanel() {
   const t = useTranslations("dashboard.paymentsCheckout");
@@ -30,11 +41,17 @@ export function PaymentsCheckoutPanel() {
     try {
       const res = await fetch(`/api/courses/${encodeURIComponent(slug)}`, { cache: "no-store" });
       if (res.ok) {
-        const data = (await res.json()) as { slug?: string; title?: string; description?: string };
+        const data = (await res.json()) as CoursePreview & { slug?: string; title?: string; description?: string };
         setCourse({
           slug: data.slug ?? slug,
           title: typeof data.title === "string" ? data.title : slug,
           description: typeof data.description === "string" ? data.description : "",
+          price_cents: data.price_cents,
+          currency: data.currency,
+          is_free: data.is_free,
+          discount_percent: data.discount_percent,
+          discount_expires_at: data.discount_expires_at,
+          sale_price_cents: data.sale_price_cents,
         });
         return;
       }
@@ -118,10 +135,24 @@ export function PaymentsCheckoutPanel() {
         <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-neutral-200/80 pt-4 dark:border-zinc-800">
           <div>
             <p className="text-xs font-semibold uppercase text-neutral-500">{t("priceLabel")}</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              {t("displayPrice", { price: displayPrice })}{" "}
-              <span className="text-xs text-neutral-500">({t("chargedNote")})</span>
-            </p>
+            {course?.price_cents != null ? (
+              <div className="mt-1">
+                <CourseSalePrice
+                  priceCents={course.price_cents}
+                  currency={course.currency ?? "NGN"}
+                  isFree={course.is_free ?? false}
+                  discountPercent={course.discount_percent}
+                  discountExpiresAt={course.discount_expires_at}
+                  salePriceCentsOverride={course.sale_price_cents}
+                />
+                <p className="mt-1 text-xs text-neutral-500">({t("chargedNote")})</p>
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-neutral-500">
+                {t("displayPrice", { price: displayPrice })}{" "}
+                <span className="text-xs text-neutral-500">({t("chargedNote")})</span>
+              </p>
+            )}
           </div>
           <button
             type="button"

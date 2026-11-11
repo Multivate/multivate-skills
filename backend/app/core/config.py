@@ -89,6 +89,19 @@ class Settings(BaseSettings):
     bank_account_number: str = Field(default="0125918288")
     bank_transfer_currency: str = Field(default="NGN", min_length=3, max_length=3)
 
+    geo_force_country: str = Field(
+        default="",
+        description="Optional ISO country code override (e.g. NG or US) for tests and staging. Empty = scan the request IP.",
+    )
+    geo_ngn_per_usd: float = Field(
+        default=1500.0,
+        description="Display-only naira per US dollar for visitors outside Nigeria. Checkout still charges the naira list price.",
+    )
+    geo_lookup_enabled: bool = Field(
+        default=True,
+        description="If true, public IPs without a country header are looked up and cached in Redis.",
+    )
+
     # 1:1 mentor sessions — 1 billed hour = 45 minutes. Amounts in kobo (NGN * 100).
     mentor_session_currency: str = Field(default="NGN", min_length=3, max_length=3)
     mentor_tier_standard_cents: int = Field(

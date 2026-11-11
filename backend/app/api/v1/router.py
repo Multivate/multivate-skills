@@ -1,12 +1,13 @@
 from fastapi import APIRouter
 
-from app.api.v1 import admin, auth, classroom_feed, courses, discounts, enrollments, guidance, instructor, learning, lessons, media, mentor, mentor_sessions, mentors, messages, notifications, payments, profiles, reviews, studio, support, users
+from app.api.v1 import admin, auth, classroom_feed, courses, discounts, enrollments, geo, guidance, instructor, learning, lessons, media, mentor, mentor_sessions, mentors, messages, notifications, payments, profiles, reviews, studio, support, users
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(admin.router)
 api_router.include_router(auth.router)
 api_router.include_router(notifications.router)
 api_router.include_router(lessons.router)
+api_router.include_router(geo.router)
 api_router.include_router(courses.router)
 api_router.include_router(enrollments.router)
 api_router.include_router(discounts.router)
