@@ -59,7 +59,7 @@ export function PackageCourseCard({ pkg, catalog, layout = "grid" }: Props) {
         </div>
         <div className="flex flex-col gap-1">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#1457D0]">{tTop("packageCourse")}</p>
-          <h3 className="line-clamp-2 min-h-[2.6rem] text-[17px] font-medium leading-[1.2] text-[#011B33] dark:text-[#eef4ff]">
+          <h3 className="line-clamp-3 min-h-[3.2rem] text-[17px] font-medium leading-[1.2] text-[#011B33] dark:text-[#eef4ff]">
             {pkg.title}
           </h3>
           <p className="mt-1 text-xs font-medium text-[#011B33]/70 dark:text-[#eef4ff]/70">

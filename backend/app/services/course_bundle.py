@@ -85,7 +85,7 @@ def bundle_quote(slugs: list[str]) -> dict:
             return {"percent": pct, "label": lab, "count": len(seen)}
     if len(seen) == 2 and len(cefr_list) == 2 and cefr_list[0] == cefr_list[1]:
         level = cefr_list[0]
-        return {"percent": 8, "label": f"{level} to {level} Advanced", "count": 2}
+        return {"percent": 8, "label": f"Complete {level} Beginner to Advanced", "count": 2}
     return {"percent": 10, "label": "2 or more courses", "count": len(seen)}
 
 

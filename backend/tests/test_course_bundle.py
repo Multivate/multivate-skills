@@ -28,7 +28,7 @@ def test_bundle_two_courses_is_10() -> None:
 def test_bundle_a1_pair_is_8() -> None:
     quote = bundle_quote(["german-a1-zero-to-beginner", "german-a1-advanced"])
     assert quote["percent"] == 8
-    assert quote["label"] == "A1 to A1 Advanced"
+    assert quote["label"] == "Complete A1 Beginner to Advanced"
 
 
 def test_bundle_one_course_is_zero() -> None:

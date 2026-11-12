@@ -62,11 +62,11 @@ const PAIR_PACKAGES: GermanPackage[] = CEFR_ORDER.map((level) => {
   const slugs = slugsAt(level);
   return {
     id: `german-${level.toLowerCase()}-package`,
-    title: `German ${level} to ${level} Advanced`,
-    range: `${level} to ${level} Advanced`,
+    title: `Complete ${level} Beginner to Advanced`,
+    range: `Complete ${level} Beginner to Advanced`,
     percent: 8,
     slugs,
-    image: `/marketing/german-${level.toLowerCase()}-package-cover.jpg`,
+    image: `/marketing/german-${level.toLowerCase()}-complete-package-cover.jpg`,
     afterSlug: slugs[slugs.length - 1] ?? "",
   };
 });
@@ -209,7 +209,7 @@ export function bundleQuote(slugs: string[], lineCents: number[]): BundleQuote {
   }
   if (percent === 10 && label === "2 or more courses" && seen.length === 2 && cefrList.length === 2 && cefrList[0] === cefrList[1]) {
     percent = 8;
-    label = `${cefrList[0]} to ${cefrList[0]} Advanced`;
+    label = `Complete ${cefrList[0]} Beginner to Advanced`;
   }
   const payableCents = Math.max(0, Math.round((listCents * (100 - percent)) / 100));
   return {
