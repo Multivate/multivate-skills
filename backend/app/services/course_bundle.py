@@ -21,18 +21,18 @@ LADDER_CEFR: dict[str, str] = {
 }
 
 PRICE_NAIRA: dict[str, int] = {
-    "german-a1-zero-to-beginner": 55_000,
-    "german-a1-advanced": 60_000,
-    "german-a2-beginner": 65_000,
-    "german-a2-advanced": 70_000,
-    "german-b1-beginner": 80_000,
-    "german-b1-advanced": 85_000,
-    "german-b2-beginner": 95_000,
-    "german-b2-advanced": 100_000,
-    "german-c1-beginner": 110_000,
-    "german-c1-advanced": 120_000,
-    "german-c2-beginner": 135_000,
-    "german-c2-advanced": 150_000,
+    "german-a1-zero-to-beginner": 50_000,
+    "german-a1-advanced": 52_000,
+    "german-a2-beginner": 55_000,
+    "german-a2-advanced": 58_000,
+    "german-b1-beginner": 62_000,
+    "german-b1-advanced": 65_000,
+    "german-b2-beginner": 68_000,
+    "german-b2-advanced": 70_000,
+    "german-c1-beginner": 73_000,
+    "german-c1-advanced": 76_000,
+    "german-c2-beginner": 78_000,
+    "german-c2-advanced": 80_000,
 }
 
 # Highest matching path wins.
@@ -78,15 +78,15 @@ def bundle_quote(slugs: list[str]) -> dict:
             seen.append(key)
     if len(seen) < 2:
         return {"percent": 0, "label": "", "count": len(seen)}
-    cefrs = {LADDER_CEFR[slug] for slug in seen if slug in LADDER_CEFR}
-    percent = 10
-    label = "2 or more courses"
+    cefr_list = [LADDER_CEFR[slug] for slug in seen if slug in LADDER_CEFR]
+    cefrs = set(cefr_list)
     for needed, pct, lab in _PATHS:
         if needed.issubset(cefrs):
-            percent = pct
-            label = lab
-            break
-    return {"percent": percent, "label": label, "count": len(seen)}
+            return {"percent": pct, "label": lab, "count": len(seen)}
+    if len(seen) == 2 and len(cefr_list) == 2 and cefr_list[0] == cefr_list[1]:
+        level = cefr_list[0]
+        return {"percent": 8, "label": f"{level} to {level} Advanced", "count": 2}
+    return {"percent": 10, "label": "2 or more courses", "count": len(seen)}
 
 
 def apply_bundle_cents(amount_cents: int, slugs: list[str], course_slug: str) -> tuple[int, int, str]:

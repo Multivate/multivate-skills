@@ -5,18 +5,18 @@ from __future__ import annotations
 MINUTES_PER_LESSON = 8
 
 _PRICE_NAIRA = {
-    "german-a1-zero-to-beginner": 55_000,
-    "german-a1-advanced": 60_000,
-    "german-a2-beginner": 65_000,
-    "german-a2-advanced": 70_000,
-    "german-b1-beginner": 80_000,
-    "german-b1-advanced": 85_000,
-    "german-b2-beginner": 95_000,
-    "german-b2-advanced": 100_000,
-    "german-c1-beginner": 110_000,
-    "german-c1-advanced": 120_000,
-    "german-c2-beginner": 135_000,
-    "german-c2-advanced": 150_000,
+    "german-a1-zero-to-beginner": 50_000,
+    "german-a1-advanced": 52_000,
+    "german-a2-beginner": 55_000,
+    "german-a2-advanced": 58_000,
+    "german-b1-beginner": 62_000,
+    "german-b1-advanced": 65_000,
+    "german-b2-beginner": 68_000,
+    "german-b2-advanced": 70_000,
+    "german-c1-beginner": 73_000,
+    "german-c1-advanced": 76_000,
+    "german-c2-beginner": 78_000,
+    "german-c2-advanced": 80_000,
 }
 _LEVEL_NAIRA = {"beginner": 55_000, "intermediate": 75_000, "advanced": 95_000}
 

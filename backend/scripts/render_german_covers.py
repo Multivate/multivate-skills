@@ -141,6 +141,66 @@ COURSES = [
         "badge": "CEFR C2  |  C2 ADVANCED",
     },
     {
+        "file": "german-a1-package-cover.jpg",
+        "level": "A1",
+        "band": "PACKAGE COURSE",
+        "quote": "A1 Zero to Beginner and A1 Advanced at one package price.",
+        "modules": "2 Classroom Courses In This Package",
+        "activities": "8 percent off the A1 beginner and advanced pair",
+        "exam": "A1 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A1 TO A1 ADVANCED",
+    },
+    {
+        "file": "german-a2-package-cover.jpg",
+        "level": "A2",
+        "band": "PACKAGE COURSE",
+        "quote": "A2 Beginner and A2 Advanced at one package price.",
+        "modules": "2 Classroom Courses In This Package",
+        "activities": "8 percent off the A2 beginner and advanced pair",
+        "exam": "A2 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A2 TO A2 ADVANCED",
+    },
+    {
+        "file": "german-b1-package-cover.jpg",
+        "level": "B1",
+        "band": "PACKAGE COURSE",
+        "quote": "B1 Beginner and B1 Advanced at one package price.",
+        "modules": "2 Classroom Courses In This Package",
+        "activities": "8 percent off the B1 beginner and advanced pair",
+        "exam": "B1 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  B1 TO B1 ADVANCED",
+    },
+    {
+        "file": "german-b2-package-cover.jpg",
+        "level": "B2",
+        "band": "PACKAGE COURSE",
+        "quote": "B2 Beginner and B2 Advanced at one package price.",
+        "modules": "2 Classroom Courses In This Package",
+        "activities": "8 percent off the B2 beginner and advanced pair",
+        "exam": "B2 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  B2 TO B2 ADVANCED",
+    },
+    {
+        "file": "german-c1-package-cover.jpg",
+        "level": "C1",
+        "band": "PACKAGE COURSE",
+        "quote": "C1 Beginner and C1 Advanced at one package price.",
+        "modules": "2 Classroom Courses In This Package",
+        "activities": "8 percent off the C1 beginner and advanced pair",
+        "exam": "C1 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  C1 TO C1 ADVANCED",
+    },
+    {
+        "file": "german-c2-package-cover.jpg",
+        "level": "C2",
+        "band": "PACKAGE COURSE",
+        "quote": "C2 Beginner and C2 Advanced at one package price.",
+        "modules": "2 Classroom Courses In This Package",
+        "activities": "8 percent off the C2 beginner and advanced pair",
+        "exam": "C2 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  C2 TO C2 ADVANCED",
+    },
+    {
         "file": "german-a1-a2-package-cover.jpg",
         "level": "A1-A2",
         "band": "PACKAGE COURSE",
@@ -322,7 +382,7 @@ def main() -> None:
         raise SystemExit(f"Missing logo: {LOGO_PATH}")
     OUT.mkdir(parents=True, exist_ok=True)
     for course in COURSES:
-        if "package" in course["file"] or not (OUT / course["file"]).is_file():
+        if not (OUT / course["file"]).is_file():
             render(course)
 
 

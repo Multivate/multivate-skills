@@ -69,7 +69,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
     ? courses.filter((c) => matchesSearch(searchQ, c.title, c.description, c.slug, c.category))
     : courses;
   const needle = searchQ.toLowerCase();
-  const packages = !searchQ || /package|german|a1|b1|b2|c1|c2/.test(needle)
+  const packages = !searchQ || /package|german|a1|a2|b1|b2|c1|c2/.test(needle)
     ? GERMAN_PACKAGES.filter(
         (pkg) =>
           !searchQ ||
