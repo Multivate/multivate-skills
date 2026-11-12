@@ -130,7 +130,12 @@ export function speakGerman(
   text: string,
   gender: TeacherVoice,
   lang = "de-DE",
-  opts?: { rate?: number; onend?: () => void },
+  opts?: {
+    rate?: number;
+    onend?: () => void;
+    onstart?: () => void;
+    onboundary?: (charIndex: number, charLength: number) => void;
+  },
 ) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
@@ -146,6 +151,13 @@ export function speakGerman(
   const match = pool.find((v) => (gender === "female" ? female.test(v.name) : male.test(v.name)));
   if (match) utter.voice = match;
   else if (de[0]) utter.voice = de[0];
+  if (opts?.onstart) utter.onstart = () => opts.onstart?.();
+  if (opts?.onboundary) {
+    utter.onboundary = (event) => {
+      const extra = event as SpeechSynthesisEvent & { charLength?: number };
+      opts.onboundary?.(event.charIndex ?? 0, extra.charLength ?? 0);
+    };
+  }
   if (opts?.onend) {
     utter.onend = () => opts.onend?.();
     utter.onerror = () => opts.onend?.();

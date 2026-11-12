@@ -1,9 +1,10 @@
 "use client";
 
-import { Headphones, Pause, Play, Shuffle, Volume2 } from "lucide-react";
+import { ChevronLeft, Pause, Play, Shuffle, SkipBack, SkipForward } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { LogoMark } from "@/components/layout/LogoMark";
+import { ListenFollowAlong, listenSceneSrc } from "@/components/player/ListenFollowAlong";
 import {
   LISTEN_DURATIONS,
   buildListenStory,
@@ -37,11 +38,15 @@ type Phrasebook = {
   module_assessments?: { module_key: string; passed: boolean }[];
 };
 
-const PACES: { id: ListenPace; label: string; hint: string }[] = [
-  { id: "slow", label: "Slow", hint: "Careful classroom speed" },
-  { id: "medium", label: "Medium", hint: "Natural talk" },
-  { id: "fast", label: "Fast", hint: "Radio speed" },
+const PACES: { id: ListenPace; label: string }[] = [
+  { id: "slow", label: "Slow" },
+  { id: "medium", label: "Natural" },
+  { id: "fast", label: "Fluent" },
 ];
+
+function wordCount(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
 
 export function ClassroomListenAlone({ slug, preview = false }: { slug: string; preview?: boolean }) {
   const [book, setBook] = useState<Phrasebook | null>(null);
@@ -52,11 +57,15 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
   const [story, setStory] = useState<ListenStory | null>(null);
   const [beat, setBeat] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [cursor, setCursor] = useState(0);
   const [teacher, setTeacher] = useState<TeacherVoice>("female");
   const playingRef = useRef(false);
   const storyRef = useRef<ListenStory | null>(null);
   const beatRef = useRef(0);
   const paceRef = useRef(pace);
+  const genRef = useRef(0);
+  const boundaryRef = useRef(false);
+  const rafRef = useRef(0);
   paceRef.current = pace;
   storyRef.current = story;
   beatRef.current = beat;
@@ -83,6 +92,8 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
     })();
     return () => {
       cancelled = true;
+      genRef.current += 1;
+      window.cancelAnimationFrame(rafRef.current);
       window.speechSynthesis?.cancel();
     };
   }, [slug, qs]);
@@ -109,6 +120,13 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
   );
   const doneIds = finishedModuleIds(modules, learned, passed);
 
+  function haltSpeech() {
+    genRef.current += 1;
+    playingRef.current = false;
+    window.cancelAnimationFrame(rafRef.current);
+    window.speechSynthesis?.cancel();
+  }
+
   function makeStory(
     nextBook = book,
     nextModules = modules,
@@ -122,9 +140,10 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
     );
     const chosen =
       nextModules.some((row) => row.id === nextModuleId) ? nextModuleId : nextModules[0]?.id ?? "";
-    window.speechSynthesis?.cancel();
+    haltSpeech();
     setPlaying(false);
     setBeat(0);
+    setCursor(0);
     setStory(
       buildListenStory({
         modules: nextModules,
@@ -151,16 +170,42 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
 
   function playFrom(index: number) {
     const current = storyRef.current;
-    if (!current?.beats[index]) {
+    const line = current?.beats[index];
+    if (!line) {
       setPlaying(false);
+      playingRef.current = false;
       return;
     }
+    window.cancelAnimationFrame(rafRef.current);
+    const gen = genRef.current + 1;
+    genRef.current = gen;
+    boundaryRef.current = false;
     setBeat(index);
+    setCursor(0);
     setPlaying(true);
     playingRef.current = true;
-    speakGerman(current.beats[index]!.de, teacher, "de-DE", {
-      rate: LISTEN_PACE_RATE[paceRef.current],
+    const rate = LISTEN_PACE_RATE[paceRef.current];
+    const ms = Math.max(1400, (wordCount(line.de) / (118 * rate)) * 60_000);
+    const started = performance.now();
+    const tick = (now: number) => {
+      if (gen !== genRef.current || !playingRef.current) return;
+      if (!boundaryRef.current) {
+        const frac = Math.min(1, (now - started) / ms);
+        setCursor(Math.floor(frac * line.de.length));
+      }
+      if (now - started < ms + 500) rafRef.current = window.requestAnimationFrame(tick);
+    };
+    rafRef.current = window.requestAnimationFrame(tick);
+    speakGerman(line.de, teacher, "de-DE", {
+      rate,
+      onboundary: (charIndex) => {
+        if (gen !== genRef.current) return;
+        if (charIndex > 0) boundaryRef.current = true;
+        setCursor(charIndex);
+      },
       onend: () => {
+        if (gen !== genRef.current) return;
+        setCursor(line.de.length);
         if (!playingRef.current) return;
         playFrom(index + 1);
       },
@@ -169,12 +214,21 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
 
   function togglePlay() {
     if (playing) {
-      playingRef.current = false;
+      haltSpeech();
       setPlaying(false);
-      window.speechSynthesis?.cancel();
       return;
     }
     playFrom(beatRef.current);
+  }
+
+  function skip(delta: number) {
+    const next = Math.min(Math.max(0, beatRef.current + delta), (storyRef.current?.beats.length ?? 1) - 1);
+    if (playingRef.current) playFrom(next);
+    else {
+      haltSpeech();
+      setBeat(next);
+      setCursor(0);
+    }
   }
 
   if (error) {
@@ -189,123 +243,169 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
   }
 
   if (!book || !story) {
-    return <p className="py-20 text-center text-sm text-[#10244F]/50">Opening listening session…</p>;
+    return <p className="py-20 text-center text-sm text-[#10244F]/50">Opening listening studio…</p>;
   }
 
   const current = story.beats[beat];
+  const progress = story.beats.length ? ((beat + (current ? cursor / Math.max(current.de.length, 1) : 0)) / story.beats.length) * 100 : 0;
+  const scene = listenSceneSrc(current?.chapter ?? "");
 
   return (
-    <div className="classroom-room mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-6">
-      <header className="flex items-center justify-between gap-3">
-        <Link href={classroomHref} className="text-sm font-semibold text-brand-accent">
-          Back to classroom
+    <div className="listen-studio flex min-h-dvh flex-col">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4">
+        <Link href={classroomHref} className="inline-flex items-center gap-1 text-sm font-semibold text-white/80 hover:text-white">
+          <ChevronLeft className="h-4 w-4" /> Classroom
         </Link>
-        <LogoMark className="max-w-[7.5rem]" />
+        <LogoMark variant="inverse" className="max-w-[9rem]" priority />
       </header>
 
-      <div className="cr-surface mt-6 rounded-[22px] p-5 shadow-[0_12px_30px_rgba(16,36,79,0.08)]">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1457D0]">
-          <Headphones className="h-4 w-4" /> Listening session
-        </p>
-        <h1 className="mt-2 text-2xl font-extrabold text-[#10244F]">{book.course_title}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-[#10244F]/70">{story.reason}</p>
-        <p className="mt-3 text-sm font-semibold text-[#10244F]">Topic: {story.topic}</p>
-        <p className="mt-1 text-sm text-[#10244F]/70">
-          Chapter: {current?.chapter} · about {estimatedMinutes(story.beats)} minutes at medium speed
-        </p>
+      <div className="mx-auto grid w-full max-w-6xl flex-1 gap-5 px-4 pb-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <section className="relative flex min-h-[28rem] flex-col overflow-hidden rounded-[28px] bg-[#0b1a3d] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+          <img src={scene} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#10244F]/40 via-[#10244F]/78 to-[#0b1a3d]" />
+          <div className="relative flex min-h-0 flex-1 flex-col p-5 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8eb6ff]">Listening studio</p>
+                <h1 className="mt-1 text-lg font-extrabold text-white sm:text-xl">{book.course_title}</h1>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80">
+                {playing ? (
+                  <span className="listen-eq inline-flex h-4 items-end gap-[3px]" aria-hidden>
+                    <span className="h-4" />
+                    <span className="h-3" />
+                    <span className="h-4" />
+                    <span className="h-2.5" />
+                  </span>
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-white/40" />
+                )}
+                {playing ? "Live" : "Paused"}
+              </div>
+            </div>
 
-        <p className="mt-5 text-xs font-bold uppercase tracking-wider text-[#10244F]/55">Story length</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {LISTEN_DURATIONS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => {
-                setMinutes(item);
-                makeStory(book, modules, moduleId, item);
+            <p className="mt-5 text-xs font-bold uppercase tracking-wider text-[#8eb6ff]">{current?.chapter}</p>
+            <div className="mt-4 flex-1">
+              <ListenFollowAlong text={current?.de ?? ""} cursor={cursor} playing={playing} />
+              <p className="mt-5 max-w-3xl text-sm leading-relaxed text-white/55">{current?.en}</p>
+            </div>
+
+            <div className="mt-8">
+              <div className="h-1 overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-[#1457D0] transition-[width] duration-200" style={{ width: `${progress}%` }} />
+              </div>
+              <div className="mt-2 flex justify-between text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                <span>
+                  Scene {beat + 1} of {story.beats.length}
+                </span>
+                <span>
+                  {minutes} min · about {estimatedMinutes(story.beats)} min of German
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => skip(-1)}
+                className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white"
+                aria-label="Previous scene"
+              >
+                <SkipBack className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={togglePlay}
+                className="inline-flex h-16 min-w-[9.5rem] items-center justify-center gap-2 rounded-full bg-[#1457D0] px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(20,87,208,0.45)]"
+              >
+                {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                {playing ? "Pause" : "Play story"}
+              </button>
+              <button
+                type="button"
+                onClick={() => skip(1)}
+                className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white"
+                aria-label="Next scene"
+              >
+                <SkipForward className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <aside className="flex flex-col gap-4 rounded-[28px] bg-white/8 p-5 text-white backdrop-blur-sm">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#8eb6ff]">Story</p>
+            <p className="mt-2 text-sm font-extrabold">{story.topic}</p>
+            <p className="mt-2 text-sm leading-relaxed text-white/65">{story.reason}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">Length</p>
+            <div className="mt-2 grid grid-cols-4 gap-2">
+              {LISTEN_DURATIONS.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    setMinutes(item);
+                    makeStory(book, modules, moduleId, item);
+                  }}
+                  className={`rounded-full py-2 text-xs font-bold ${
+                    minutes === item ? "bg-[#1457D0] text-white" : "bg-white/10 text-white/80"
+                  }`}
+                >
+                  {item}m
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">Pace</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {PACES.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setPace(item.id);
+                    if (playingRef.current) playFrom(beatRef.current);
+                  }}
+                  className={`rounded-full py-2 text-xs font-bold ${
+                    pace === item.id ? "bg-[#1457D0] text-white" : "bg-white/10 text-white/80"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-white/45">
+            Module
+            <select
+              className="mt-2 w-full rounded-[14px] border border-white/15 bg-[#0b1a3d] px-3 py-3 text-sm font-semibold text-white"
+              value={moduleId}
+              onChange={(event) => {
+                const next = event.target.value;
+                setModuleId(next);
+                makeStory(book, modules, next);
               }}
-              className={`rounded-full px-4 py-2 text-sm font-bold ${
-                minutes === item ? "bg-[#1457D0] text-white" : "cr-chip"
-              }`}
             >
-              {item} min
-            </button>
-          ))}
-        </div>
-
-        <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-[#10244F]/55">
-          Module
-          <select
-            className="mt-2 w-full rounded-[14px] border border-[#10244F]/15 bg-white px-3 py-3 text-sm font-semibold text-[#10244F]"
-            value={moduleId}
-            onChange={(event) => {
-              const next = event.target.value;
-              setModuleId(next);
-              makeStory(book, modules, next);
-            }}
-          >
-            {modules.map((row, index) => (
-              <option key={row.id} value={row.id}>
-                {moduleLabel(index, row.title)}
-                {doneIds.includes(row.id) ? " (finished)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {PACES.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setPace(item.id);
-                if (playingRef.current) playFrom(beatRef.current);
-              }}
-              className={`rounded-full px-4 py-2 text-sm font-bold ${
-                pace === item.id ? "bg-[#1457D0] text-white" : "cr-chip"
-              }`}
-            >
-              {item.label}
-              <span className="ml-2 text-[11px] font-medium opacity-80">{item.hint}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="cr-surface-soft mt-6 rounded-[18px] px-4 py-6 text-left">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#1457D0]">{current?.chapter}</p>
-          <p className="mt-3 text-[1.15rem] font-semibold leading-relaxed text-[#10244F] sm:text-xl">{current?.de}</p>
-          <p className="mt-3 text-sm leading-relaxed text-[#10244F]/65">{current?.en}</p>
-          <p className="mt-4 text-xs font-semibold text-[#10244F]/45">
-            Scene {beat + 1} of {story.beats.length} · keep playing for the full {minutes}-minute story
-          </p>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="inline-flex h-14 items-center gap-2 rounded-full bg-[#1457D0] px-6 text-sm font-semibold text-white"
-          >
-            {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-            {playing ? "Pause" : "Play story"}
-          </button>
-          <button
-            type="button"
-            onClick={() => playFrom(beat)}
-            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#10244F] text-white"
-            aria-label="Play this line"
-          >
-            <Volume2 className="h-5 w-5" />
-          </button>
+              {modules.map((row, index) => (
+                <option key={row.id} value={row.id}>
+                  {moduleLabel(index, row.title)}
+                  {doneIds.includes(row.id) ? " (finished)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
             onClick={() => makeStory(book, modules, moduleId)}
-            className="inline-flex h-14 items-center gap-2 rounded-full border border-[#10244F]/15 px-5 text-sm font-semibold text-[#10244F]"
+            className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/15 text-sm font-semibold text-white"
           >
-            <Shuffle className="h-4 w-4" /> New story at {minutes} min
+            <Shuffle className="h-4 w-4" /> New {minutes}-minute story
           </button>
-        </div>
+        </aside>
       </div>
     </div>
   );
