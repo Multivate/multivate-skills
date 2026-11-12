@@ -92,3 +92,45 @@ export function arrangeBank(tokens: string[], extra: string[] = [], random = Mat
 export function sameOrder(picked: string[], expected: string[]): boolean {
   return normalizeGap(picked.join(" ")) === normalizeGap(expected.join(" "));
 }
+
+export function lettersOf(line: string): string[] {
+  return [...line.replace(/[^\p{L}]/gu, "")];
+}
+
+export function hideLetterIndexes(letters: string[], random = Math.random): number[] {
+  if (!letters.length) return [];
+  if (letters.length <= 4) return letters.map((_, index) => index);
+  const count = letters.length <= 10 ? Math.min(3, letters.length - 1) : Math.min(5, Math.max(3, Math.round(letters.length * 0.35)));
+  const pool = letters.map((_, index) => index);
+  const hidden: number[] = [];
+  while (hidden.length < count && pool.length) {
+    const at = Math.floor(random() * pool.length);
+    hidden.push(pool.splice(at, 1)[0]!);
+  }
+  return hidden.sort((a, b) => a - b);
+}
+
+export function maskLetters(line: string, hidden: number[]): string {
+  let n = 0;
+  return [...line]
+    .map((ch) => {
+      if (!/\p{L}/u.test(ch)) return ch;
+      const index = n;
+      n += 1;
+      return hidden.includes(index) ? "_" : ch;
+    })
+    .join("");
+}
+
+export function letterBank(letters: string[], hidden: number[], random = Math.random): string[] {
+  const needed = hidden.map((index) => letters[index]!).filter(Boolean);
+  const extras = shuffle(["e", "n", "r", "s", "t", "a", "i"].filter((row) => !needed.some((need) => need.toLowerCase() === row)), random).slice(
+    0,
+    needed.length <= 2 ? 2 : 1,
+  );
+  return shuffle([...needed, ...extras], random);
+}
+
+export function sameLetters(picked: string[], expected: string[]): boolean {
+  return normalizeGap(picked.join("")) === normalizeGap(expected.join(""));
+}

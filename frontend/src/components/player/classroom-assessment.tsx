@@ -293,6 +293,10 @@ export function ClassroomAssessment({
   }, [current?.id]);
 
   useEffect(() => {
+    if (current?.kind === "speak") window.speechSynthesis?.cancel();
+  }, [current?.id, current?.kind]);
+
+  useEffect(() => {
     if (!current || current.kind !== "listen" || checked) return;
     const timer = window.setTimeout(() => playClip(current, voiceLine), 400);
     return () => window.clearTimeout(timer);

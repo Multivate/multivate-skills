@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   Bookmark,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Flame,
@@ -195,7 +196,7 @@ function TweetCard({
   );
 }
 
-export function ClassroomOpportunityHub() {
+export function ClassroomGermanyDesk() {
   const [channel, setChannel] = useState("for-you");
   const [posts, setPosts] = useState<Post[]>([]);
   const [body, setBody] = useState("");
@@ -263,7 +264,7 @@ export function ClassroomOpportunityHub() {
       <div className="flex min-h-0 w-full max-w-[598px] flex-col border-x-0 bg-white sm:border-x sm:border-[#eff3f4] dark:bg-black dark:sm:border-[#2f3336]">
         <div className="flex items-center gap-2 border-b border-[#eff3f4] px-4 py-3 dark:border-[#2f3336]">
           <LogoMark size="md" />
-          <p className="text-[15px] font-extrabold">Opportunity Hub</p>
+          <p className="text-[15px] font-extrabold">Germany Desk</p>
         </div>
         <div className="grid grid-cols-3 border-b border-[#eff3f4] dark:border-[#2f3336]">
           {HUB_CHANNELS.map((item) => (
@@ -777,11 +778,22 @@ export function ClassroomProgress({
               <span
                 key={key}
                 title={done ? `Class completed ${key}` : key}
-                className={`flex h-9 items-center justify-center rounded-full text-xs font-bold ${
-                  done ? "bg-[#1457D0] text-white" : isToday ? "ring-2 ring-[#1457D0] ring-offset-1 ring-offset-[var(--cr-surface)]" : "cr-muted"
+                className={`relative flex h-9 items-center justify-center rounded-full text-xs font-bold ${
+                  done
+                    ? "bg-[#1457D0]/12 text-[#10244F]"
+                    : isToday
+                      ? "ring-2 ring-[#1457D0] ring-offset-1 ring-offset-[var(--cr-surface)]"
+                      : "cr-muted"
                 }`}
               >
                 {day}
+                {done ? (
+                  <CheckCircle2
+                    className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 fill-[#1457D0] text-white"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                ) : null}
               </span>
             );
           })}

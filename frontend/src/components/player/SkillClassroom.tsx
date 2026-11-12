@@ -20,7 +20,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { Link } from "@/i18n/navigation";
-import { phraseEnglish, phraseIpa, phraseTips, phraseUsage, spellLetters, usageDialogue, usageSituations } from "@/lib/classroom-copy";
+import { phraseEnglish, phraseIpa, phraseTips, phraseUsage, usageDialogue, usageSituations } from "@/lib/classroom-copy";
+import { LetterSpellDrill } from "@/components/player/GapArrangeDrill";
 import {
   loadLook,
   loadPracticeDays,
@@ -40,7 +41,7 @@ import { useClassroomVoice } from "@/hooks/useClassroomVoice";
 import { getCurrentUser } from "@/services/auth";
 import {
   ClassroomCommunity,
-  ClassroomOpportunityHub,
+  ClassroomGermanyDesk,
   ClassroomProgress,
   ClassroomSettings,
 } from "@/components/player/classroom-panels";
@@ -476,7 +477,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
     { id: "listen" as const, label: "Listening session", icon: Headphones, href: listenHref },
     { id: "assessment" as const, label: "Assessment", icon: Trophy },
     { id: "scenario" as const, label: "Real-life", icon: MessageCircle },
-    { id: "hub" as const, label: "Opportunity Hub", icon: Target },
+    { id: "hub" as const, label: "Germany Desk", icon: Target },
     { id: "progress" as const, label: "My Progress", icon: GraduationCap },
     { id: "community" as const, label: "Community", icon: Users },
     { id: "settings" as const, label: "Settings", icon: Settings },
@@ -614,7 +615,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
         <main className="cr-stage relative flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-4">
           {view === "hub" ? (
             <div className="h-full min-h-0">
-              <ClassroomOpportunityHub />
+              <ClassroomGermanyDesk />
             </div>
           ) : null}
           {view === "progress" ? (
@@ -685,7 +686,9 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   </div>
                 </div>
 
-                {tab === "usage" ? (
+                {tab === "spelling" ? (
+                  <LetterSpellDrill german={phrase.target_text} english={phraseEnglish(phrase.source_text, phrase.target_text)} />
+                ) : tab === "usage" ? (
                   <div className="cr-surface-soft mt-4 rounded-[18px] px-3 py-5 sm:px-4 sm:py-6">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-[#1457D0]">When this line is useful</p>
                     <p className="mt-2 text-sm font-extrabold text-[#10244F]">{usage}</p>
@@ -753,13 +756,15 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   </div>
                 ) : null}
 
-                {tab === "spelling" ? <p className="mt-4 text-center font-mono text-lg font-semibold tracking-[0.22em]">{spellLetters(phrase.target_text)}</p> : null}
-
                 <div className="mt-auto grid items-end gap-3 pt-4 sm:grid-cols-[1fr_auto]">
                   <div>
-                    <p className="text-sm font-extrabold">{tab === "usage" ? "Use it" : "When to use"}</p>
+                    <p className="text-sm font-extrabold">
+                      {tab === "usage" ? "Use it" : tab === "spelling" ? "Spell" : "When to use"}
+                    </p>
                     {tab === "usage" ? (
                       <p className="cr-muted mt-1 text-sm">This tab is the situation, not another listen repeat.</p>
+                    ) : tab === "spelling" ? (
+                      <p className="cr-muted mt-1 text-sm">Fill the gap or tap letters in order. We do not show a dotted letter list.</p>
                     ) : (
                       <ul className="mt-2 space-y-2 text-sm">
                         <li className="flex gap-2">
@@ -768,6 +773,12 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                       </ul>
                     )}
                   </div>
+                  {tab === "spelling" ? (
+                    <div className="flex items-end justify-center gap-1 overflow-hidden sm:justify-end sm:gap-2">
+                      <Kid src={themSrc} className="h-16 w-auto object-contain object-bottom sm:h-24" />
+                      <Kid src={meSrc} className="h-16 w-auto object-contain object-bottom sm:h-24" />
+                    </div>
+                  ) : (
                   <div className="flex items-end justify-center gap-1 overflow-hidden sm:justify-end sm:gap-2">
                     <Kid src={themSrc} talking={talking} className="h-16 w-auto object-contain object-bottom sm:h-24" />
                     <button
@@ -784,6 +795,7 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     </button>
                     <Kid src={meSrc} className="h-16 w-auto object-contain object-bottom sm:h-24" />
                   </div>
+                  )}
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2">

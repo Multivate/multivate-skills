@@ -148,7 +148,7 @@ export function phraseTips(source: string, target: string) {
   }
   return [
     `Say: ${target}`,
-    `Spell: ${target.replace(/[^\p{L}]/gu, "").split("").join("-").toUpperCase() || target}`,
+    `Spell it by tapping the missing letters, not by reading a letter list.`,
     `Use it for: ${source.toLowerCase()}.`,
   ];
 }
