@@ -10,7 +10,10 @@ type Rec = {
   start: () => void;
   abort: () => void;
   stop: () => void;
-  onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal?: boolean; 0: { transcript: string } }> }) => void) | null;
+  onresult: ((event: {
+    resultIndex: number;
+    results: ArrayLike<{ isFinal?: boolean; 0: { transcript: string } }>;
+  }) => void) | null;
   onerror: ((event: { error?: string }) => void) | null;
   onend: (() => void) | null;
 };
@@ -22,6 +25,15 @@ function speechEngine() {
     webkitSpeechRecognition?: new () => Rec;
   };
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
+function appleSpeech() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const iOS = /iP(hone|ad|od)/.test(ua);
+  const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  const safari = /Safari/i.test(ua) && !/Chrome|CriOS|Chromium|Edg|Firefox|FxiOS|OPR/i.test(ua);
+  return iOS || iPadOS || safari;
 }
 
 export function useClassroomVoice(lang = "de-DE") {
@@ -37,6 +49,7 @@ export function useClassroomVoice(lang = "de-DE") {
   const heardRef = useRef("");
   const liveRef = useRef(false);
   const sessionRef = useRef(0);
+  const appleRef = useRef(false);
 
   const clearClip = useCallback(() => {
     if (clipRef.current) URL.revokeObjectURL(clipRef.current);
@@ -44,23 +57,7 @@ export function useClassroomVoice(lang = "de-DE") {
     setClipUrl(null);
   }, []);
 
-  const releaseMic = useCallback(() => {
-    const speech = speechRef.current;
-    speechRef.current = null;
-    if (speech) {
-      speech.onend = null;
-      speech.onerror = null;
-      speech.onresult = null;
-      try {
-        speech.abort();
-      } catch {
-        try {
-          speech.stop();
-        } catch {
-          /* ignore */
-        }
-      }
-    }
+  const dropRecorder = useCallback(() => {
     try {
       if (recRef.current && recRef.current.state !== "inactive") recRef.current.stop();
     } catch {
@@ -71,60 +68,124 @@ export function useClassroomVoice(lang = "de-DE") {
     streamRef.current = null;
   }, []);
 
+  const hardAbortSpeech = useCallback(() => {
+    const speech = speechRef.current;
+    speechRef.current = null;
+    if (!speech) return;
+    speech.onend = null;
+    speech.onerror = null;
+    speech.onresult = null;
+    try {
+      speech.abort();
+    } catch {
+      try {
+        speech.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
   const stop = useCallback(() => {
-    sessionRef.current += 1;
     liveRef.current = false;
-    releaseMic();
+    dropRecorder();
+    const speech = speechRef.current;
+    if (speech) {
+      try {
+        speech.stop();
+      } catch {
+        hardAbortSpeech();
+        sessionRef.current += 1;
+        setRecording(false);
+        return;
+      }
+      window.setTimeout(() => {
+        if (!liveRef.current) {
+          hardAbortSpeech();
+          setRecording(false);
+        }
+      }, 700);
+      return;
+    }
+    sessionRef.current += 1;
     setRecording(false);
-  }, [releaseMic]);
+  }, [dropRecorder, hardAbortSpeech]);
 
   useEffect(() => {
+    appleRef.current = appleSpeech();
     return () => {
-      stop();
+      liveRef.current = false;
+      sessionRef.current += 1;
+      dropRecorder();
+      hardAbortSpeech();
       if (clipRef.current) URL.revokeObjectURL(clipRef.current);
     };
-  }, [stop]);
+  }, [dropRecorder, hardAbortSpeech]);
 
-  const startSpeech = useCallback(
+  const attachSpeech = useCallback(
     (Engine: new () => Rec, session: number) => {
+      const apple = appleRef.current;
       const speech = new Engine();
       speech.lang = lang;
+      speech.maxAlternatives = 1;
+      speech.continuous = !apple;
       speech.interimResults = true;
-      speech.continuous = true;
-      speech.maxAlternatives = 3;
       speech.onresult = (event) => {
         if (sessionRef.current !== session) return;
         let text = "";
+        let sawFinal = false;
         for (let i = 0; i < event.results.length; i += 1) {
-          text += event.results[i]?.[0]?.transcript ?? "";
+          const row = event.results[i];
+          text += row?.[0]?.transcript ?? "";
+          if (row?.isFinal) sawFinal = true;
         }
-        heardRef.current = text.trim();
-        setHeard(text.trim());
+        const next = text.trim();
+        if (!next) return;
+        heardRef.current = next;
+        setHeard(next);
+        setError(null);
+        if (apple && sawFinal) {
+          liveRef.current = false;
+          try {
+            speech.stop();
+          } catch {
+            /* onend will finish */
+          }
+        }
       };
       speech.onerror = (event) => {
         if (sessionRef.current !== session) return;
         const code = event.error || "";
-        if (code === "aborted" || code === "no-speech") return;
+        if (code === "aborted") return;
+        if (code === "no-speech") return;
         if (code === "not-allowed") {
-          setError("Allow the microphone, then tap Speak again.");
           liveRef.current = false;
           setRecording(false);
+          setError("Allow the microphone, then tap Speak again.");
           return;
         }
-        if (code === "audio-capture") {
-          setError("The microphone was still busy. Tap Speak once more.");
+        if (code === "audio-capture" || code === "service-not-allowed") {
+          setError("Safari could not use the microphone. Close other audio, then tap Speak.");
         }
       };
       speech.onend = () => {
-        if (sessionRef.current !== session || !liveRef.current) return;
+        if (sessionRef.current !== session) return;
+        speechRef.current = null;
+        if (!liveRef.current) {
+          sessionRef.current += 1;
+          setRecording(false);
+          return;
+        }
         window.setTimeout(() => {
           if (sessionRef.current !== session || !liveRef.current) return;
           try {
-            speech.start();
+            attachSpeech(Engine, session);
           } catch {
-            /* Chrome is still closing the last session */
+            liveRef.current = false;
+            setRecording(false);
+            setError("Speech stopped. Tap Speak and try again.");
           }
-        }, 180);
+        }, apple ? 220 : 160);
       };
       speechRef.current = speech;
       speech.start();
@@ -132,10 +193,14 @@ export function useClassroomVoice(lang = "de-DE") {
     [lang],
   );
 
-  const start = useCallback(async () => {
+  const start = useCallback(() => {
     if (liveRef.current) return;
-    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-    releaseMic();
+    appleRef.current = appleSpeech();
+    if (typeof window !== "undefined" && window.speechSynthesis?.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    hardAbortSpeech();
+    dropRecorder();
 
     const session = sessionRef.current + 1;
     sessionRef.current = session;
@@ -147,16 +212,9 @@ export function useClassroomVoice(lang = "de-DE") {
     setRecording(true);
 
     const Engine = speechEngine();
-    if (!Engine && !navigator.mediaDevices?.getUserMedia) {
-      liveRef.current = false;
-      setRecording(false);
-      setError("This browser cannot take speech. Open Chrome and allow the microphone.");
-      return;
-    }
-
     if (Engine) {
       try {
-        startSpeech(Engine, session);
+        attachSpeech(Engine, session);
       } catch {
         liveRef.current = false;
         setRecording(false);
@@ -165,41 +223,54 @@ export function useClassroomVoice(lang = "de-DE") {
       return;
     }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-      if (sessionRef.current !== session || !liveRef.current) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
-      streamRef.current = stream;
-      chunksRef.current = [];
-      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
-      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-      rec.ondataavailable = (event) => {
-        if (event.data.size) chunksRef.current.push(event.data);
-      };
-      rec.onstop = () => {
-        if (sessionRef.current !== session || !chunksRef.current.length) return;
-        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
-        if (blob.size < 200) return;
-        const url = URL.createObjectURL(blob);
-        clipRef.current = url;
-        setClipUrl(url);
-      };
-      rec.start(250);
-      recRef.current = rec;
-    } catch {
+    if (!navigator.mediaDevices?.getUserMedia) {
       liveRef.current = false;
       setRecording(false);
-      setError("Allow the microphone to speak.");
+      setError("This browser cannot take speech. Open Safari or Chrome and allow the microphone.");
+      return;
     }
-  }, [clearClip, releaseMic, startSpeech]);
+
+    void (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        if (sessionRef.current !== session || !liveRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        streamRef.current = stream;
+        chunksRef.current = [];
+        const mime = MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : MediaRecorder.isTypeSupported("audio/webm")
+            ? "audio/webm"
+            : "";
+        const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        rec.ondataavailable = (event) => {
+          if (event.data.size) chunksRef.current.push(event.data);
+        };
+        rec.onstop = () => {
+          if (sessionRef.current !== session || !chunksRef.current.length) return;
+          const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/mp4" });
+          if (blob.size < 200) return;
+          const url = URL.createObjectURL(blob);
+          clipRef.current = url;
+          setClipUrl(url);
+        };
+        rec.start(250);
+        recRef.current = rec;
+      } catch {
+        liveRef.current = false;
+        setRecording(false);
+        setError("Allow the microphone to speak.");
+      }
+    })();
+  }, [attachSpeech, clearClip, dropRecorder, hardAbortSpeech]);
 
   const toggle = useCallback(() => {
     if (liveRef.current) stop();
-    else void start();
+    else start();
   }, [start, stop]);
 
   return { recording, heard, clipUrl, error, start, stop, toggle, clearClip, setHeard };

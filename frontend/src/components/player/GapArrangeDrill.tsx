@@ -128,7 +128,15 @@ export function GapArrangeDrill({
   );
 }
 
-export function LetterSpellDrill({ german, english }: { german: string; english: string }) {
+export function LetterSpellDrill({
+  german,
+  english,
+  onSolved,
+}: {
+  german: string;
+  english: string;
+  onSolved?: (ok: boolean) => void;
+}) {
   const letters = useMemo(() => lettersOf(german), [german]);
   const arrangeAll = letters.length <= 10;
   const hidden = useMemo(() => (arrangeAll ? letters.map((_, index) => index) : hideLetterIndexes(letters)), [arrangeAll, letters]);
@@ -167,6 +175,7 @@ export function LetterSpellDrill({ german, english }: { german: string; english:
     const pass = sameLetters(picked, expected);
     setOk(pass);
     setChecked(true);
+    onSolved?.(pass);
   }
 
   return (

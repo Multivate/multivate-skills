@@ -2,6 +2,7 @@
 
 import {
   Check,
+  CheckCircle2,
   ChevronLeft,
   GraduationCap,
   Headphones,
@@ -16,6 +17,7 @@ import {
   Type,
   Users,
   Volume2,
+  XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
@@ -207,7 +209,12 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
   const scenarioVoice = useClassroomVoice("de-DE");
   const autoTimer = useRef<number | null>(null);
   const teacherRef = useRef(teacher);
+  const tabRef = useRef(tab);
+  const pendingScore = useRef(false);
+  const heardNow = useRef("");
   teacherRef.current = teacher;
+  tabRef.current = tab;
+  heardNow.current = pronounce.heard;
 
   const qs = preview ? "?preview=true" : "";
   const lang = "de-DE";
@@ -229,24 +236,32 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
     speakGerman(text, teacherRef.current, lang);
   }
 
-  function playLine(phrase: Phrase, onTalk: (v: boolean) => void) {
+  function playLine(phrase: Phrase, onTalk: (v: boolean) => void, onDone?: () => void) {
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      onTalk(false);
+      onDone?.();
+    };
     onTalk(true);
-    const done = () => onTalk(false);
+    const fallback = window.setTimeout(done, Math.max(2800, phrase.target_text.trim().split(/\s+/).filter(Boolean).length * 420));
+    const finish = () => {
+      window.clearTimeout(fallback);
+      done();
+    };
     if (phrase.audio_url) {
       const audio = new Audio(phrase.audio_url);
-      audio.onended = done;
+      audio.onended = finish;
       audio.onerror = () => {
-        voiceLine(phrase.target_text);
-        window.setTimeout(done, 1500);
+        speakGerman(phrase.target_text, teacherRef.current, lang, { onend: finish });
       };
       void audio.play().catch(() => {
-        voiceLine(phrase.target_text);
-        window.setTimeout(done, 1500);
+        speakGerman(phrase.target_text, teacherRef.current, lang, { onend: finish });
       });
       return;
     }
-    voiceLine(phrase.target_text);
-    window.setTimeout(done, 1500);
+    speakGerman(phrase.target_text, teacherRef.current, lang, { onend: finish });
   }
 
   useEffect(() => {
@@ -414,26 +429,42 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
 
   function playPhrase() {
     if (!phrase) return;
-    playLine(phrase, setTalking);
-    if (tab === "listen") {
-      if (autoTimer.current) window.clearTimeout(autoTimer.current);
-      autoTimer.current = window.setTimeout(() => afterLearn(), 2200);
-    }
-  }
-
-  function scoreSpeech(expect: string, heard: string) {
-    const ok = Boolean(heard) && speechMatches(expect, heard);
-    setVerdict(ok ? "ok" : heard ? "bad" : null);
-    if (ok && phrase) markLearned(phrase.id);
-    return ok;
+    if (autoTimer.current) window.clearTimeout(autoTimer.current);
+    playLine(phrase, setTalking, () => {
+      if (tabRef.current !== "listen") return;
+      autoTimer.current = window.setTimeout(() => afterLearn(), 700);
+    });
   }
 
   useEffect(() => {
-    if (!pronounce.recording && pronounce.heard && tab === "pronounce" && phrase) {
-      const ok = scoreSpeech(phrase.target_text, pronounce.heard);
-      if (ok) window.setTimeout(() => afterLearn(), 800);
+    setVerdict(null);
+    pendingScore.current = false;
+  }, [phrase?.id, tab]);
+
+  useEffect(() => {
+    if (tab !== "pronounce" || !phrase) return;
+    if (pronounce.recording) {
+      pendingScore.current = true;
+      setVerdict(null);
+      return;
     }
-  }, [pronounce.recording, pronounce.heard]);
+    if (!pendingScore.current) return;
+    const expect = phrase.target_text;
+    const timer = window.setTimeout(() => {
+      if (tabRef.current !== "pronounce") return;
+      pendingScore.current = false;
+      const heard = heardNow.current.trim();
+      const ok = Boolean(heard) && speechMatches(expect, heard);
+      setVerdict(ok ? "ok" : "bad");
+      if (ok) {
+        markLearned(phrase.id);
+        autoTimer.current = window.setTimeout(() => {
+          if (tabRef.current === "pronounce") afterLearn();
+        }, 1600);
+      }
+    }, 550);
+    return () => window.clearTimeout(timer);
+  }, [pronounce.recording, tab, phrase?.id]);
 
   useEffect(() => {
     if (!scenarioVoice.recording && scenarioVoice.heard) setDraft(scenarioVoice.heard);
@@ -474,8 +505,8 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
 
   const nav = [
     { id: "classroom" as const, label: "My Classroom", icon: Home },
-    { id: "listen" as const, label: "Listening session", icon: Headphones, href: listenHref },
     { id: "assessment" as const, label: "Assessment", icon: Trophy },
+    { id: "listen" as const, label: "Listening session", icon: Headphones, href: listenHref },
     { id: "scenario" as const, label: "Real-life", icon: MessageCircle },
     { id: "hub" as const, label: "Germany Desk", icon: Target },
     { id: "progress" as const, label: "My Progress", icon: GraduationCap },
@@ -687,7 +718,13 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                 </div>
 
                 {tab === "spelling" ? (
-                  <LetterSpellDrill german={phrase.target_text} english={phraseEnglish(phrase.source_text, phrase.target_text)} />
+                  <LetterSpellDrill
+                    german={phrase.target_text}
+                    english={phraseEnglish(phrase.source_text, phrase.target_text)}
+                    onSolved={(ok) => {
+                      if (ok) window.setTimeout(() => afterLearn(), 900);
+                    }}
+                  />
                 ) : tab === "usage" ? (
                   <div className="cr-surface-soft mt-4 rounded-[18px] px-3 py-5 sm:px-4 sm:py-6">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-[#1457D0]">When this line is useful</p>
@@ -739,19 +776,46 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     >
                       <Mic className="h-6 w-6" />
                     </button>
-                    <div className="text-sm">
+                    <div className="min-w-0 flex-1 text-sm">
                       <p className="font-semibold">
                         {pronounce.recording
-                          ? "Recording… tap again to stop"
-                          : `Tap Speak, say ${phrase.target_text}, tap Stop`}
+                          ? "Listening… speak now"
+                          : verdict
+                            ? verdict === "ok"
+                              ? "Correct. Next: spelling."
+                              : "Incorrect. Tap the mic and try again."
+                            : `Tap the mic and say ${phrase.target_text}`}
                       </p>
-                      <SpeechHeardFeedback
-                        expect={phrase.target_text}
-                        heard={pronounce.heard}
-                        recording={pronounce.recording}
-                        error={pronounce.error}
-                        clipUrl={pronounce.clipUrl}
-                      />
+                      {verdict ? (
+                        <div
+                          className={`mt-2 flex items-center gap-3 rounded-[16px] px-3 py-3 ${
+                            verdict === "ok" ? "bg-emerald-500/15 text-emerald-600" : "bg-rose-500/15 text-rose-500"
+                          }`}
+                          role="status"
+                        >
+                          {verdict === "ok" ? (
+                            <CheckCircle2 className="h-10 w-10 shrink-0" aria-hidden />
+                          ) : (
+                            <XCircle className="h-10 w-10 shrink-0" aria-hidden />
+                          )}
+                          <div>
+                            <p className="text-lg font-extrabold">{verdict === "ok" ? "Correct" : "Incorrect"}</p>
+                            <p className="text-sm font-semibold">
+                              {pronounce.heard.trim() ? `Heard: ${pronounce.heard}` : "Nothing was heard."}
+                              {verdict === "bad" ? ` Aim for: ${phrase.target_text}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <SpeechHeardFeedback
+                          expect={phrase.target_text}
+                          heard={pronounce.heard}
+                          recording={pronounce.recording}
+                          error={pronounce.error}
+                          clipUrl={pronounce.clipUrl}
+                          showVerdict={false}
+                        />
+                      )}
                     </div>
                   </div>
                 ) : null}
@@ -848,7 +912,11 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                     <Mic className="h-5 w-5" />
                   </button>
                   <p className="mt-2 text-xs text-white/80">{pronounce.recording ? "Tap to stop" : "Tap to record"}</p>
-                  {pronounce.heard && !pronounce.recording ? (
+                  {verdict && tab === "pronounce" ? (
+                    <p className={`mt-2 text-sm font-extrabold ${verdict === "ok" ? "text-emerald-200" : "text-rose-200"}`}>
+                      {verdict === "ok" ? "Correct" : "Incorrect"}
+                    </p>
+                  ) : pronounce.heard && !pronounce.recording ? (
                     <SpeechHeardFeedback
                       expect={phrase.target_text}
                       heard={pronounce.heard}
