@@ -114,7 +114,8 @@ export function phraseIpa(target: string, stored?: string | null) {
 
 export function phraseUsage(source: string, target: string, stored?: string | null) {
   if (isAlphabetLetter(target)) return "When you spell a name or a word.";
-  if (stored?.trim()) return stored.trim();
+  const note = stored?.trim() ?? "";
+  if (note && note.split(/\s+/).length >= 5) return note;
   const line = `${source} ${target}`.toLowerCase();
   if (/(hallo|guten|hello|good day)/.test(line)) return "When you greet someone, any time of day.";
   if (/(danke|thank)/.test(line)) return "When someone helps you or gives you something.";
@@ -122,6 +123,23 @@ export function phraseUsage(source: string, target: string, stored?: string | nu
   if (/(komme|from)/.test(line)) return "When someone asks where you are from.";
   if (/(bitte|please)/.test(line)) return "When you ask for something politely.";
   return "In everyday German at work, on campus, or in town.";
+}
+
+export function usageSituations(source: string, target: string, stored?: string | null): string[] {
+  const main = phraseUsage(source, target, stored);
+  return [
+    main,
+    `Say it to a real person, not only while you look at the German line. Example: at a counter, on campus, or with a neighbour.`,
+    `Do not paste the same listen line again. Use “${target}” when the English idea is: ${phraseEnglish(source, target)}.`,
+  ];
+}
+
+export function usageDialogue(source: string, target: string): { them: string; you: string } {
+  const english = phraseEnglish(source, target);
+  return {
+    them: `In this situation someone needs the idea “${english}”. They look at you and wait.`,
+    you: target,
+  };
 }
 
 export function phraseTips(source: string, target: string) {

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { phraseEnglish, phraseUsage } from "@/lib/classroom-copy";
 import { SpeechHeardFeedback, speechMatches } from "@/components/player/SpeechHeardFeedback";
 import { useClassroomVoice } from "@/hooks/useClassroomVoice";
+import { gappedDisplay, hideIndexes, sameOrder, tileBank, tokenizeGerman } from "@/lib/gap-drill";
 
 export const PASS_MARK = 70;
 export const QUIZ_SIZE = 20;
@@ -21,7 +22,7 @@ export type LessonPhrase = {
 
 export type AssessmentRecord = { scorePct: number; passed: boolean; at: string };
 
-type Kind = "listen" | "meaning" | "choose" | "spell" | "write" | "speak" | "usage";
+type Kind = "listen" | "meaning" | "choose" | "spell" | "write" | "speak" | "usage" | "arrange" | "gap";
 type Option = { id: string; text: string };
 type Question = {
   id: string;
@@ -33,6 +34,9 @@ type Question = {
   answer?: string;
   speak?: string;
   audioUrl?: string | null;
+  display?: string;
+  tiles?: string[];
+  expectedTokens?: string[];
 };
 
 const FALLBACK_EN = ["Hello", "Thank you", "Please", "Good morning", "Excuse me", "Yes", "How are you?"];
@@ -99,6 +103,8 @@ function fillQuestionBuckets(pool: LessonPhrase[], round: number) {
     write: [],
     speak: [],
     usage: [],
+    arrange: [],
+    gap: [],
   };
   shuffle(pool).forEach((row, index) => {
     const key = `${row.id}_${round}_${index}`;
@@ -141,6 +147,19 @@ function fillQuestionBuckets(pool: LessonPhrase[], round: number) {
       options: [],
       answer: row.target_text,
     });
+    const tokens = tokenizeGerman(row.target_text);
+    const hidden = hideIndexes(tokens);
+    buckets.gap.push({
+      id: `g_${key}`,
+      kind: "gap",
+      skill: "Speaking · gap fill",
+      prompt: `Speak by filling the gap. English: “${english}”.`,
+      options: [],
+      display: gappedDisplay(tokens, hidden),
+      tiles: tileBank(tokens, hidden, targets),
+      expectedTokens: hidden.map((index) => tokens[index]!).filter(Boolean),
+      answer: hidden.map((index) => tokens[index]!).filter(Boolean).join(" "),
+    });
     buckets.speak.push({
       id: `sk_${key}`,
       kind: "speak",
@@ -159,7 +178,7 @@ export function buildLessonQuiz(phrases: LessonPhrase[]): Question[] {
   const pool = phrases.filter((row) => row.source_text.trim() && row.target_text.trim());
   if (!pool.length) return [];
   const mixed: Question[] = [];
-  const order: Kind[] = ["listen", "speak", "meaning", "spell", "write", "choose", "usage"];
+  const order: Kind[] = ["choose", "meaning", "speak", "gap", "write", "listen"];
   let round = 0;
   let buckets = fillQuestionBuckets(pool, round);
   while (mixed.length < QUIZ_SIZE && round < 8) {
@@ -195,6 +214,7 @@ function SkillIcon({ kind }: { kind: Kind }) {
   if (kind === "speak") return <Mic className="h-4 w-4 text-[#1457D0]" />;
   if (kind === "spell") return <Type className="h-4 w-4 text-[#1457D0]" />;
   if (kind === "write") return <PenLine className="h-4 w-4 text-[#1457D0]" />;
+  if (kind === "gap" || kind === "arrange") return <Type className="h-4 w-4 text-[#1457D0]" />;
   return <Star className="h-4 w-4 text-[#1457D0]" />;
 }
 
@@ -227,6 +247,8 @@ export function ClassroomAssessment({
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
+  const [arranged, setArranged] = useState<string[]>([]);
+  const [tileLeft, setTileLeft] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
   const [ok, setOk] = useState(false);
   const [correct, setCorrect] = useState(0);
@@ -238,6 +260,8 @@ export function ClassroomAssessment({
     setIndex(0);
     setPicked(null);
     setTyped("");
+    setArranged([]);
+    setTileLeft([]);
     setChecked(false);
     setOk(false);
     setCorrect(0);
@@ -256,6 +280,17 @@ export function ClassroomAssessment({
   const progress = quiz.length ? Math.round(((index + (checked ? 1 : 0)) / quiz.length) * 100) : 0;
   const isChoice = current ? ["listen", "meaning", "choose", "usage"].includes(current.kind) : false;
   const isTyped = current ? current.kind === "spell" || current.kind === "write" : false;
+  const isTiles = current ? current.kind === "gap" : false;
+
+  useEffect(() => {
+    if (!current?.tiles) {
+      setArranged([]);
+      setTileLeft([]);
+      return;
+    }
+    setArranged([]);
+    setTileLeft(current.tiles);
+  }, [current?.id]);
 
   useEffect(() => {
     if (!current || current.kind !== "listen" || checked) return;
@@ -267,6 +302,7 @@ export function ClassroomAssessment({
     if (!current) return false;
     if (isChoice) return Boolean(picked);
     if (isTyped) return Boolean(typed.trim());
+    if (isTiles) return arranged.length > 0;
     if (current.kind === "speak") return !speak.recording && Boolean(speak.heard.trim() || speak.clipUrl);
     return false;
   }
@@ -276,6 +312,7 @@ export function ClassroomAssessment({
     let pass = false;
     if (isChoice) pass = picked === current.correctId;
     else if (isTyped) pass = normalize(typed) === normalize(current.answer ?? "");
+    else if (isTiles) pass = sameOrder(arranged, current.expectedTokens ?? []);
     else if (current.kind === "speak") pass = speechMatches(current.answer ?? "", speak.heard);
     setOk(pass);
     if (pass) setCorrect((n) => n + 1);
@@ -306,6 +343,8 @@ export function ClassroomAssessment({
     setIndex((n) => n + 1);
     setPicked(null);
     setTyped("");
+    setArranged([]);
+    setTileLeft(quiz[index + 1]?.tiles ?? []);
     setChecked(false);
     setOk(false);
     speak.setHeard("");
@@ -339,7 +378,7 @@ export function ClassroomAssessment({
           {lessonTitle} · you scored <span className="font-bold cr-text">{pct}%</span>
           {passed ? ". Next module is unlocked." : ` · you need ${PASS_MARK}% to move on.`}
         </p>
-        <p className="cr-muted mt-2 text-center text-xs">Listening, speaking, spelling, writing, and reading in one test.</p>
+        <p className="cr-muted mt-2 text-center text-xs">Multiple choice, speaking, gap fill, and writing.</p>
         <div className="mt-6 grid grid-cols-3 gap-2">
           <div className="cr-surface-soft rounded-[16px] px-3 py-4 text-center">
             <p className="text-2xl font-extrabold">{pct}%</p>
@@ -392,6 +431,10 @@ export function ClassroomAssessment({
         <SkillIcon kind={current.kind} /> {current.skill}
       </div>
       <h2 className="mt-3 text-xl font-extrabold leading-snug">{current.prompt}</h2>
+
+      {current.display && current.kind === "gap" ? (
+        <p className="mt-3 text-center text-lg font-extrabold leading-snug">{current.display}</p>
+      ) : null}
 
       {current.kind === "listen" || current.kind === "speak" ? (
         <button
@@ -453,6 +496,47 @@ export function ClassroomAssessment({
           </div>
         ) : null}
 
+        {isTiles ? (
+          <div>
+            <div className="flex min-h-[3rem] flex-wrap justify-center gap-2 rounded-[14px] border border-dashed border-[var(--cr-border)] px-3 py-3">
+              {arranged.length ? (
+                arranged.map((tile, index) => (
+                  <button
+                    key={`p-${tile}-${index}`}
+                    type="button"
+                    disabled={checked}
+                    onClick={() => {
+                      setArranged((rows) => rows.filter((_, i) => i !== index));
+                      setTileLeft((rows) => [...rows, tile]);
+                    }}
+                    className="rounded-lg bg-[#1457D0] px-3 py-2 text-sm font-bold text-white"
+                  >
+                    {tile}
+                  </button>
+                ))
+              ) : (
+                <span className="cr-muted text-sm">Tap tiles below</span>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {tileLeft.map((tile, index) => (
+                <button
+                  key={`b-${tile}-${index}`}
+                  type="button"
+                  disabled={checked}
+                  onClick={() => {
+                    setTileLeft((rows) => rows.filter((_, i) => i !== index));
+                    setArranged((rows) => [...rows, tile]);
+                  }}
+                  className="rounded-lg border border-[var(--cr-border)] bg-[var(--cr-surface-soft)] px-3 py-2 text-sm font-bold disabled:opacity-40"
+                >
+                  {tile}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {current.kind === "speak" ? (
           <div>
             <button
@@ -501,9 +585,11 @@ export function ClassroomAssessment({
             <span className="cr-muted">
               {isChoice
                 ? "Pick an answer, then check it."
-                : current.kind === "speak"
-                  ? "Tap Speak, tap Stop, then check your answer."
-                  : "Type your answer, then check it."}
+                : isTiles
+                  ? "Tap the tiles in order, then check it."
+                  : current.kind === "speak"
+                    ? "Tap Speak, tap Stop, then check your answer."
+                    : "Type your answer, then check it."}
             </span>
           )}
         </p>

@@ -4,7 +4,16 @@ import { Headphones, Pause, Play, Shuffle, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { LogoMark } from "@/components/layout/LogoMark";
-import { buildListenStory, finishedModuleIds, moduleLabel, type ListenStory, type StoryModule } from "@/lib/listen-story";
+import {
+  LISTEN_DURATIONS,
+  buildListenStory,
+  estimatedMinutes,
+  finishedModuleIds,
+  moduleLabel,
+  type ListenDuration,
+  type ListenStory,
+  type StoryModule,
+} from "@/lib/listen-story";
 import {
   LISTEN_PACE_RATE,
   loadTeacherVoice,
@@ -38,6 +47,7 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
   const [book, setBook] = useState<Phrasebook | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pace, setPace] = useState<ListenPace>("medium");
+  const [minutes, setMinutes] = useState<ListenDuration>(10);
   const [moduleId, setModuleId] = useState("");
   const [story, setStory] = useState<ListenStory | null>(null);
   const [beat, setBeat] = useState(0);
@@ -99,7 +109,12 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
   );
   const doneIds = finishedModuleIds(modules, learned, passed);
 
-  function makeStory(nextBook = book, nextModules = modules, nextModuleId = moduleId) {
+  function makeStory(
+    nextBook = book,
+    nextModules = modules,
+    nextModuleId = moduleId,
+    nextMinutes = minutes,
+  ) {
     if (!nextBook || !nextModules.length) return;
     const nextLearned = new Set((nextBook.learned_phrase_ids ?? []).map(String));
     const nextPassed = new Set(
@@ -117,6 +132,7 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
         passed: nextPassed,
         cefr: nextBook.cefr_level || "A1",
         moduleId: chosen,
+        minutes: nextMinutes,
       }),
     );
   }
@@ -194,6 +210,28 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
         <h1 className="mt-2 text-2xl font-extrabold text-[#10244F]">{book.course_title}</h1>
         <p className="mt-2 text-sm leading-relaxed text-[#10244F]/70">{story.reason}</p>
         <p className="mt-3 text-sm font-semibold text-[#10244F]">Topic: {story.topic}</p>
+        <p className="mt-1 text-sm text-[#10244F]/70">
+          Chapter: {current?.chapter} · about {estimatedMinutes(story.beats)} minutes at medium speed
+        </p>
+
+        <p className="mt-5 text-xs font-bold uppercase tracking-wider text-[#10244F]/55">Story length</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {LISTEN_DURATIONS.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => {
+                setMinutes(item);
+                makeStory(book, modules, moduleId, item);
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-bold ${
+                minutes === item ? "bg-[#1457D0] text-white" : "cr-chip"
+              }`}
+            >
+              {item} min
+            </button>
+          ))}
+        </div>
 
         <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-[#10244F]/55">
           Module
@@ -234,11 +272,12 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
           ))}
         </div>
 
-        <div className="cr-surface-soft mt-6 rounded-[18px] px-4 py-8 text-center">
-          <p className="text-[1.45rem] font-extrabold leading-snug text-[#10244F] sm:text-3xl">{current?.de}</p>
-          <p className="mt-3 text-sm font-medium text-[#10244F]/65">{current?.en}</p>
+        <div className="cr-surface-soft mt-6 rounded-[18px] px-4 py-6 text-left">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#1457D0]">{current?.chapter}</p>
+          <p className="mt-3 text-[1.15rem] font-semibold leading-relaxed text-[#10244F] sm:text-xl">{current?.de}</p>
+          <p className="mt-3 text-sm leading-relaxed text-[#10244F]/65">{current?.en}</p>
           <p className="mt-4 text-xs font-semibold text-[#10244F]/45">
-            Line {beat + 1} of {story.beats.length}
+            Scene {beat + 1} of {story.beats.length} · keep playing for the full {minutes}-minute story
           </p>
         </div>
 
@@ -264,7 +303,7 @@ export function ClassroomListenAlone({ slug, preview = false }: { slug: string; 
             onClick={() => makeStory(book, modules, moduleId)}
             className="inline-flex h-14 items-center gap-2 rounded-full border border-[#10244F]/15 px-5 text-sm font-semibold text-[#10244F]"
           >
-            <Shuffle className="h-4 w-4" /> New random story
+            <Shuffle className="h-4 w-4" /> New story at {minutes} min
           </button>
         </div>
       </div>

@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogoMark } from "@/components/layout/LogoMark";
 import { Link } from "@/i18n/navigation";
-import { phraseEnglish, phraseIpa, phraseTips, phraseUsage, spellLetters } from "@/lib/classroom-copy";
+import { phraseEnglish, phraseIpa, phraseTips, phraseUsage, spellLetters, usageDialogue, usageSituations } from "@/lib/classroom-copy";
 import {
   loadLook,
   loadPracticeDays,
@@ -309,6 +309,8 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
   const phraseIndex = phrase ? lessonPhrases.findIndex((row) => row.id === phrase.id) : 0;
   const ipa = phrase ? phraseIpa(phrase.target_text, phrase.ipa) : "";
   const usage = phrase ? phraseUsage(phrase.source_text, phrase.target_text, phrase.usage_note) : "";
+  const usageBits = phrase ? usageSituations(phrase.source_text, phrase.target_text, phrase.usage_note) : [];
+  const usageTalk = phrase ? usageDialogue(phrase.source_text, phrase.target_text) : null;
   const tips = phrase ? phraseTips(phrase.source_text, phrase.target_text) : [];
   const nextPhrase = lessonPhrases[phraseIndex + 1] ?? null;
   const readiness = book?.phrases?.length
@@ -683,25 +685,46 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
                   </div>
                 </div>
 
-                <div className="cr-surface-soft mt-4 rounded-[18px] px-3 py-5 sm:px-4 sm:py-6">
-                  <div className="flex items-center justify-center gap-2 sm:gap-4">
-                    <button type="button" onClick={() => playPhrase()} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1457D0] text-white sm:h-12 sm:w-12" aria-label="Play">
-                      <Volume2 className="h-5 w-5" />
-                    </button>
-                    <div className="min-w-0 text-center">
-                      <p className="break-words text-[1.65rem] font-extrabold leading-tight tracking-tight cr-text sm:text-4xl">{phrase.target_text}</p>
-                      {ipa ? <p className="cr-muted mt-1 text-sm">/{ipa}/</p> : null}
-                    </div>
-                    <button type="button" onClick={() => playPhrase()} className="cr-surface inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#1457D0] sm:h-12 sm:w-12" aria-label="Play again">
-                      ▶
-                    </button>
+                {tab === "usage" ? (
+                  <div className="cr-surface-soft mt-4 rounded-[18px] px-3 py-5 sm:px-4 sm:py-6">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#1457D0]">When this line is useful</p>
+                    <p className="mt-2 text-sm font-extrabold text-[#10244F]">{usage}</p>
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {usageBits.map((bit) => (
+                        <li key={bit} className="flex gap-2">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {bit}
+                        </li>
+                      ))}
+                    </ul>
+                    {usageTalk ? (
+                      <div className="mt-4 rounded-[14px] bg-white px-4 py-3 text-sm">
+                        <p className="font-bold text-[#1457D0]">Situation</p>
+                        <p className="mt-1 text-[#10244F]/75">{usageTalk.them}</p>
+                        <p className="mt-2 font-semibold text-[#10244F]">You say: {usageTalk.you}</p>
+                      </div>
+                    ) : null}
                   </div>
-                  {tab === "pronounce" ? (
-                    <p className="cr-muted mt-3 text-center text-sm font-medium">Say {phrase.target_text}</p>
-                  ) : (
-                    <p className="cr-muted mt-3 text-center text-sm font-medium">Meaning: {phraseEnglish(phrase.source_text, phrase.target_text)}</p>
-                  )}
-                </div>
+                ) : (
+                  <div className="cr-surface-soft mt-4 rounded-[18px] px-3 py-5 sm:px-4 sm:py-6">
+                    <div className="flex items-center justify-center gap-2 sm:gap-4">
+                      <button type="button" onClick={() => playPhrase()} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1457D0] text-white sm:h-12 sm:w-12" aria-label="Play">
+                        <Volume2 className="h-5 w-5" />
+                      </button>
+                      <div className="min-w-0 text-center">
+                        <p className="break-words text-[1.65rem] font-extrabold leading-tight tracking-tight cr-text sm:text-4xl">{phrase.target_text}</p>
+                        {ipa ? <p className="cr-muted mt-1 text-sm">/{ipa}/</p> : null}
+                      </div>
+                      <button type="button" onClick={() => playPhrase()} className="cr-surface inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#1457D0] sm:h-12 sm:w-12" aria-label="Play again">
+                        ▶
+                      </button>
+                    </div>
+                    {tab === "pronounce" ? (
+                      <p className="cr-muted mt-3 text-center text-sm font-medium">Say {phrase.target_text}</p>
+                    ) : (
+                      <p className="cr-muted mt-3 text-center text-sm font-medium">Meaning: {phraseEnglish(phrase.source_text, phrase.target_text)}</p>
+                    )}
+                  </div>
+                )}
 
                 {tab === "pronounce" ? (
                   <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -734,12 +757,16 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
 
                 <div className="mt-auto grid items-end gap-3 pt-4 sm:grid-cols-[1fr_auto]">
                   <div>
-                    <p className="text-sm font-extrabold">When to use</p>
-                    <ul className="mt-2 space-y-2 text-sm">
-                      <li className="flex gap-2">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {usage}
-                      </li>
-                    </ul>
+                    <p className="text-sm font-extrabold">{tab === "usage" ? "Use it" : "When to use"}</p>
+                    {tab === "usage" ? (
+                      <p className="cr-muted mt-1 text-sm">This tab is the situation, not another listen repeat.</p>
+                    ) : (
+                      <ul className="mt-2 space-y-2 text-sm">
+                        <li className="flex gap-2">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {usage}
+                        </li>
+                      </ul>
+                    )}
                   </div>
                   <div className="flex items-end justify-center gap-1 overflow-hidden sm:justify-end sm:gap-2">
                     <Kid src={themSrc} talking={talking} className="h-16 w-auto object-contain object-bottom sm:h-24" />
