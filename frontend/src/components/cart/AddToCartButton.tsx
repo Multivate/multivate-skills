@@ -12,7 +12,7 @@ export function AddToCartButton({
   item,
   variant = "outline",
   className = "",
-  studentOnly = true,
+  studentOnly = false,
   addLabel,
   removeLabel,
 }: {

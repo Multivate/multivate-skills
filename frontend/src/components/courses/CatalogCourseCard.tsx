@@ -135,7 +135,13 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
             </Link>
           )}
         </div>
-        <AddToCartButton item={cartLine} variant="inline" addLabel={tCart("add")} removeLabel={tCart("remove")} />
+        <AddToCartButton
+          item={cartLine}
+          variant="inline"
+          studentOnly={false}
+          addLabel={tCart("add")}
+          removeLabel={tCart("remove")}
+        />
       </div>
     </article>
   );
