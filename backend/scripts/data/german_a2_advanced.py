@@ -554,17 +554,28 @@ MODULES = [
 COURSE = make_course(
     slug="german-a2-advanced",
     title="German A2: Advanced",
-    subtitle="Reflexive verbs, adjective endings, relative clauses, and A2 exam polish",
+    subtitle="Complete second-half A2 German language programme",
     cefr="A2",
     band="intermediate",
     modules=MODULES,
-    focus="This is the second A2 half: more accurate sentences, polite requests, stories, complaints, and exam papers. You should already be able to talk about yesterday in Perfekt.",
+    focus="Reflexive verbs, adjective endings, relative clauses, and A2 exam polish.",
+    audience="for learners who can already talk about yesterday in Perfekt",
+    topics=(
+        "reflexive verbs, adjective endings after der and ein, place and movement prepositions, "
+        "polite requests and past modals, relative clauses, public notices, education and work talk, "
+        "complaints, news and simple arguments, celebrations, housing problems, travel problems, "
+        "storytelling, future plans, sport and appointments, and a full A2 exam set"
+    ),
     objectives=[
         "Use reflexive verbs and adjective endings in real noun phrases.",
         "Choose dative or accusative with two-way prepositions.",
         "Make polite requests with könnten, würden, and past modals.",
         "Describe people and things with relative clauses.",
-        "Read notices and tell a picture story.",
+        "Read public notices and simple news items.",
+        "Handle complaints, housing problems, and travel problems in set language.",
+        "Tell a picture story with first, then, and after that.",
+        "Talk about education, work processes, and future plans.",
+        "Listen for rules, appointments, and longer A2 dialogues.",
         "Complete A2-style reading, listening, writing, and speaking tasks.",
     ],
 )

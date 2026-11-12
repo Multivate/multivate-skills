@@ -5,14 +5,21 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useCart } from "@/contexts/cart-context";
+import { bundleQuote } from "@/lib/course-bundle";
+import { formatCoursePrice } from "@/lib/course-price";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 const menuPanel =
-  "pointer-events-none absolute right-0 top-full z-50 w-64 pt-2 opacity-0 translate-y-1 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100";
+  "pointer-events-none absolute right-0 top-full z-50 w-80 max-w-[calc(100vw-2rem)] pt-2 opacity-0 translate-y-1 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100";
 
 export function SiteHeaderCart() {
   const t = useTranslations("nav");
+  const tCourses = useTranslations("dashboard.coursesTab");
   const { items, count } = useCart();
+  const quote = bundleQuote(
+    items.map((line) => line.slug),
+    items.map((line) => line.priceCents ?? 0),
+  );
   const [hover, setHover] = useState(false);
   useBodyScrollLock(hover, undefined, "events");
 
@@ -43,8 +50,8 @@ export function SiteHeaderCart() {
           {items.length === 0 ? (
             <p className="px-3 py-2.5 text-sm text-[#011B33]/70 dark:text-[#eef4ff]/70">{t("cartEmpty")}</p>
           ) : (
-            <ul>
-              {items.slice(0, 5).map((item) => (
+            <ul className="max-h-64 overflow-y-auto">
+              {items.map((item) => (
                 <li key={item.slug}>
                   <Link
                     href={`/courses/${item.slug}`}
@@ -56,6 +63,12 @@ export function SiteHeaderCart() {
               ))}
             </ul>
           )}
+          {quote.percent > 0 ? (
+            <p className="border-t border-brand-ink/10 px-3 py-2 text-xs font-semibold text-[#1457D0]">
+              {tCourses("bundleSave", { amount: formatCoursePrice(quote.saveCents, "NGN", false) })}
+              {` · ${quote.percent}% (${quote.label})`}
+            </p>
+          ) : null}
           <Link
             href="/dashboard/courses?tab=saved"
             className="block border-t border-brand-ink/10 px-3 py-2 text-sm font-medium text-brand-accent transition duration-200 hover:bg-brand-sky"

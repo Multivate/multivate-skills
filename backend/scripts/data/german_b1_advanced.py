@@ -554,17 +554,28 @@ MODULES = [
 COURSE = make_course(
     slug="german-b1-advanced",
     title="German B1: Advanced",
-    subtitle="Passive, relative clauses, official language, and a full B1 exam set",
+    subtitle="Complete second-half B1 German language programme",
     cefr="B1",
     band="intermediate",
     modules=MODULES,
-    focus="This is the second B1 half. You already give opinions. Now you handle notices, longer writing, reported information, work conflict, and a complete practice-paper skill map.",
+    focus="Passive, relative clauses, official language, and a full B1 exam set.",
+    audience="for learners who can already give a B1 opinion and now need official language and exam stamina",
+    topics=(
+        "passive and official processes, relative clauses, noun gender and n-declension, "
+        "meetings and teamwork, housing notices, news topics, notes and summaries, "
+        "travel and comparison, careful money talk, reported speech, long listening, "
+        "80 to 120 word writing, speaking repair, error hunting, future plans, and a full B1 exam set"
+    ),
     objectives=[
         "Read and write official-style German with passive and relative clauses.",
         "Decline high-value people nouns and repair frequent B1 errors.",
         "Handle meetings, housing letters, and careful money language.",
         "Report what others said and summarise texts.",
+        "Take notes from longer listening and keep the question in view.",
+        "Read news-style texts on work, family, and the city.",
         "Write 80 to 120 words with because, if, would, and one relative clause.",
+        "Ask follow-up questions and repair speech in the oral.",
+        "Talk about travel, study skills, and future plans.",
         "Walk into a Goethe, telc, or ÖSD B1 paper knowing the task types.",
     ],
 )

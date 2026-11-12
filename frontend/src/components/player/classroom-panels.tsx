@@ -609,7 +609,7 @@ export function ClassroomCommunity() {
       </section>
 
       <aside className="cr-dc-chan hidden w-[15rem] shrink-0 flex-col border-l border-black/10 xl:flex dark:border-white/10">
-        <p className="px-4 pt-4 text-[11px] font-bold uppercase tracking-wider opacity-50">Online — {Math.max(1, online.length)}</p>
+        <p className="px-4 pt-4 text-[11px] font-bold uppercase tracking-wider opacity-50">Online: {Math.max(1, online.length)}</p>
         <div className="mt-2 space-y-1 px-2">
           {online.length === 0 ? (
             <p className="px-2 text-xs opacity-50">You are here</p>
@@ -802,7 +802,7 @@ export function ClassroomProgress({
             </div>
             <div className="mt-4 flex items-end justify-between gap-3">
               <div>
-                <p className="text-3xl font-extrabold text-[#1457D0]">{row.scorePct == null ? "—" : `${row.scorePct}%`}</p>
+                <p className="text-3xl font-extrabold text-[#1457D0]">{row.scorePct == null ? "-" : `${row.scorePct}%`}</p>
                 <p className="cr-muted text-[11px] font-bold uppercase tracking-wide">
                   {row.locked ? "Locked" : row.scorePct == null ? "No score yet" : row.passed ? "Passed" : "Retry"}
                 </p>

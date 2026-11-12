@@ -554,17 +554,28 @@ MODULES = [
 COURSE = make_course(
     slug="german-a1-advanced",
     title="German A1: Advanced",
-    subtitle="More A1 situations, grammar in use, and exam tasks",
+    subtitle="Complete A1 follow-on German language programme",
     cefr="A1",
     band="beginner",
     modules=MODULES,
-    focus="You already know first greetings. This course adds forms, du and Sie, shops, tickets, health, housing, phone messages, and A1-style speaking and writing tasks.",
+    focus="More A1 situations, grammar in use, and exam tasks.",
+    audience="for learners who already know first greetings and want the rest of A1",
+    topics=(
+        "spelling and forms, du and Sie, shops and money, time and appointments, "
+        "haben, sein and mögen, regular and stem-changing verbs, accusative and dative, "
+        "separable verbs, travel and tickets, health, housing, phone messages, "
+        "family and invitations, and A1 speaking and writing tasks"
+    ),
     objectives=[
-        "Spell names and complete simple German forms.",
+        "Spell names and complete simple German forms with personal data.",
         "Choose du or Sie in shops, offices, and with friends.",
-        "Use haben, sein, mögen, regular verbs, and common stem-changing verbs.",
-        "Use accusative and dative in set shopping, travel, and help phrases.",
+        "Use haben, sein, mögen, regular present tense, and common stem-changing verbs.",
+        "Use accusative and dative in shopping, travel, and help phrases.",
         "Talk through tickets, directions, a doctor visit, and a flat viewing.",
-        "Write a short message and take part in A1-style role plays.",
+        "Handle separable verbs in a daily routine.",
+        "Listen for names, times, prices, and short phone messages.",
+        "Read signs, housing adverts, and short notices.",
+        "Write a short message, invitation, or simple form.",
+        "Take part in A1-style role plays and exam speaking tasks.",
     ],
 )

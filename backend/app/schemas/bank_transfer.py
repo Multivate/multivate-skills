@@ -70,6 +70,7 @@ class EnrollmentStartOut(BaseModel):
 class EnrollmentStartIn(BaseModel):
     course_slug: str = Field(min_length=1, max_length=128)
     coupon_code: str | None = Field(default=None, max_length=32)
+    cart_slugs: list[str] = Field(default_factory=list, max_length=40)
 
 
 class PaymentVerifyIn(BaseModel):

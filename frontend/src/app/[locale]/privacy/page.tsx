@@ -80,11 +80,11 @@ export default function PrivacyPage() {
         },
         {
           id: "kazzy",
-          title: "Kay and automated guidance",
+          title: "Amara and automated guidance",
           body: (
             <>
               <p>
-                Kay is Multivate’s in-product guide. Chat messages you send to Kay may be processed by our systems and
+                Amara is Multivate’s in-product guide. Chat messages you send to Amara may be processed by our systems and
                 third-party AI providers we configure to generate a response. Do not submit passwords, payment card numbers,
                 or government ID documents in chat.
               </p>

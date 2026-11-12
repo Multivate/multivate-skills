@@ -41,6 +41,7 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
     image: course.image_url,
     source: "live",
     priceLabel,
+    priceCents: shown.cents,
   };
   const ratingCount = course.rating_count ?? 0;
   const rating = course.average_rating ?? 0;
@@ -101,22 +102,22 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
           )}
         </ul>
       </Link>
-      <div className="mt-4 flex items-start justify-between gap-4">
-        <CourseSalePrice
-          priceCents={listCents}
-          currency={course.currency ?? "NGN"}
-          isFree={course.is_free ?? false}
-          discountPercent={course.discount_percent}
-          discountExpiresAt={course.discount_expires_at}
-          salePriceCentsOverride={course.sale_price_cents}
-        />
-        <div className="flex items-center gap-2">
+      <div className="mt-auto flex flex-col gap-3 pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <CourseSalePrice
+            priceCents={listCents}
+            currency={course.currency ?? "NGN"}
+            isFree={course.is_free ?? false}
+            discountPercent={course.discount_percent}
+            discountExpiresAt={course.discount_expires_at}
+            salePriceCentsOverride={course.sale_price_cents}
+          />
           {user?.role === "student" ? (
             <button
               type="button"
               aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
               onClick={() => void toggle(course.slug)}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
+              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition ${
                 wished
                   ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
                   : "border-[#d1d7dc] text-[#1c1d1f] hover:border-[#1457D0] hover:text-[#1457D0] dark:border-white/20 dark:text-[#eef4ff] dark:hover:border-brand-accent dark:hover:text-brand-accent"
@@ -128,13 +129,13 @@ export function CatalogCourseCard({ course, layout = "grid" }: Props) {
             <Link
               href={`/login?from=${encodeURIComponent(`/courses/${course.slug}`)}`}
               aria-label="Sign in to save this course"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d1d7dc] text-[#1c1d1f] hover:text-[#1457D0] dark:border-white/20 dark:text-[#eef4ff] dark:hover:text-brand-accent"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d1d7dc] text-[#1c1d1f] hover:text-[#1457D0] dark:border-white/20 dark:text-[#eef4ff] dark:hover:text-brand-accent"
             >
               <Heart className="h-4 w-4 stroke-current" />
             </Link>
           )}
-          <AddToCartButton item={cartLine} variant="inline" addLabel={tCart("add")} removeLabel={tCart("remove")} />
         </div>
+        <AddToCartButton item={cartLine} variant="inline" addLabel={tCart("add")} removeLabel={tCart("remove")} />
       </div>
     </article>
   );

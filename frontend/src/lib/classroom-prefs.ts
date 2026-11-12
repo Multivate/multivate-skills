@@ -118,12 +118,25 @@ export function streakCount(days: string[], from = new Date()): number {
   return count;
 }
 
-export function speakGerman(text: string, gender: TeacherVoice, lang = "de-DE") {
+export type ListenPace = "slow" | "medium" | "fast";
+
+export const LISTEN_PACE_RATE: Record<ListenPace, number> = {
+  slow: 0.68,
+  medium: 0.95,
+  fast: 1.22,
+};
+
+export function speakGerman(
+  text: string,
+  gender: TeacherVoice,
+  lang = "de-DE",
+  opts?: { rate?: number; onend?: () => void },
+) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(spokenGermanLine(text));
   utter.lang = lang;
-  utter.rate = 0.92;
+  utter.rate = opts?.rate ?? 0.92;
   utter.pitch = gender === "female" ? 1.12 : 0.84;
   const voices = window.speechSynthesis.getVoices();
   const de = voices.filter((v) => /^de/i.test(v.lang));
@@ -133,5 +146,9 @@ export function speakGerman(text: string, gender: TeacherVoice, lang = "de-DE") 
   const match = pool.find((v) => (gender === "female" ? female.test(v.name) : male.test(v.name)));
   if (match) utter.voice = match;
   else if (de[0]) utter.voice = de[0];
+  if (opts?.onend) {
+    utter.onend = () => opts.onend?.();
+    utter.onerror = () => opts.onend?.();
+  }
   window.speechSynthesis.speak(utter);
 }

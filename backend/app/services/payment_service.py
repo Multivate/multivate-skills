@@ -42,4 +42,6 @@ def checkout_and_enroll(db: Session, user: User, payload: PaymentCreate) -> Enro
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Checkout is only available for student accounts.",
         )
-    return bank_transfer_service.start_enrollment(db, user, payload.course_slug)
+    return bank_transfer_service.start_enrollment(
+        db, user, payload.course_slug, cart_slugs=payload.cart_slugs
+    )

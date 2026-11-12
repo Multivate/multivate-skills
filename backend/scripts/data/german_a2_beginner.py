@@ -554,17 +554,28 @@ MODULES = [
 COURSE = make_course(
     slug="german-a2-beginner",
     title="German A2: Beginner",
-    subtitle="Past events, reasons, plans, and A2 exam skills",
+    subtitle="Complete first-half A2 German language programme",
     cefr="A2",
     band="beginner",
     modules=MODULES,
-    focus="You move from A1 survival language to talking about the past, giving reasons with weil and dass, comparing things, and handling work, travel, and services.",
+    focus="Past events, reasons, plans, and A2 exam skills.",
+    audience="for learners who can already handle A1 survival language",
+    topics=(
+        "Perfekt for yesterday, war and hatte, weil, dass and wenn, comparisons and opinions, "
+        "work and a typical week, leisure and plans, holidays and weather, health, "
+        "bank, post and phone, clothes shopping, directions in town, food with others, "
+        "feelings and small problems, A2 emails, moving house, and A2 listen, speak and read tasks"
+    ),
     objectives=[
         "Tell yesterday's events in Perfekt and use war and hatte for states.",
         "Give reasons and conditions with weil, dass, wenn, als, and ob.",
-        "Compare people, prices, and places.",
-        "Handle work weeks, invitations, short trips, and basic services.",
-        "Write a short formal or informal email.",
+        "Compare people, prices, and places, and give a simple opinion.",
+        "Talk about work weeks, invitations, short trips, and weather.",
+        "Handle health, bank, post, phone, and clothes shopping in set phrases.",
+        "Ask for and give directions around town.",
+        "Listen for times, places, and short service dialogues.",
+        "Read notices, menus, and simple emails.",
+        "Write a short formal or informal A2 email.",
         "Practise A2 listening, speaking, and writing task types.",
     ],
 )

@@ -554,17 +554,29 @@ MODULES = [
 COURSE = make_course(
     slug="german-b2-beginner",
     title="German B2: Beginner",
-    subtitle="Register, argument, sources, and first B2 exam genres",
+    subtitle="Complete first-half B2 German language programme",
     cefr="B2",
     band="advanced",
     modules=MODULES,
-    focus="You already function independently at B1. This first B2 half trains compact style, reporting, structured opinion, workplace email, and the genres of a B2 paper.",
+    focus="Register, argument, sources, and first B2 exam genres.",
+    audience="for learners who already function independently at B1",
+    topics=(
+        "informal, neutral and formal register, nominalisation, participles and precise description, "
+        "argument structure, Konjunktiv I and reporting sources, study and presenting information, "
+        "workplace email and meetings, society topics, health-system language, environment and the city, "
+        "media evaluation, B2 connectors, authentic-style reading and listening, the Stellungnahme, "
+        "letters to the editor, and a first B2 exam set"
+    ),
     objectives=[
         "Switch register between chat, workplace, and formal writing.",
         "Unpack nominalisations and extended attributes in reading.",
-        "Build a claim, reason, example, objection, proposal.",
+        "Build a claim, reason, example, objection, and proposal.",
         "Report sources with distance, including Konjunktiv I in writing.",
-        "Write a planned Stellungnahme and give a four-minute talk.",
+        "Handle workplace email, meetings, and clear responsibility.",
+        "Talk about society, education, digital life, and the city without empty slogans.",
+        "Listen to and read authentic-style texts for stance and detail.",
+        "Write a planned Stellungnahme and a public comment or letter.",
+        "Give a four-minute talk with a clear limit.",
         "Choose one exam body and practise that paper's timing.",
     ],
 )

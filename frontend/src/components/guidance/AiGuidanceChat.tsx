@@ -4,7 +4,7 @@ import Image from "next/image";
 import { RotateCcw, Send, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import headHow from "../../../public/marketing/heads/head-how.webp";
+import headAmara from "../../../public/marketing/heads/head-amara.jpg";
 import { readApiError } from "@/lib/api-error";
 import { GuidanceMessageContent } from "@/components/guidance/GuidanceMessageContent";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -12,14 +12,14 @@ import { usePathname } from "@/i18n/navigation";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
-function KayFace({ className = "h-9 w-9" }: { className?: string }) {
+function AmaraFace({ className = "h-9 w-9" }: { className?: string }) {
   return (
     <Image
-      src={headHow}
-      alt=""
+      src={headAmara}
+      alt="Amara"
       width={88}
       height={88}
-      className={`shrink-0 rounded-full object-cover object-center ring-2 ring-white ${className}`}
+      className={`shrink-0 rounded-full object-cover object-top ring-2 ring-white ${className}`}
     />
   );
 }
@@ -27,6 +27,7 @@ function KayFace({ className = "h-9 w-9" }: { className?: string }) {
 export function AiGuidanceChat() {
   const t = useTranslations("kazzy");
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const hidden =
     pathname.includes("/register") ||
     pathname.includes("/login") ||
@@ -45,6 +46,10 @@ export function AiGuidanceChat() {
   useBodyScrollLock(open, listRef);
 
   const prompts = [t("promptGerman"), t("promptStudy"), t("promptWork"), t("promptCourse")];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     try {
@@ -121,7 +126,7 @@ export function AiGuidanceChat() {
     }
   }
 
-  if (hidden) return null;
+  if (!mounted || hidden) return null;
 
   return (
     <>
@@ -134,7 +139,7 @@ export function AiGuidanceChat() {
           aria-label={t("openAria")}
         >
           <span className="relative">
-            <KayFace className="h-11 w-11 ring-0" />
+            <AmaraFace className="h-11 w-11 ring-0" />
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#3DDC97] ring-2 ring-[#10244F]" />
           </span>
           <span className="hidden pr-1 text-sm font-semibold sm:inline">{t("name")}</span>
@@ -149,7 +154,7 @@ export function AiGuidanceChat() {
           <header className="flex shrink-0 items-center justify-between bg-white px-3 py-2.5 pt-[max(0.65rem,env(safe-area-inset-top))] shadow-[0_1px_0_rgba(16,36,79,0.06)]">
             <div className="flex min-w-0 items-center gap-3">
               <div className="relative">
-                <KayFace />
+                <AmaraFace />
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#3DDC97] ring-2 ring-white" />
               </div>
               <div className="min-w-0">
@@ -182,7 +187,7 @@ export function AiGuidanceChat() {
           <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 [-webkit-overflow-scrolling:touch]">
             {turns.length === 0 ? (
               <div className="flex items-end gap-2">
-                <KayFace className="h-7 w-7" />
+                <AmaraFace className="h-7 w-7" />
                 <div className="max-w-[88%] rounded-[20px] rounded-bl-[6px] bg-white px-3.5 py-3 text-[#111] shadow-[0_1px_2px_rgba(16,36,79,0.06)]">
                   <p className="text-[15px] font-semibold">{t("greeting")}</p>
                   <p className="mt-1.5 text-[15px] leading-relaxed text-[#333]">{t("intro")}</p>
@@ -204,7 +209,7 @@ export function AiGuidanceChat() {
 
             {turns.map((turn, i) => (
               <div key={`${turn.role}-${i}`} className={`flex ${turn.role === "user" ? "justify-end" : "items-end gap-2"}`}>
-                {turn.role === "assistant" ? <KayFace className="h-7 w-7" /> : null}
+                {turn.role === "assistant" ? <AmaraFace className="h-7 w-7" /> : null}
                 <div
                   className={`max-w-[82%] px-3.5 py-2.5 text-[15px] leading-relaxed ${
                     turn.role === "user"
@@ -223,7 +228,7 @@ export function AiGuidanceChat() {
 
             {busy ? (
               <div className="flex items-end gap-2">
-                <KayFace className="h-7 w-7" />
+                <AmaraFace className="h-7 w-7" />
                 <div className="flex items-center gap-1 rounded-[20px] rounded-bl-[6px] bg-white px-3.5 py-3">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#98A2B3]" />
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#98A2B3] [animation-delay:150ms]" />

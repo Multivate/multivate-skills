@@ -68,6 +68,9 @@ export function StudentEnrolledCard({
           {started ? `${course.progress_pct}% complete` : "Start course"}
         </p>
       </Link>
+      <Link href={`/learn/${course.slug}/listen`} className="mt-2 text-xs font-semibold text-[#1457D0]">
+        Listening session
+      </Link>
     </article>
   );
 }

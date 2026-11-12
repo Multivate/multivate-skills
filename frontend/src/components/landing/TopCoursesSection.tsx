@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CatalogCourseCard } from "@/components/courses/CatalogCourseCard";
+import { germanPackagesForTab, PackageCourseCard } from "@/components/courses/PackageCourseCard";
 import type { BackendCourse } from "@/lib/backend-courses";
+import { isHiddenPublicCourse, mixCatalogWithPackages, sortCatalogCourses } from "@/lib/course-bundle";
 
 export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: BackendCourse[] }) {
   const tTop = useTranslations("topCourses");
@@ -23,7 +25,12 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
         const res = await fetch("/api/courses");
         const data = (await res.json().catch(() => null)) as unknown;
         if (cancelled) return;
-        setCourses(Array.isArray(data) ? (data as BackendCourse[]) : []);
+        const rows = Array.isArray(data) ? (data as BackendCourse[]) : [];
+        setCourses(
+          sortCatalogCourses(
+            rows.filter((row) => !isHiddenPublicCourse(row.title || "", row.slug || "")),
+          ),
+        );
       } catch {
         if (!cancelled) setCourses([]);
       } finally {
@@ -41,18 +48,21 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
     el.scrollBy({ left: dir * Math.max(280, el.clientWidth * 0.72), behavior: "smooth" });
   }, []);
 
+  const tabIds = new Set(["ai", "data", "cloud", "web", "design", "german", "career"]);
   const categories = useMemo(() => {
     const seen = new Set<string>();
     for (const course of courses) {
-      const label = course.category?.trim();
+      const label = (course.category ?? "").trim().toLowerCase();
       if (label) seen.add(label);
     }
     return Array.from(seen);
   }, [courses]);
   const [activeCategory, setActiveCategory] = useState("all");
-  const visible = (
-    activeCategory === "all" ? courses : courses.filter((course) => course.category === activeCategory)
-  ).slice(0, 8);
+  const visible =
+    activeCategory === "all"
+      ? courses
+      : courses.filter((course) => (course.category ?? "").trim().toLowerCase() === activeCategory);
+  const mixed = mixCatalogWithPackages(visible, germanPackagesForTab(activeCategory));
 
   return (
     <section id="courses" className="bg-white py-14 sm:py-16">
@@ -96,7 +106,7 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
                     : "border-transparent text-[#011B33]/60 hover:text-brand-navy"
                 }`}
               >
-                {category}
+                {tabIds.has(category) ? tTop(`tabs.${category}` as "tabs.german") : category}
               </button>
             ))}
           </div>
@@ -104,7 +114,7 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
 
         {loading ? (
           <p className="mt-10 text-sm text-neutral-500">{tExplore("viewDetails")}…</p>
-        ) : courses.length === 0 ? (
+        ) : courses.length === 0 && germanPackagesForTab(activeCategory).length === 0 ? (
           <p className="mt-8 max-w-prose text-sm leading-relaxed text-neutral-500">{tExplore("empty")}</p>
         ) : (
           <div className="relative mt-6">
@@ -129,9 +139,18 @@ export function TopCoursesSection({ initialCourses = [] }: { initialCourses?: Ba
               ref={scrollerRef}
               className="flex flex-nowrap gap-4 overflow-x-auto overscroll-x-contain pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
             >
-              {visible.map((course) => (
-                <CatalogCourseCard key={course.slug} course={course} layout="scroll" categoryLabel={course.category} />
-              ))}
+              {mixed.map((item) =>
+                item.kind === "package" ? (
+                  <PackageCourseCard key={item.pkg.id} pkg={item.pkg} catalog={courses} layout="scroll" />
+                ) : (
+                  <CatalogCourseCard
+                    key={item.course.slug}
+                    course={item.course}
+                    layout="scroll"
+                    categoryLabel={item.course.category}
+                  />
+                ),
+              )}
             </div>
           </div>
         )}

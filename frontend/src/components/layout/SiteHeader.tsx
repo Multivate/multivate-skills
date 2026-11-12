@@ -9,20 +9,26 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { LogoMark } from "./LogoMark";
 import { SiteHeaderCart } from "./SiteHeaderCart";
 import { SiteHeaderSearch } from "./SiteHeaderSearch";
+import type { BackendCourse } from "@/lib/backend-courses";
+import { GERMAN_PACKAGES, isHiddenPublicCourse, mixCatalogWithPackages, sortCatalogCourses } from "@/lib/course-bundle";
 
 const menuPanel =
   "pointer-events-none absolute left-0 top-full z-50 min-w-[13.5rem] pt-2 opacity-0 translate-y-1 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100";
+const courseMenuPanel =
+  "pointer-events-none absolute left-0 top-full z-50 w-[22rem] max-w-[calc(100vw-2rem)] pt-2 opacity-0 translate-y-1 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100";
 
 function NavMenu({
   href,
   label,
   icon: Icon,
   items,
+  wide = false,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   items: { href: string; label: string }[];
+  wide?: boolean;
 }) {
   const [hover, setHover] = useState(false);
   useBodyScrollLock(hover, undefined, "events");
@@ -48,8 +54,8 @@ function NavMenu({
           aria-hidden
         />
       </Link>
-      <div className={menuPanel}>
-        <ul className="overflow-hidden rounded-[5px] border border-brand-ink/10 bg-white py-1 shadow-[0_8px_24px_rgba(12,27,74,0.12)]">
+      <div className={wide ? courseMenuPanel : menuPanel}>
+        <ul className="max-h-[min(70vh,28rem)] overflow-y-auto rounded-[5px] border border-brand-ink/10 bg-white py-1 shadow-[0_8px_24px_rgba(12,27,74,0.12)]">
           {items.map((item) => (
             <li key={item.href + item.label}>
               <Link
@@ -82,21 +88,58 @@ export function SiteHeader() {
   }, []);
 
   const tTabs = useTranslations("topCourses.tabs");
+  const tTop = useTranslations("topCourses");
   const tTeach = useTranslations("landing.teach");
   const tFooter = useTranslations("footer");
+  const packageNavItems = GERMAN_PACKAGES.map((pkg) => ({
+    href: `/courses#${pkg.id}`,
+    label: `${pkg.title} · ${tTop("packageCourse")}`,
+  }));
+  const fallbackCourseItems = [
+    { href: "/courses", label: tTabs("all") },
+    ...packageNavItems,
+    { href: "/courses?search=German", label: tTabs("german") },
+    { href: "/courses?search=tech", label: tTabs("web") },
+    { href: "/courses?search=data", label: tTabs("data") },
+    { href: "/courses?search=career", label: tTabs("career") },
+  ];
+  const [courseItems, setCourseItems] = useState(fallbackCourseItems);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/courses", { cache: "no-store" });
+        const data = (await res.json().catch(() => null)) as unknown;
+        if (cancelled || !Array.isArray(data)) return;
+        const rows = sortCatalogCourses(
+          (data as BackendCourse[]).filter((row) => !isHiddenPublicCourse(row.title || "", row.slug || "")),
+        );
+        if (!rows.length) return;
+        setCourseItems([
+          { href: "/courses", label: tTabs("all") },
+          ...mixCatalogWithPackages(rows).map((item) =>
+            item.kind === "package"
+              ? { href: `/courses#${item.pkg.id}`, label: `${item.pkg.title} · ${tTop("packageCourse")}` }
+              : { href: `/courses/${item.course.slug}`, label: item.course.title },
+          ),
+        ]);
+      } catch {
+        /* keep category fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tTabs, tTop]);
 
   const menus = [
     {
       href: "/courses",
       label: t("courses"),
       icon: BookOpen,
-      items: [
-        { href: "/courses", label: tTabs("all") },
-        { href: "/courses?search=German", label: tTabs("german") },
-        { href: "/courses?search=tech", label: tTabs("web") },
-        { href: "/courses?search=data", label: tTabs("data") },
-        { href: "/courses?search=career", label: tTabs("career") },
-      ],
+      items: courseItems,
+      wide: true,
     },
     {
       href: "/mentors",
@@ -149,7 +192,14 @@ export function SiteHeader() {
 
         <nav className="hidden items-center gap-4 lg:flex" aria-label={t("explore")}>
           {menus.map((menu) => (
-            <NavMenu key={menu.label} href={menu.href} label={menu.label} icon={menu.icon} items={[...menu.items]} />
+            <NavMenu
+              key={menu.label}
+              href={menu.href}
+              label={menu.label}
+              icon={menu.icon}
+              items={[...menu.items]}
+              wide={"wide" in menu && menu.wide === true}
+            />
           ))}
         </nav>
 

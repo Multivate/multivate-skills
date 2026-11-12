@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -37,7 +36,7 @@ COURSES = [
         "band": "ADVANCED",
         "quote": "More A1 situations, grammar in use, and exam tasks.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "720 Learning and Practice Activities",
         "exam": "A1 Examination Preparation",
         "badge": "CEFR A1  |  A1 ADVANCED",
     },
@@ -47,7 +46,7 @@ COURSES = [
         "band": "BEGINNER",
         "quote": "Past events, reasons, plans, and A2 exam skills.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "750 Learning and Practice Activities",
         "exam": "A2 Examination Preparation",
         "badge": "CEFR A2  |  A2 BEGINNER",
     },
@@ -57,7 +56,7 @@ COURSES = [
         "band": "ADVANCED",
         "quote": "Reflexive verbs, adjective endings, and A2 exam polish.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "750 Learning and Practice Activities",
         "exam": "A2 Examination Preparation",
         "badge": "CEFR A2  |  A2 ADVANCED",
     },
@@ -67,7 +66,7 @@ COURSES = [
         "band": "BEGINNER",
         "quote": "Opinions, work language, connectors, and B1 exam tasks.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "767 Learning and Practice Activities",
         "exam": "B1 Examination Preparation",
         "badge": "CEFR B1  |  B1 BEGINNER",
     },
@@ -77,7 +76,7 @@ COURSES = [
         "band": "ADVANCED",
         "quote": "Passive, relative clauses, official language, and the B1 paper.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "768 Learning and Practice Activities",
         "exam": "B1 Examination Preparation",
         "badge": "CEFR B1  |  B1 ADVANCED",
     },
@@ -87,7 +86,7 @@ COURSES = [
         "band": "BEGINNER",
         "quote": "Register, argument, sources, and first B2 exam genres.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "766 Learning and Practice Activities",
         "exam": "B2 Examination Preparation",
         "badge": "CEFR B2  |  B2 BEGINNER",
     },
@@ -97,9 +96,99 @@ COURSES = [
         "band": "ADVANCED",
         "quote": "Style, debate, official language, and full B2 exam method.",
         "modules": "16 Structured Learning Modules",
-        "activities": "448 Learning and Practice Activities",
+        "activities": "768 Learning and Practice Activities",
         "exam": "B2 Examination Preparation",
         "badge": "CEFR B2  |  B2 ADVANCED",
+    },
+    {
+        "file": "german-c1-beginner-cover.jpg",
+        "level": "C1",
+        "band": "BEGINNER",
+        "quote": "Demanding texts, fluent argument, and first C1 exam genres.",
+        "modules": "16 Structured Learning Modules",
+        "activities": "720 Learning and Practice Activities",
+        "exam": "C1 Examination Preparation",
+        "badge": "CEFR C1  |  C1 BEGINNER",
+    },
+    {
+        "file": "german-c1-advanced-cover.jpg",
+        "level": "C1",
+        "band": "ADVANCED",
+        "quote": "Hochschule tasks, mediation, data talk, and C1 exam stamina.",
+        "modules": "16 Structured Learning Modules",
+        "activities": "719 Learning and Practice Activities",
+        "exam": "C1 Examination Preparation",
+        "badge": "CEFR C1  |  C1 ADVANCED",
+    },
+    {
+        "file": "german-c2-beginner-cover.jpg",
+        "level": "C2",
+        "band": "BEGINNER",
+        "quote": "Implication, style, paraphrase, and first C2 exam genres.",
+        "modules": "16 Structured Learning Modules",
+        "activities": "720 Learning and Practice Activities",
+        "exam": "C2 Examination Preparation",
+        "badge": "CEFR C2  |  C2 BEGINNER",
+    },
+    {
+        "file": "german-c2-advanced-cover.jpg",
+        "level": "C2",
+        "band": "ADVANCED",
+        "quote": "Full GDS method: literary control, expert mediation, stamina.",
+        "modules": "16 Structured Learning Modules",
+        "activities": "720 Learning and Practice Activities",
+        "exam": "C2 Examination Preparation",
+        "badge": "CEFR C2  |  C2 ADVANCED",
+    },
+    {
+        "file": "german-a1-a2-package-cover.jpg",
+        "level": "A1-A2",
+        "band": "PACKAGE COURSE",
+        "quote": "All A1 and A2 classroom courses at one package price.",
+        "modules": "4 Classroom Courses In This Package",
+        "activities": "10 percent off the full A1 to A2 path",
+        "exam": "A1 and A2 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A1 TO A2",
+    },
+    {
+        "file": "german-a1-b1-package-cover.jpg",
+        "level": "A1-B1",
+        "band": "PACKAGE COURSE",
+        "quote": "All A1, A2 and B1 classroom courses at one package price.",
+        "modules": "6 Classroom Courses In This Package",
+        "activities": "12 percent off the full A1 to B1 path",
+        "exam": "A1 to B1 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A1 TO B1",
+    },
+    {
+        "file": "german-a1-b2-package-cover.jpg",
+        "level": "A1-B2",
+        "band": "PACKAGE COURSE",
+        "quote": "All A1 through B2 classroom courses at one package price.",
+        "modules": "8 Classroom Courses In This Package",
+        "activities": "15 percent off the full A1 to B2 path",
+        "exam": "A1 to B2 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A1 TO B2",
+    },
+    {
+        "file": "german-a1-c1-package-cover.jpg",
+        "level": "A1-C1",
+        "band": "PACKAGE COURSE",
+        "quote": "All A1 through C1 classroom courses at one package price.",
+        "modules": "10 Classroom Courses In This Package",
+        "activities": "18 percent off the full A1 to C1 path",
+        "exam": "A1 to C1 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A1 TO C1",
+    },
+    {
+        "file": "german-a1-c2-package-cover.jpg",
+        "level": "A1-C2",
+        "band": "PACKAGE COURSE",
+        "quote": "The full German classroom path at one package price.",
+        "modules": "12 Classroom Courses In This Package",
+        "activities": "20 percent off the full A1 to C2 path",
+        "exam": "A1 to C2 Examination Preparation",
+        "badge": "PACKAGE COURSE  |  A1 TO C2",
     },
 ]
 
@@ -127,15 +216,12 @@ def fonts() -> dict[str, ImageFont.FreeTypeFont]:
 
 
 def background() -> Image.Image:
-    yy, xx = np.mgrid[0:H, 0:W]
-    ink = np.array(INK, dtype=np.float32)
-    accent = np.array(ACCENT, dtype=np.float32)
-    r1 = np.sqrt((xx - 1020) ** 2 + (yy - 220) ** 2)
-    r2 = np.sqrt((xx - 180) ** 2 + (yy - 620) ** 2)
-    t1 = np.clip(1 - r1 / 780, 0, 1)[..., None]
-    t2 = np.clip(1 - r2 / 520, 0, 1)[..., None] * 0.18
-    arr = ink + (accent - ink) * (t1 * 0.42 + t2)
-    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGB")
+    base = Image.new("RGBA", (W, H), (*INK, 255))
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(glow)
+    draw.ellipse([240, -280, 1800, 780], fill=(*ACCENT, 110))
+    draw.ellipse([-220, 380, 580, 980], fill=(*ACCENT, 48))
+    return Image.alpha_composite(base, glow).convert("RGB")
 
 
 def real_logo() -> Image.Image:
@@ -191,7 +277,10 @@ def render(course: dict) -> None:
     german = "GERMAN  "
     draw.text((48, title_y), german, font=f["title"], fill=WHITE)
     gx = 48 + draw.textlength(german, font=f["title"])
-    draw.text((gx, title_y), course["level"], font=f["level"], fill=GOLD)
+    level_font = f["level"]
+    if len(str(course["level"])) > 3:
+        level_font = _font("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 48)
+    draw.text((gx, title_y + (8 if len(str(course["level"])) > 3 else 0)), course["level"], font=level_font, fill=GOLD)
     draw.text((48, 278), course["band"], font=f["band"], fill=WHITE)
     draw.text((52, 348), f"“{course['quote']}”", font=f["quote"], fill=MUTED)
 
@@ -233,7 +322,8 @@ def main() -> None:
         raise SystemExit(f"Missing logo: {LOGO_PATH}")
     OUT.mkdir(parents=True, exist_ok=True)
     for course in COURSES:
-        render(course)
+        if "package" in course["file"] or not (OUT / course["file"]).is_file():
+            render(course)
 
 
 if __name__ == "__main__":

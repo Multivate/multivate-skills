@@ -40,7 +40,7 @@ export function AddToCartButton({
       : variant === "compact"
         ? "inline-flex items-center gap-1.5 rounded-sm border border-neutral-200 bg-brand-surface px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary"
         : variant === "inline"
-          ? "inline-flex h-10 w-auto shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-brand-accent px-3 text-sm font-bold transition"
+          ? "inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-lg border border-brand-accent px-3 text-sm font-bold transition"
           : "inline-flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 bg-brand-surface py-2.5 text-sm font-semibold text-zinc-800 transition hover:border-brand-panel hover:text-brand-primary";
   const inlineState = inCart
     ? "border-brand-accent bg-brand-accent text-white hover:bg-brand-accent-dark"

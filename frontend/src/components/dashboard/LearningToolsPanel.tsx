@@ -67,9 +67,14 @@ export function LearningToolsPanel() {
                     {course.lesson_done}/{course.lessons} · {course.progress_pct}%
                   </p>
                 </div>
-                <Link href={`/learn/${course.slug}`} className="text-sm font-bold text-[#1457D0]">
-                  Continue
-                </Link>
+                <div className="flex items-center gap-4">
+                  <Link href={`/learn/${course.slug}/listen`} className="text-sm font-bold text-[#1457D0]">
+                    Listening session
+                  </Link>
+                  <Link href={`/learn/${course.slug}`} className="text-sm font-bold text-[#1457D0]">
+                    Continue
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>

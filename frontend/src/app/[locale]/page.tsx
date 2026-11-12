@@ -7,6 +7,7 @@ import { TopCoursesSection } from "@/components/landing/TopCoursesSection";
 import { StorySections } from "@/components/landing/StorySections";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { fetchBackendCatalog } from "@/lib/backend-courses";
+import { isHiddenPublicCourse, sortCatalogCourses } from "@/lib/course-bundle";
 import { fetchPublicMentors } from "@/lib/backend-mentors";
 import { fetchBackendPublicReviews } from "@/lib/backend-reviews";
 import { encodedAssetPath, SITE_EMAIL, SITE_LEGAL_NAME, SITE_NAME } from "@/lib/seo";
@@ -16,11 +17,14 @@ type Props = { params: Promise<{ locale: string }> };
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
-  const [courses, reviews, mentors] = await Promise.all([
+  const [catalog, reviews, mentors] = await Promise.all([
     fetchBackendCatalog({ revalidate: 60 }),
     fetchBackendPublicReviews(),
     fetchPublicMentors(false),
   ]);
+  const courses = sortCatalogCourses(
+    catalog.filter((row) => !isHiddenPublicCourse(row.title || "", row.slug || "")),
+  );
   const site = getSiteUrl();
 
   return (

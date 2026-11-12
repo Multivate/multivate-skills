@@ -283,12 +283,17 @@ def _apply_coupon_pricing(
     user: User,
     course: Course,
     coupon_code: str | None,
+    cart_slugs: list[str] | None = None,
 ) -> tuple[int, str, int, int, DiscountCode | None, str | None]:
     """Returns amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code."""
+    from app.services.course_bundle import apply_bundle_cents
     from app.services.course_pricing import list_price_cents
 
     amount_cents, currency = _course_price(course)
     original_cents = list_price_cents(course)
+    amount_cents, _bundle_off, _bundle_label = apply_bundle_cents(
+        amount_cents, cart_slugs or [], course.slug
+    )
     discount_cents = max(0, original_cents - amount_cents)
     discount_row = None
     normalized_code: str | None = None
@@ -387,13 +392,19 @@ def _get_or_create_pending_enrollment(db: Session, user_id: UUID, course_id: UUI
         return row
 
 
-def start_enrollment(db: Session, user: User, course_slug: str, coupon_code: str | None = None) -> EnrollmentStartOut:
+def start_enrollment(
+    db: Session,
+    user: User,
+    course_slug: str,
+    coupon_code: str | None = None,
+    cart_slugs: list[str] | None = None,
+) -> EnrollmentStartOut:
     if user.role != UserRole.STUDENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only students can enroll in courses")
 
     course = course_service.get_course_or_404(db, course_slug, user=user)
     amount_cents, currency, original_cents, discount_cents, discount_row, normalized_code = _apply_coupon_pricing(
-        db, user, course, coupon_code
+        db, user, course, coupon_code, cart_slugs=cart_slugs
     )
 
     if course.is_free or (amount_cents == 0 and original_cents == 0):

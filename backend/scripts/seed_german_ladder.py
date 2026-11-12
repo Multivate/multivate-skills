@@ -1,4 +1,4 @@
-"""Publish the German CEFR classroom ladder (A1 Advanced through B2 Advanced).
+"""Publish the German CEFR classroom ladder (A1 Advanced through C2 Advanced).
 
 Does not replace german-a1-zero-to-beginner. Idempotent per slug.
 
@@ -32,6 +32,10 @@ PACKS = [
     "german_b1_advanced",
     "german_b2_beginner",
     "german_b2_advanced",
+    "german_c1_beginner",
+    "german_c1_advanced",
+    "german_c2_beginner",
+    "german_c2_advanced",
 ]
 
 
@@ -93,7 +97,7 @@ def _course_owner(db, admin: User) -> User:
             InstructorTeachingProfile(
                 user_id=owner.id,
                 expertise_areas="German language",
-                teaching_bio="German classroom instructor for CEFR A1 to B2 exam preparation.",
+                teaching_bio="German classroom instructor for CEFR A1 to C2 exam preparation.",
                 subjects_taught="German",
                 years_experience="3_5",
                 teaching_formats="online",
@@ -170,13 +174,38 @@ def main() -> None:
     db = SessionLocal()
     try:
         admin = _admin(db)
+        data_dir = Path(__file__).resolve().parent / "data"
+        if str(data_dir) not in sys.path:
+            sys.path.insert(0, str(data_dir))
+        from goethe_extras import merge_modules
+        from german_ladder import MINUTES_PER_LESSON  # noqa: E402
+        import re
+
         for name in PACKS:
             meta, modules = _load_pack(name)
             if len(modules) != 16:
                 raise SystemExit(f"{name} must have 16 modules, has {len(modules)}")
+            modules = merge_modules(name, modules)
+            lesson_count = sum(len(row[2]) for row in modules)
+            meta = dict(meta)
+            meta["description"] = re.sub(
+                r"\d+ practice lessons", f"{lesson_count} practice lessons", meta["description"]
+            )
+            meta["duration_minutes"] = lesson_count * MINUTES_PER_LESSON
+            meta["lessons_count"] = lesson_count
+            if lesson_count < 600:
+                raise SystemExit(f"{name} has only {lesson_count} lessons after merge, need 600+")
             course = _upsert_course(db, admin, meta)
             n_mod, n_ph = _replace_curriculum(db, course, modules)
             print(f"Published {course.slug}: {n_mod} modules, {n_ph} lessons, {meta['cefr_level']} {meta['band']}")
+        from app.services.course_bundle import price_cents_for
+
+        published = db.execute(select(Course).where(Course.status == CourseStatus.PUBLISHED)).scalars().all()
+        for row in published:
+            level = row.level.value if hasattr(row.level, "value") else str(row.level or "beginner")
+            row.price_cents = price_cents_for(row.slug, level)
+            row.is_free = False
+            print(f"Price {row.slug}: ₦{row.price_cents // 100:,}")
         db.commit()
         invalidate_catalog_cache()
     except Exception:

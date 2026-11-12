@@ -3,7 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CatalogCourseCard } from "@/components/courses/CatalogCourseCard";
+import { PackageCourseCard } from "@/components/courses/PackageCourseCard";
 import { fetchBackendCatalog } from "@/lib/backend-courses";
+import { GERMAN_PACKAGES, isHiddenPublicCourse, mixCatalogWithPackages, sortCatalogCourses } from "@/lib/course-bundle";
 import { publicPageMetadata } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 
@@ -58,10 +60,24 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
   const t = await getTranslations({ locale, namespace: "coursesPage" });
   const tTabs = await getTranslations({ locale, namespace: "topCourses.tabs" });
 
-  const courses = await fetchBackendCatalog({ revalidate: 60 });
+  const courses = sortCatalogCourses(
+    (await fetchBackendCatalog({ revalidate: 60 })).filter(
+      (row) => !isHiddenPublicCourse(row.title || "", row.slug || ""),
+    ),
+  );
   const filtered = searchQ
     ? courses.filter((c) => matchesSearch(searchQ, c.title, c.description, c.slug, c.category))
     : courses;
+  const needle = searchQ.toLowerCase();
+  const packages = !searchQ || /package|german|a1|b1|b2|c1|c2/.test(needle)
+    ? GERMAN_PACKAGES.filter(
+        (pkg) =>
+          !searchQ ||
+          `${pkg.title} ${pkg.range} package`.toLowerCase().includes(needle) ||
+          /german|package/.test(needle),
+      )
+    : [];
+  const mixed = mixCatalogWithPackages(filtered, packages);
 
   return (
     <>
@@ -91,7 +107,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
             <div className="mt-6 flex flex-col gap-2 rounded-md border border-neutral-200/90 bg-brand-surface px-4 py-3 text-sm dark:border-zinc-800/90 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-zinc-700">
                 <span className="font-semibold text-brand-ink">{t("searchActiveLabel")}</span>{" "}
-                <q className="text-brand-primary">{searchQ}</q> ({t("searchResultCount", { count: filtered.length })})
+                <q className="text-brand-primary">{searchQ}</q> ({t("searchResultCount", { count: filtered.length + packages.length })})
               </p>
               <Link href="/courses" className="shrink-0 font-semibold text-brand-primary hover:text-brand-primary-dark">
                 {t("searchClear")}
@@ -100,7 +116,15 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
           ) : null}
 
           <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {filtered.map((c) => {
+            {mixed.map((item) => {
+              if (item.kind === "package") {
+                return (
+                  <li key={item.pkg.id}>
+                    <PackageCourseCard pkg={item.pkg} catalog={courses} layout="grid" />
+                  </li>
+                );
+              }
+              const c = item.course;
               const catKey = (c.category ?? "general").toLowerCase();
               const categoryLabel = ["ai", "data", "cloud", "web", "design", "german", "career"].includes(catKey)
                 ? tTabs(catKey as "ai")
@@ -113,7 +137,7 @@ export default async function CoursesIndexPage({ params, searchParams }: PagePro
             })}
           </ul>
 
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && packages.length === 0 ? (
             <p className="mt-10 rounded-md border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-10 text-center text-sm text-neutral-500 dark:border-zinc-700 dark:bg-zinc-900/40">
               {searchQ ? t("searchNoResults") : t("emptyCatalog")}
             </p>

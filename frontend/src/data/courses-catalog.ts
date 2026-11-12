@@ -94,8 +94,8 @@ export const courses = [
   {
     slug: "german",
     category: "german" as CourseCategory,
-    title: "German Language (A1-B2)",
-    description: "Learn German step-by-step from A1 to B2 level.",
+    title: "German Language (A1-C2)",
+    description: "Learn German step-by-step from A1 to C2 level.",
     detail:
       "Structured tracks for exams, workplace German, and daily life in Germany.",
     bullets: [
@@ -105,7 +105,7 @@ export const courses = [
     ],
     pill: "Essential",
     pillClass: "bg-amber-50 text-amber-900 ring-1 ring-amber-200/90",
-    level: "A1 to B2",
+    level: "A1 to C2",
     lessons: 35,
     hours: "24h",
     rating: "4.8",

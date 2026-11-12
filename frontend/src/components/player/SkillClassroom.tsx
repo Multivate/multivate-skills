@@ -467,8 +467,11 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
     );
   }
 
+  const listenHref = `/learn/${slug}/listen${preview ? "?preview=1" : ""}`;
+
   const nav = [
     { id: "classroom" as const, label: "My Classroom", icon: Home },
+    { id: "listen" as const, label: "Listening session", icon: Headphones, href: listenHref },
     { id: "assessment" as const, label: "Assessment", icon: Trophy },
     { id: "scenario" as const, label: "Real-life", icon: MessageCircle },
     { id: "hub" as const, label: "Opportunity Hub", icon: Target },
@@ -518,19 +521,29 @@ export function SkillClassroom({ slug, preview = false }: { slug: string; previe
           {nav.map((item) => {
             const Icon = item.icon;
             const on = view === item.id;
+            const className = `flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm font-semibold disabled:cursor-not-allowed ${
+              on ? "cr-chip-on" : "cr-muted hover:bg-[var(--cr-surface-soft)]"
+            } ${item.id === "assessment" && !assessmentUnlocked ? "opacity-50" : ""}`;
+            if ("href" in item && item.href) {
+              return (
+                <Link key={item.id} href={item.href} className={className} onClick={() => setNavOpen(false)}>
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            }
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => {
                   if (item.id === "assessment" && !assessmentUnlocked) return;
+                  if (item.id === "listen") return;
                   setView(item.id);
                   setNavOpen(false);
                 }}
                 disabled={item.id === "assessment" && !assessmentUnlocked}
-                className={`flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm font-semibold disabled:cursor-not-allowed ${
-                  on ? "cr-chip-on" : "cr-muted hover:bg-[var(--cr-surface-soft)]"
-                } ${item.id === "assessment" && !assessmentUnlocked ? "opacity-50" : ""}`}
+                className={className}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}

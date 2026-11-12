@@ -554,15 +554,27 @@ MODULES = [
 COURSE = make_course(
     slug="german-b1-beginner",
     title="German B1: Beginner",
-    subtitle="Opinions, work and health language, connectors, and B1 exam tasks",
+    subtitle="Complete first-half B1 German language programme",
     cefr="B1",
     band="intermediate",
     modules=MODULES,
-    focus="You move from A2 description to independent use: reasons, advice, workplace and clinic language, emails, and partner planning. This is the first B1 half.",
+    focus="Opinions, work and health language, connectors, and B1 exam tasks.",
+    audience="for learners who can already describe everyday life at A2 and want independent use",
+    topics=(
+        "opinions and linking words, wishes and Konjunktiv II, infinitive with zu, "
+        "work and applications, health and insurance language, school and adult learning, "
+        "biography, time clauses, media and advertising, environment and daily choices, "
+        "complaints and telephone German, informal and formal emails, picture talks, "
+        "partner discussion, grammar repair, and a first B1 exam set"
+    ),
     objectives=[
         "Give a structured opinion with weil, deshalb, obwohl, and dass.",
         "Use Konjunktiv II for wishes, advice, and polite requests.",
         "Handle job, health, and service conversations without panic.",
+        "Link ideas with time clauses, um zu, and ohne zu.",
+        "Talk about education, family stories, media, and daily choices.",
+        "Listen to longer dialogues and keep the task question in view.",
+        "Read adverts, notices, and short opinion texts.",
         "Write a B1-style email that covers every task bullet.",
         "Describe a photo and hold a short talk.",
         "Plan with a partner: suggest, disagree, and summarise.",

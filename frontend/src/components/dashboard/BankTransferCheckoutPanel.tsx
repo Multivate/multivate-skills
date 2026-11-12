@@ -55,7 +55,7 @@ export function BankTransferCheckoutPanel() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { removeItem } = useCart();
+  const { items, removeItem } = useCart();
   const remitaFormRef = useRef<HTMLFormElement>(null);
   const slug = (searchParams.get("checkout") ?? "").trim();
   const [data, setData] = useState<StartResponse | null>(null);
@@ -80,7 +80,10 @@ export function BankTransferCheckoutPanel() {
       setBusy(true);
       setErr(null);
       try {
-        const payload: { course_slug: string; coupon_code?: string } = { course_slug: slug };
+        const payload: { course_slug: string; coupon_code?: string; cart_slugs: string[] } = {
+          course_slug: slug,
+          cart_slugs: items.map((line) => line.slug),
+        };
         const trimmed = couponCode?.trim();
         if (trimmed) payload.coupon_code = trimmed.toUpperCase();
 
@@ -120,7 +123,7 @@ export function BankTransferCheckoutPanel() {
         setBusy(false);
       }
     },
-    [slug, t, removeItem, router],
+    [slug, t, removeItem, router, items],
   );
 
   async function applyCoupon() {

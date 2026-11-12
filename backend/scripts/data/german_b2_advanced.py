@@ -554,16 +554,27 @@ MODULES = [
 COURSE = make_course(
     slug="german-b2-advanced",
     title="German B2: Advanced",
-    subtitle="Style, debate, official language, and full B2 exam method",
+    subtitle="Complete second-half B2 German language programme",
     cefr="B2",
     band="advanced",
     modules=MODULES,
-    focus="This is the second B2 half. You already structure an argument. Now you vary style, debate with concessions, read writer stance, negotiate at work, and walk into a real B2 paper with a method per skill. The certificate still comes from an authorised centre.",
+    focus="Style, debate, official language, and full B2 exam method.",
+    audience="for learners who already structure a B2 argument and now need exam method",
+    topics=(
+        "style and emphasis, abstract topics without empty philosophy, debate and concession, "
+        "hypotheticals, administrative style, professional negotiation, charts and processes, "
+        "collocation, formal complaint and proposal, oral exam timing, fast disagreement, "
+        "long-text stance, fossil repair, exam integrity, examiner follow-up, and a full B2 exam set"
+    ),
     objectives=[
         "Vary style and land a point with short sentences and emphasis.",
         "Debate: concede, distinguish groups, and name a trade-off.",
         "Use mixed conditionals and administrative paraphrases.",
+        "Explain charts, processes, and systems without inventing numbers.",
+        "Negotiate at work with a clear ask, limit, and next step.",
         "Write a complaint, a proposal, and a summary from the same facts.",
+        "Listen to disagreement and fast speech with a method.",
+        "Read long texts for structure and writer stance.",
         "Run a timed oral with interaction, not a memorised script.",
         "Sit official B2 samples with a method, then book an authorised centre.",
     ],

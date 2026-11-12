@@ -23,3 +23,4 @@ class PaymentCreate(BaseModel):
     course_slug: str = Field(min_length=1, max_length=128)
     amount_cents: int | None = Field(default=None, description="Ignored. Server sets the price.")
     currency: str | None = Field(default=None, max_length=3, description="Ignored. Server sets the currency.")
+    cart_slugs: list[str] = Field(default_factory=list, max_length=40)

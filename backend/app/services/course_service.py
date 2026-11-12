@@ -18,6 +18,7 @@ from app.models.enrollment_status import EnrollmentStatus
 from app.models.role import UserRole
 from app.models.user import User
 from app.schemas.course import CourseCreate, CourseOut, CourseUpdate
+from app.services.course_bundle import catalog_sort_key, is_hidden_public_title
 from app.services.course_pricing import sale_price_cents
 
 
@@ -131,7 +132,9 @@ def list_catalog(db: Session) -> list[CourseOut]:
         .where(Course.status == CourseStatus.PUBLISHED)
         .order_by(Course.title.asc())
     ).scalars().all()
-    out = _with_public_stats(db, list(rows))
+    visible = [row for row in rows if not is_hidden_public_title(row.title or "", row.slug or "")]
+    visible.sort(key=lambda row: catalog_sort_key(row.slug or "", row.title or ""))
+    out = _with_public_stats(db, visible)
     cache_set_json(CATALOG_KEY, [item.model_dump(mode="json") for item in out], ttl_seconds=60)
     return out
 

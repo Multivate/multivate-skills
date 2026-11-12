@@ -9,7 +9,9 @@ type CartContextValue = {
   items: CartLine[];
   count: number;
   addItem: (item: CartLine) => void;
+  addItems: (rows: CartLine[]) => void;
   removeItem: (slug: string) => void;
+  removeItems: (slugs: string[]) => void;
   clear: () => void;
   hasSlug: (slug: string) => boolean;
 };
@@ -68,8 +70,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const addItems = useCallback((rows: CartLine[]) => {
+    setItems((prev) => {
+      const next = [...prev];
+      for (const row of rows) {
+        if (!next.some((p) => p.slug === row.slug)) next.push(row);
+      }
+      return next;
+    });
+  }, []);
+
   const removeItem = useCallback((slug: string) => {
     setItems((prev) => prev.filter((p) => p.slug !== slug));
+  }, []);
+
+  const removeItems = useCallback((slugs: string[]) => {
+    const drop = new Set(slugs);
+    setItems((prev) => prev.filter((p) => !drop.has(p.slug)));
   }, []);
 
   const clear = useCallback(() => setItems([]), []);
@@ -79,8 +96,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = items.length;
 
   const value = useMemo(
-    () => ({ items, count, addItem, removeItem, clear, hasSlug }),
-    [items, count, addItem, removeItem, clear, hasSlug],
+    () => ({ items, count, addItem, addItems, removeItem, removeItems, clear, hasSlug }),
+    [items, count, addItem, addItems, removeItem, removeItems, clear, hasSlug],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

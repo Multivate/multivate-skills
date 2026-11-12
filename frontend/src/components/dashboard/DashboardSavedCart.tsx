@@ -5,12 +5,18 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
+import { bundleQuote } from "@/lib/course-bundle";
+import { formatCoursePrice } from "@/lib/course-price";
 
 export function DashboardSavedCart() {
   const t = useTranslations("dashboard.coursesTab");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { items, removeItem } = useCart();
+  const quote = bundleQuote(
+    items.map((line) => line.slug),
+    items.map((line) => line.priceCents ?? 0),
+  );
   if (!authLoading && user && user.role !== "student") {
     return null;
   }
@@ -42,6 +48,17 @@ export function DashboardSavedCart() {
     <section id="saved-cart" className="scroll-mt-24 rounded border border-[#d1d7dc] p-5 sm:p-6">
       <h2 className="text-base font-bold">{t("cartTitle")}</h2>
       <p className="mt-2 max-w-2xl text-sm text-[#6a6f73]">{t("cartBody")}</p>
+      {quote.percent > 0 ? (
+        <div className="mt-4 rounded-lg border border-[#1457D0]/20 bg-[#1457D0]/5 px-4 py-3 text-sm text-[#10244F]">
+          <p className="font-bold text-[#1457D0]">
+            {t("bundleSave", { amount: formatCoursePrice(quote.saveCents, "NGN", false) })}
+          </p>
+          <p className="mt-1">
+            {t("bundleRate", { percent: quote.percent, label: quote.label })}
+            {quote.listCents > 0 ? ` · ${t("bundlePay", { amount: formatCoursePrice(quote.payableCents, "NGN", false) })}` : ""}
+          </p>
+        </div>
+      ) : null}
       <ul className="mt-5 space-y-3">
         {items.map((line) => (
           <li key={line.slug} className="flex flex-col gap-4 rounded border border-[#d1d7dc] p-4 sm:flex-row sm:items-center">
